@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP SMS12T1G
+D Pb-Free Packages are Available; SC-74 Package Allows Four Separate Unidirectional Configurations; Peak Power  350 Watts, 8 x 20 S; ESD Rating of Class N (Exceeding 25 kV) per the Human Body Model; ESD Rating: IEC 6100042 (ESD) 15 kV (air) 8 kV (contact) IEC 6100044 (EFT) 40 Amps (5/50 ns) IEC 6100045 (lighting) 23 Amps (8/20  s); UL Flammability Rating of 94V0
+K
+F https://www.onsemi.com/pub/Collateral/SMS05T1-D.PDF
+$ENDCMP
+#
+#End Doc Library
