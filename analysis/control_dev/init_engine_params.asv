@@ -1,0 +1,17 @@
+%% Parameters for Throttleable Engine Model
+
+% Ambient Pressure
+P_amb = 101325; % [Pa] ambient pressure
+
+% Engine Parameters
+% V_c = % [units] chamber volume
+% A_t = % [units] throat area
+
+% Feed Pressures
+% P_feed_f = % [units] fuel feed pressure
+% P_feed_ox  = % [units] ox feed pressure
+
+% Set CdAmax for initial Cd tuning
+A_eff = mdot_nom / (C)
+
+
