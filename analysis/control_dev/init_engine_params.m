@@ -14,6 +14,7 @@ OF = 1.2; % ox fuel ratio. source: Engine + Feed Speccing Sheet
 % Engine Parameters
 V_c = 2.5335373958699e-4; % [m^3] chamber volume. source: Engine + Feed Speccing Sheet
 A_t = 1.266768698e-4; % [m^2] throat area. source: Engine + Feed Speccing Sheet
+tau_c = 5e-3; % [s] combustion/mixing time scale ??how do I choose this accurately??
 
 % Injector Parameters
 DeltaP_inj_percent = 20; % [% of P_c_nom]. source: Engine + Feed Speccing Sheet

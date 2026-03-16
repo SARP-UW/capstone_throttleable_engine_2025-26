@@ -1,6 +1,6 @@
 %% Parameters for Throttleable Engine Model
 
-%%%%% psi to Pa conversion
+% psi to Pa conversion
 psi_to_Pa = 6894.76;
 
 % Ambient Pressure
@@ -14,15 +14,15 @@ OF = 1.2; % ox fuel ratio. source: Engine + Feed Speccing Sheet
 % Engine Parameters
 V_c = 2.5335373958699e-4; % [m^3] chamber volume. source: Engine + Feed Speccing Sheet
 A_t = 1.266768698e-4; % [m^2] throat area. source: Engine + Feed Speccing Sheet
-
+tau_c = 5e-3; % [s] combustion
 % Injector Parameters
 DeltaP_inj_percent = 20; % [% of P_c_nom]. source: Engine + Feed Speccing Sheet
 DeltaP_inj = DeltaP_inj_percent / 100 * P_c_nom; % [Pa] Delta P across injector for both propellants
-% Calculate nominal propellant flow rates
+%%%% Calculate nominal propellant flow rates
 mdot_nom = 0.3; % [kg/s] nominal/max/fully open mdot total. source: Engine + Feed Speccing Sheet
 mdot_f_nom = mdot_nom / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
 mdot_ox_nom = mdot_nom * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
-% Calculate CdA_inj for propellants
+%%%% Calculate CdA_inj for propellants
 CdA_inj_f = mdot_f_nom / sqrt(2 * rho_f * DeltaP_inj);
 CdA_inj_ox = mdot_ox_nom / sqrt(2 * rho_ox * DeltaP_inj);
 
