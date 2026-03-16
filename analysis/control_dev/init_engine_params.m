@@ -4,51 +4,43 @@
 psi_to_Pa = 6894.76;
 
 % Ambient Pressure
-P_amb = 101325; % [Pa] ambient pressure
+P_amb = 101325; % [Pa]
+
+% Design values
+P_c_nom = 350 * psi_to_Pa; % [Pa] max chamber pressure. source: Engine + Feed Speccing Sheet
+P_c_min = 270 * psi_to_Pa; % [Pa] min desired chamber pressure. source: Engine + Feed Speccing Sheet
+OF = 1.2; % ox fuel ratio. source: Engine + Feed Speccing Sheet
 
 % Engine Parameters
-V_c = 0.2; % [m^3] chamber volume
-A_t = 1.266768698e-4; % [m^2] throat area
+V_c = 2.5335373958699e-4; % [m^3] chamber volume. source: Engine + Feed Speccing Sheet
+A_t = 1.266768698e-4; % [m^2] throat area. source: Engine + Feed Speccing Sheet
 
 % Injector Parameters
-CdA_inj_f = 0.7; % CdA for fuel injector ??need to model better than constant??
-CdA_inj_ox = 0.7; % CdA for fuel injector ??need to model better than constant??
+DeltaP_inj_percent = 20; % [% of P_c_nom]. source: Engine + Feed Speccing Sheet
+DeltaP_inj = DeltaP_inj_percent / 100 * P_c_nom; % [Pa] Delta P across injector for both propellants
+%%%% Calculate nominal propellant flow rates
+mdot_nom = 0.3; % [kg/s] nominal/max/fully open mdot total. source: Engine + Feed Speccing Sheet
+mdot_f_nom = mdot_nom / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
+mdot_ox_nom = mdot_nom * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
+%%%% Calculate CdA_inj for propellants
+CdA_inj_f = mdot_f_nom / sqrt(2 * rho_f * DeltaP_inj);
+CdA_inj_ox = mdot_ox_nom / sqrt(2 * rho_ox * DeltaP_inj);
 
 % Feed Pressures
-P_tank_f = 3242543.676; % [Pa] fuel feed pressure, constant because regulated with N2
-P_tank_ox = 3260949.847; % [Pa] ox feed pressure, constant because regulated with N2
-DeltaP_lines_f = 33.2 * psi_to_Pa; % [Pa]
-DeltaP_lines_ox = 36 * psi_to_Pa; % [Pa]
+P_tank_f = 3242543.676; % [Pa] fuel feed pressure, constant because regulated with N2. source: Engine + Feed Speccing Sheet
+P_tank_ox = 3260949.847; % [Pa] ox feed pressure, constant because regulated with N2. source: Engine + Feed Speccing Sheet
+DeltaP_lines_f = 33.2 * psi_to_Pa; % [Pa] source: Engine + Feed Speccing Sheet
+DeltaP_lines_ox = 36 * psi_to_Pa; % [Pa] source: Engine + Feed Speccing Sheet
 P_feed_f = P_tank_f - DeltaP_lines_f; % [Pa] fuel feed pressure
 P_feed_ox = P_tank_ox - DeltaP_lines_ox; % [Pa] ox feed pressure
 
 % Liquid Propellant Properties
-rho_f = 789; % [kg/m^3] ethanol density
-rho_ox = 988.82; % [kg/m^3]  liquid N2O density at 0 F, const T before combustion chamber
+rho_f = 789; % [kg/m^3] ethanol density. source: google
+rho_ox = 988.82; % [kg/m^3] liquid N2O density at 0 F, const T before combustion chamber. source: Engine + Feed Speccing Sheet
 a_liq_f = 1144; % [m/s] speed of sound in liquid ethanol, source: Link #8
 a_liq_ox = 263; % [m/s] ??varies with temp?? speed of sound in liquid nitrous oxide
 
-% Design values
-P_c_nom = 350 * psi_to_Pa; % [Pa] max chamber pressure
-P_c_min = 270 * psi_to_Pa; % [Pa] min desired chamber pressure
-OF = 1.2; % ox fuel ratio
 
-% Set nominal DeltaP and mdot
-DeltaP_inj_percent = 20; % [% of P_c_nom]
-DeltaP_inj = DeltaP_inj_percent / 100 * P_c_nom; % [Pa] Delta P across injector for both propellants
-mdot_nom = 0.3; % [kg/s] nominal/max/fully open mdot total
-
-% Set CdAmax for initial Cd tuning
-% not really sure about this method, need to learn more about Cd
-% why does injector geometry not show up here?
-% Fuel:
-% C_d_f = 0.7; % starting estimate
-% A_eff_f = mdot_nom / (C_d_f * sqrt(2 * rho_f * DeltaP_inj));
-% CdA_max_valve_f = C_d_f * A_eff_f;
-% % Ox:
-% C_d_ox = 0.7; % starting estimate
-% A_eff_ox = mdot_nom / (C_d_ox * sqrt(2 * rho_ox * DeltaP_inj));
-% CdA_max_valve_ox = C_d_ox * A_eff_ox;
 
 
 

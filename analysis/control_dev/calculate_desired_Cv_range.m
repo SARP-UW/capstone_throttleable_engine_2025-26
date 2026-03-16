@@ -3,14 +3,6 @@
 % Load parameters from parameters script into workspace
 run("init_engine_params.m")
 
-% Calculate nominal propellant flow rates
-mdot_f_nom = mdot_nom / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
-mdot_ox_nom = mdot_nom * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
-
-% Calculate CdA_inj for propellants
-CdA_inj_f = mdot_f_nom / sqrt(2 * rho_f * DeltaP_inj);
-CdA_inj_ox = mdot_ox_nom / sqrt(2 * rho_ox * DeltaP_inj);
-
 % Calculate injector inlet pressure
 P_inj_in = P_c_nom + DeltaP_inj;
 
