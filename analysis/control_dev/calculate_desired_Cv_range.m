@@ -33,7 +33,7 @@ Cv_open_f = Q_gpm_f / sqrt(DeltaP_valve_f_psi / G_f);
 Cv_open_ox = Q_gpm_ox / sqrt(DeltaP_valve_ox_psi / G_ox);
 
 % Calculate lowest mass flow
-c_star_P_c_min = 1170.9; % [m/s] calculated with CEA at P_c = 270 psi, OF = 1.2
+c_star_P_c_min = 1207.7; % [m/s] calculated with CEA at P_c = 270 psi, OF = 1.2
 mdot_min = P_c_min * A_t / c_star_P_c_min;
 
 % Calculate min propellant flow rates
