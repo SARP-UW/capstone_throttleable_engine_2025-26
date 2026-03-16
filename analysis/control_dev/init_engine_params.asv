@@ -8,7 +8,7 @@ P_amb = 101325; % [Pa] ambient pressure
 
 % Engine Parameters
 V_c = 0.2; % [m^3] chamber volume
-A_t = 1.266768698e-4; % [m^2] throat area
+A_t = 0.002; % [m^2] throat area
 
 % Injector Parameters
 CdA_inj_f = 0.7; % CdA for fuel injector ??need to model better than constant??
@@ -24,7 +24,7 @@ P_feed_ox = P_tank_ox - DeltaP_lines_ox; % [Pa] ox feed pressure
 
 % Liquid Propellant Properties
 rho_f = 789; % [kg/m^3] ethanol density
-rho_ox = 988.82; % [kg/m^3]  liquid N2O density at 0 F, const T before combustion chamber
+rho_ox = 750; % [kg/m^3] ??const T before combustion chamber?? liquid N2O density, temp depedent
 a_liq_f = 1144; % [m/s] speed of sound in liquid ethanol, source: Link #8
 a_liq_ox = 263; % [m/s] ??varies with temp?? speed of sound in liquid nitrous oxide
 
