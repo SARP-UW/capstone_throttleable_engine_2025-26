@@ -11,6 +11,12 @@ P_c_nom = 350 * psi_to_Pa; % [Pa] max chamber pressure. source: Engine + Feed Sp
 P_c_min = 270 * psi_to_Pa; % [Pa] min desired chamber pressure. source: Engine + Feed Speccing Sheet
 OF = 1.2; % ox fuel ratio. source: Engine + Feed Speccing Sheet
 
+% Liquid Propellant Properties
+rho_f = 789; % [kg/m^3] ethanol density. source: google
+rho_ox = 988.82; % [kg/m^3] liquid N2O density at 0 F, const T before combustion chamber. source: Engine + Feed Speccing Sheet
+a_liq_f = 1144; % [m/s] speed of sound in liquid ethanol, source: Link #8
+a_liq_ox = 263; % [m/s] ??varies with temp?? speed of sound in liquid nitrous oxide
+
 % Engine Parameters
 V_c = 2.5335373958699e-4; % [m^3] chamber volume. source: Engine + Feed Speccing Sheet
 A_t = 1.266768698e-4; % [m^2] throat area. source: Engine + Feed Speccing Sheet
@@ -34,14 +40,6 @@ DeltaP_lines_f = 33.2 * psi_to_Pa; % [Pa] source: Engine + Feed Speccing Sheet
 DeltaP_lines_ox = 36 * psi_to_Pa; % [Pa] source: Engine + Feed Speccing Sheet
 P_feed_f = P_tank_f - DeltaP_lines_f; % [Pa] fuel feed pressure
 P_feed_ox = P_tank_ox - DeltaP_lines_ox; % [Pa] ox feed pressure
-
-% Liquid Propellant Properties
-rho_f = 789; % [kg/m^3] ethanol density. source: google
-rho_ox = 988.82; % [kg/m^3] liquid N2O density at 0 F, const T before combustion chamber. source: Engine + Feed Speccing Sheet
-a_liq_f = 1144; % [m/s] speed of sound in liquid ethanol, source: Link #8
-a_liq_ox = 263; % [m/s] ??varies with temp?? speed of sound in liquid nitrous oxide
-
-
 
 
 
