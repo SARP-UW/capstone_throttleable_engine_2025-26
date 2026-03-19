@@ -8,9 +8,9 @@
 	)
 	(paper "A4")
 	(title_block
-		(title "Data Acquisition Board")
-		(date "2025-11-14")
-		(rev "2")
+		(title "DAQ+F3C")
+		(date "2026-03-19")
+		(rev "Capstone-1")
 		(company "Society for Advanced Rocket Propulsion")
 	)
 	(layers
@@ -650,7 +650,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "04054701-975e-4ab0-9324-16b47e8104a9")
-		(at 251.594 114.6225)
+		(at 207.494 126.1975)
 		(property "Reference" "D5"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -940,7 +940,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "077d2b47-f0c6-4f7d-ab27-06352b26f6d2")
-		(at 254.75 42.9)
+		(at 210.65 54.475)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R47"
@@ -2642,7 +2642,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "0df69341-46b3-4c09-87a3-632de6d4d015")
-		(at 251.545 79.545)
+		(at 207.445 91.12)
 		(property "Reference" "C79"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -3556,7 +3556,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "1c77970b-6c20-4be7-a286-c1b3ab2ef504")
-		(at 251.594 119.0975)
+		(at 207.494 130.6725)
 		(property "Reference" "D6"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -4012,7 +4012,7 @@
 	(footprint "ul_SN74AHCT125RGYR:RGY14_2P05X2P05"
 		(layer "F.Cu")
 		(uuid "1fe314d9-f4a1-408a-8a18-d16b035f0af8")
-		(at 251.759141 61.621142)
+		(at 207.659141 73.196142)
 		(tags "SN74AHCT125RGYR ")
 		(property "Reference" "U11"
 			(at 0 0 0)
@@ -5020,7 +5020,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "2501a935-d2ff-433d-ba4c-15e3f914acd3")
-		(at 251.594 110.1475)
+		(at 207.494 121.7225)
 		(property "Reference" "D4"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -5926,7 +5926,7 @@
 	(footprint "GRM21BC71E106KE11L:CAPC2012X145N"
 		(layer "F.Cu")
 		(uuid "26dcc128-86cf-4d3f-bbed-52b88c52ba5c")
-		(at 256.448 99.009)
+		(at 212.348 110.584)
 		(property "Reference" "C88"
 			(at -0.46 -1.32 0)
 			(layer "F.SilkS")
@@ -8829,7 +8829,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "323b45d0-bcd4-4e17-8c78-cf5cf3e6d29b")
-		(at 254.75 47.92)
+		(at 210.65 59.495)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R49"
@@ -9028,7 +9028,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "32f78061-41de-45cc-9426-425862d8f4b7")
-		(at 251.545 86.185)
+		(at 207.445 97.76)
 		(property "Reference" "C81"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -9734,7 +9734,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "3901984b-6e2c-48d2-b36a-d0941e0ee855")
-		(at 254.75 45.41)
+		(at 210.65 56.985)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R48"
@@ -10119,7 +10119,7 @@
 	(footprint "CRCW060320K0FKEA:RESC1508X50N"
 		(layer "F.Cu")
 		(uuid "3de84d9f-3629-4892-af06-045a202884d3")
-		(at 256.324 78.52)
+		(at 212.224 90.095)
 		(property "Reference" "R54"
 			(at -0.19 -1.07 0)
 			(layer "F.SilkS")
@@ -10274,7 +10274,7 @@
 	(footprint "0603YC105JAT2A:CAPC1608X94N"
 		(layer "F.Cu")
 		(uuid "3f65106e-7241-4bbc-b268-2f2de11d7a60")
-		(at 256.225 114.87)
+		(at 212.125 126.445)
 		(property "Reference" "C89"
 			(at -0.24 -1.08 0)
 			(layer "F.SilkS")
@@ -10950,7 +10950,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "428e7543-8482-4801-a0b8-0dc8a9a58687")
-		(at 254.75 40.39)
+		(at 210.65 51.965)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R46"
@@ -11335,7 +11335,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "45c1ff00-a21a-470c-a34a-b2f2cee15a66")
-		(at 250.74 45.41)
+		(at 206.64 56.985)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R43"
@@ -14575,7 +14575,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "4cac89e4-e4eb-4a2e-bd75-0da9b3dcf031")
-		(at 251.594 96.7225)
+		(at 207.494 108.2975)
 		(property "Reference" "D1"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -16409,7 +16409,7 @@
 	(footprint "CRCW060320K0FKEA:RESC1508X50N"
 		(layer "F.Cu")
 		(uuid "5ba0b41a-1423-4334-9701-e127fef744ff")
-		(at 256.324 75.99)
+		(at 212.224 87.565)
 		(property "Reference" "R53"
 			(at -0.19 -1.07 0)
 			(layer "F.SilkS")
@@ -16564,7 +16564,7 @@
 	(footprint "GRM21BC71E106KE11L:CAPC2012X145N"
 		(layer "F.Cu")
 		(uuid "5cbe11ac-e8b1-48b8-a6c9-571cab587c4c")
-		(at 256.448 95.993)
+		(at 212.348 107.568)
 		(property "Reference" "C87"
 			(at -0.46 -1.32 0)
 			(layer "F.SilkS")
@@ -16719,7 +16719,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "5d7f965a-3965-4fae-950b-2021b1872d90")
-		(at 254.75 50.43)
+		(at 210.65 62.005)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R50"
@@ -17119,7 +17119,7 @@
 	(footprint "CRCW060320K0FKEA:RESC1508X50N"
 		(layer "F.Cu")
 		(uuid "5ea2ac82-d479-40c0-a125-5c1db7228ef0")
-		(at 256.324 65.87)
+		(at 212.224 77.445)
 		(property "Reference" "R27"
 			(at -0.19 -1.07 0)
 			(layer "F.SilkS")
@@ -24515,7 +24515,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "79d0bc0d-33bd-4d41-96f9-56fb66072e34")
-		(at 250.74 42.9)
+		(at 206.64 54.475)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R4"
@@ -25245,7 +25245,7 @@
 	(footprint "VJ0603Y104JXXAC:CAPC1608X97N"
 		(layer "F.Cu")
 		(uuid "7ca4012d-2d37-45fc-bc29-a71b1a850fea")
-		(at 256.225 107.305)
+		(at 212.125 118.88)
 		(property "Reference" "C91"
 			(at -0.24 -1.07 0)
 			(layer "F.SilkS")
@@ -25400,7 +25400,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "836f04fd-c6f3-4a48-83ba-117642f39e16")
-		(at 251.594 123.5725)
+		(at 207.494 135.1475)
 		(property "Reference" "D8"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -25690,7 +25690,7 @@
 	(footprint "SMST12T1G:SOT95P275X110-6N"
 		(layer "F.Cu")
 		(uuid "84e6c6f8-f6ac-4f88-92ab-46ca76e6caf6")
-		(at 251.385 128.13)
+		(at 207.285 139.705)
 		(descr "SC-74 CASE 318F-05")
 		(tags "TVS Diode (Uni-directional)")
 		(property "Reference" "D7"
@@ -26906,7 +26906,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "8caa0328-a7e6-4ec3-883e-6eafba752148")
-		(at 251.545 66.265)
+		(at 207.445 77.84)
 		(property "Reference" "C75"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -27081,7 +27081,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "8e6dee52-3d21-4004-aef7-c5d9853a84ac")
-		(at 251.545 72.905)
+		(at 207.445 84.48)
 		(property "Reference" "C77"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -27810,7 +27810,7 @@
 	(footprint "CRCW060320K0FKEA:RESC1508X50N"
 		(layer "F.Cu")
 		(uuid "92aa0633-2e35-4af3-b9d2-e162ead44297")
-		(at 256.324 73.46)
+		(at 212.224 85.035)
 		(property "Reference" "R52"
 			(at -0.19 -1.07 0)
 			(layer "F.SilkS")
@@ -28164,7 +28164,7 @@
 	(footprint "CRCW060320K0FKEA:RESC1508X50N"
 		(layer "F.Cu")
 		(uuid "954e3eb4-0e24-47a9-919a-fc7cf07bf5f2")
-		(at 256.324 70.93)
+		(at 212.224 82.505)
 		(property "Reference" "R51"
 			(at -0.19 -1.07 0)
 			(layer "F.SilkS")
@@ -28319,7 +28319,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "9572f2f3-84fc-45d1-91a4-ed8dbe637cd9")
-		(at 250.74 47.92)
+		(at 206.64 59.495)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R44"
@@ -28518,7 +28518,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "95ad64c4-0e12-44ea-b0d6-15c1805c4652")
-		(at 251.594 105.6725)
+		(at 207.494 117.2475)
 		(property "Reference" "D3"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -28994,7 +28994,7 @@
 	(footprint "GRM21BC71E106KE11L:CAPC2012X145N"
 		(layer "F.Cu")
 		(uuid "99505a8d-18aa-448e-8105-5b86c993e856")
-		(at 256.448 102.025)
+		(at 212.348 113.6)
 		(property "Reference" "C93"
 			(at -0.46 -1.32 0)
 			(layer "F.SilkS")
@@ -29348,7 +29348,7 @@
 	(footprint "0603YC105JAT2A:CAPC1608X94N"
 		(layer "F.Cu")
 		(uuid "99dbdd68-d3a2-4f9a-b9e0-fe7b3a1a4604")
-		(at 256.225 119.93)
+		(at 212.125 131.505)
 		(property "Reference" "C94"
 			(at -0.24 -1.08 0)
 			(layer "F.SilkS")
@@ -29855,7 +29855,7 @@
 	(footprint "ESDA6V1BC6:SOT95P280X145-6N"
 		(layer "F.Cu")
 		(uuid "9dafaac0-ede9-49dc-8eaa-c8659ce89d0b")
-		(at 251.594 101.1975)
+		(at 207.494 112.7725)
 		(property "Reference" "D2"
 			(at 0.032 -2.4064 0)
 			(layer "F.SilkS")
@@ -30643,7 +30643,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "a4454495-c740-46b1-ad37-23074ea80d45")
-		(at 250.74 50.43)
+		(at 206.64 62.005)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R45"
@@ -32468,7 +32468,7 @@
 	(footprint "VJ0603Y104JXXAC:CAPC1608X97N"
 		(layer "F.Cu")
 		(uuid "acb2baab-b91f-4e2f-9d02-f21e70ee958d")
-		(at 256.225 112.345)
+		(at 212.125 123.92)
 		(property "Reference" "C95"
 			(at -0.24 -1.07 0)
 			(layer "F.SilkS")
@@ -33322,7 +33322,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "af0803f7-32f3-4bfd-a3bb-224b5eeaaddf")
-		(at 251.545 69.585)
+		(at 207.445 81.16)
 		(property "Reference" "C76"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -34415,7 +34415,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "b4accac4-185a-4e0c-952f-3c7e565f3a80")
-		(at 251.545 89.505)
+		(at 207.445 101.08)
 		(property "Reference" "C82"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -35619,7 +35619,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "c2352d56-e3b6-472a-80dd-f45cc4e3d004")
-		(at 251.545 92.825)
+		(at 207.445 104.4)
 		(property "Reference" "C83"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -35794,7 +35794,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "c599cf2d-c31b-4176-8102-2780040d527a")
-		(at 251.545 76.225)
+		(at 207.445 87.8)
 		(property "Reference" "C78"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -36789,7 +36789,7 @@
 	(footprint "0603YC105JAT2A:CAPC1608X94N"
 		(layer "F.Cu")
 		(uuid "c9da9bc7-2699-4629-8b25-cd4fe3fe5b90")
-		(at 256.225 117.4)
+		(at 212.125 128.975)
 		(property "Reference" "C90"
 			(at -0.24 -1.08 0)
 			(layer "F.SilkS")
@@ -37143,7 +37143,7 @@
 	(footprint "VJ0603Y104JXXAC:CAPC1608X97N"
 		(layer "F.Cu")
 		(uuid "cbb4fcea-aab9-4229-bdbe-d12d8cdf6dbe")
-		(at 256.225 104.785)
+		(at 212.125 116.36)
 		(property "Reference" "C84"
 			(at -0.24 -1.07 0)
 			(layer "F.SilkS")
@@ -40522,7 +40522,7 @@
 	(footprint "GRM3195C2A163JA01D:CAPC3216X95N"
 		(layer "F.Cu")
 		(uuid "d682867e-dc31-4d15-9f46-db017a463ba6")
-		(at 251.545 82.865)
+		(at 207.445 94.44)
 		(property "Reference" "C80"
 			(at -1.04 -1.48 0)
 			(layer "F.SilkS")
@@ -40697,7 +40697,7 @@
 	(footprint "VJ0603Y104JXXAC:CAPC1608X97N"
 		(layer "F.Cu")
 		(uuid "d6ab0bda-2f8f-4347-951c-317c26b5ab7f")
-		(at 256.225 109.825)
+		(at 212.125 121.4)
 		(property "Reference" "C92"
 			(at -0.24 -1.07 0)
 			(layer "F.SilkS")
@@ -40852,7 +40852,7 @@
 	(footprint "CRCW060320K0FKEA:RESC1508X50N"
 		(layer "F.Cu")
 		(uuid "d72c8ce4-cf39-4a22-8038-a9fa8aea4b91")
-		(at 256.324 68.4)
+		(at 212.224 79.975)
 		(property "Reference" "R28"
 			(at -0.19 -1.07 0)
 			(layer "F.SilkS")
@@ -42787,7 +42787,7 @@
 	(footprint "Resistor_SMD:R_0603_1608Metric"
 		(layer "F.Cu")
 		(uuid "e00f6be4-e770-4c6d-93b9-779175232e50")
-		(at 250.74 40.39)
+		(at 206.64 51.965)
 		(descr "Resistor SMD 0603 (1608 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor")
 		(property "Reference" "R3"
@@ -44499,7 +44499,7 @@
 	(footprint "ADS124S08IRHBT:QFN50P500X500X100-33N"
 		(layer "F.Cu")
 		(uuid "eea6a2ed-1cab-45a7-a2c2-4db85cbaa976")
-		(at 252.73 55.16)
+		(at 208.63 66.735)
 		(property "Reference" "U9"
 			(at -0.41 -3.683 0)
 			(layer "F.SilkS")
@@ -51460,15 +51460,6 @@
 		(free yes)
 		(net 2)
 		(uuid "2e634830-12c6-4970-a3e6-6782d29cdac5")
-	)
-	(via
-		(at 87.1 121.3)
-		(size 0.5)
-		(drill 0.3)
-		(layers "F.Cu" "B.Cu")
-		(free yes)
-		(net 2)
-		(uuid "40dcf3e6-4880-44a8-95df-de80e5819299")
 	)
 	(via
 		(at 98.100001 141.399999)
