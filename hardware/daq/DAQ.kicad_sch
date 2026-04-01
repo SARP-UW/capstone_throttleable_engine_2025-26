@@ -12268,6 +12268,16 @@
 	)
 	(wire
 		(pts
+			(xy 63.5 377.19) (xy 67.31 377.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "242591b7-435e-4c91-b14c-dcfa1b28e325")
+	)
+	(wire
+		(pts
 			(xy 448.31 365.76) (xy 454.66 365.76)
 		)
 		(stroke
@@ -14568,7 +14578,7 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 377.19) (xy 67.31 377.19)
+			(xy 43.18 377.19) (xy 55.88 377.19)
 		)
 		(stroke
 			(width 0)
@@ -36720,6 +36730,73 @@
 			(project "DAQ"
 				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
 					(reference "C33")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 59.69 377.19 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "bbc5e1cb-4994-4b9e-8d23-c445561905f1")
+		(property "Reference" "R55"
+			(at 59.69 373.126 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 59.69 374.904 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 59.69 378.968 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 59.69 377.19 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 59.69 377.19 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "12c9ea46-29b5-4375-8d8f-08ebf7fd6aaa")
+		)
+		(pin "2"
+			(uuid "62d58f96-98c7-4672-ae9a-136105908477")
+		)
+		(instances
+			(project "DAQ"
+				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
+					(reference "R55")
 					(unit 1)
 				)
 			)
