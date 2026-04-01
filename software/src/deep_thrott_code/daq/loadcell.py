@@ -3,7 +3,7 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import config
+import software.src.deep_thrott_code.daq.config as config
 
 class Load_Cell:
     """

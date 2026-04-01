@@ -3,10 +3,10 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import config
-from deep_thrott_code.daq.loadcell import Load_Cell
-from deep_thrott_code.daq.pt import Pressure_Transducer
-from deep_thrott_code.daq.rtd import RTD
+import software.src.deep_thrott_code.daq.config as config
+from software.src.deep_thrott_code.daq.loadcell import Load_Cell
+from software.src.deep_thrott_code.daq.pt import Pressure_Transducer
+from software.src.deep_thrott_code.daq.rtd import RTD
 
 
 def _adc_for_cfg(cfg, adc1, adc2):
