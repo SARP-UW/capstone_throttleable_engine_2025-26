@@ -9693,7 +9693,7 @@
 		(uuid "ca232c86-3427-4800-93f4-0282ee81460f")
 	)
 	(no_connect
-		(at 530.86 72.39)
+		(at 541.02 72.39)
 		(uuid "cb64e2f5-1397-4d53-833c-ab16220bad99")
 	)
 	(no_connect
@@ -9707,6 +9707,10 @@
 	(no_connect
 		(at 157.48 341.63)
 		(uuid "dd0825e5-ad6d-4bfb-823e-29caceeeb3db")
+	)
+	(no_connect
+		(at 541.02 92.71)
+		(uuid "e2fb0a28-a800-43e6-ab39-a1782638672a")
 	)
 	(no_connect
 		(at 523.24 182.88)
@@ -11251,6 +11255,16 @@
 			(type default)
 		)
 		(uuid "37a5515d-a6f3-4b85-9a7b-46db9ef71dcd")
+	)
+	(wire
+		(pts
+			(xy 541.02 72.39) (xy 530.86 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3853db76-7900-483d-9c09-7289e70d27c1")
 	)
 	(wire
 		(pts
@@ -17010,7 +17024,7 @@
 		)
 		(uuid "52070cc0-6583-4779-bae6-2cf6ce4efea3")
 	)
-	(label "OMFV"
+	(label "OMV"
 		(at 312.42 64.77 0)
 		(effects
 			(font
@@ -17710,7 +17724,7 @@
 		)
 		(uuid "c14d0771-01d6-439e-8fea-146fd17761db")
 	)
-	(label "FMFV"
+	(label "FMV"
 		(at 350.52 53.34 0)
 		(effects
 			(font
