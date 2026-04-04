@@ -227,7 +227,12 @@
     "equivalence_files": []
   },
   "erc": {
-    "erc_exclusions": [],
+    "erc_exclusions": [
+      [
+        "pin_to_pin|2108200|863600|a93fe48a-f2a4-4e38-907b-3f5fc66dd163|f17bea1c-da3f-4e26-89e7-b36590dcf812|/98ce85a8-ddff-4ecb-9668-dd271ba07a43|/98ce85a8-ddff-4ecb-9668-dd271ba07a43|/98ce85a8-ddff-4ecb-9668-dd271ba07a43",
+        "MISO is labeled as an output pin on the Pi"
+      ]
+    ],
     "meta": {
       "version": 0
     },
