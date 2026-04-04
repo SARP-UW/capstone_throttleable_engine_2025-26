@@ -15,6 +15,8 @@
 	)
 	(layers
 		(0 "F.Cu" signal)
+		(4 "In1.Cu" signal)
+		(6 "In2.Cu" signal)
 		(2 "B.Cu" signal)
 		(9 "F.Adhes" user "F.Adhesive")
 		(11 "B.Adhes" user "B.Adhesive")
@@ -45,6 +47,67 @@
 		(55 "User.9" user)
 	)
 	(setup
+		(stackup
+			(layer "F.SilkS"
+				(type "Top Silk Screen")
+			)
+			(layer "F.Paste"
+				(type "Top Solder Paste")
+			)
+			(layer "F.Mask"
+				(type "Top Solder Mask")
+				(thickness 0.01)
+			)
+			(layer "F.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 1"
+				(type "prepreg")
+				(thickness 0.1)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "In1.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 2"
+				(type "core")
+				(thickness 1.24)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "In2.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 3"
+				(type "prepreg")
+				(thickness 0.1)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "B.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "B.Mask"
+				(type "Bottom Solder Mask")
+				(thickness 0.01)
+			)
+			(layer "B.Paste"
+				(type "Bottom Solder Paste")
+			)
+			(layer "B.SilkS"
+				(type "Bottom Silk Screen")
+			)
+			(copper_finish "None")
+			(dielectric_constraints no)
+		)
 		(pad_to_mask_clearance 0)
 		(allow_soldermask_bridges_in_footprints no)
 		(tenting front back)
@@ -13864,7 +13927,7 @@
 	(footprint "ICD15S13:AMPHENOL_ICD15S13E4GX00LF"
 		(layer "F.Cu")
 		(uuid "49ad99a7-7b5b-420b-b3c0-864de0af182a")
-		(at 166.86 79.985 90)
+		(at 166.774699 80.392691 90)
 		(property "Reference" "J2"
 			(at -12.48 -7.135 90)
 			(layer "F.SilkS")
@@ -27977,7 +28040,7 @@
 	(footprint "ICD15S13:AMPHENOL_ICD15S13E4GX00LF"
 		(layer "F.Cu")
 		(uuid "9735c9be-c3d8-4e1f-8e90-24d57bb86260")
-		(at 166.7825 142.78825 90)
+		(at 166.774699 143.192691 90)
 		(property "Reference" "J5"
 			(at -12.48 -7.135 90)
 			(layer "F.SilkS")
@@ -35273,7 +35336,7 @@
 	(footprint "ICD15S13:AMPHENOL_ICD15S13E4GX00LF"
 		(layer "F.Cu")
 		(uuid "c10437fe-ff2f-4504-8332-1a1a35a69481")
-		(at 167.274699 49.142691 90)
+		(at 166.762199 49.029441 90)
 		(property "Reference" "J1"
 			(at -11.765559 -7.627199 90)
 			(layer "F.SilkS")
@@ -43967,7 +44030,7 @@
 	(footprint "ICD15S13:AMPHENOL_ICD15S13E4GX00LF"
 		(layer "F.Cu")
 		(uuid "ed47911e-d7bc-4a94-8cec-2689eeb3dbfd")
-		(at 166.86 111.385 90)
+		(at 166.774699 111.792691 90)
 		(property "Reference" "J4"
 			(at -12.48 -7.135 90)
 			(layer "F.SilkS")
