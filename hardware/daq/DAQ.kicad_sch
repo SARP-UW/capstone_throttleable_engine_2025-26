@@ -20534,7 +20534,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 67.0052 95.25 0)
 			(effects
 				(font
@@ -23083,7 +23083,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 70.8152 149.86 0)
 			(effects
 				(font
@@ -27894,7 +27894,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 73.3552 297.18 0)
 			(effects
 				(font
@@ -28560,7 +28560,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 73.3552 278.13 0)
 			(effects
 				(font
@@ -36981,7 +36981,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 72.0852 58.42 0)
 			(effects
 				(font
@@ -40212,7 +40212,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 70.8152 168.91 0)
 			(effects
 				(font
@@ -41428,7 +41428,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 67.0052 111.76 0)
 			(effects
 				(font
@@ -47158,7 +47158,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 72.0852 76.2 0)
 			(effects
 				(font
@@ -47720,7 +47720,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "footprintsCL10:CAP_CL10_SAM"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
 			(at 67.0052 128.27 0)
 			(effects
 				(font
