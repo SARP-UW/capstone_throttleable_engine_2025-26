@@ -10376,12 +10376,6 @@
 		(uuid "3561810e-43dd-4441-936e-e2fda48f02d3")
 	)
 	(junction
-		(at 72.39 289.56)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "3683dfa4-9b32-458b-b550-5e0081bada7e")
-	)
-	(junction
 		(at 135.89 283.21)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -10530,12 +10524,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "5cc416cb-fddd-4434-a379-7890cdd023dc")
-	)
-	(junction
-		(at 72.39 297.18)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "5da0f96c-2990-440c-837e-a2229ae92b16")
 	)
 	(junction
 		(at 222.25 351.79)
@@ -12479,6 +12467,16 @@
 	)
 	(wire
 		(pts
+			(xy 553.72 82.55) (xy 556.26 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "25b773f7-ded8-405f-be0d-1d9a923f4c10")
+	)
+	(wire
+		(pts
 			(xy 63.5 337.82) (xy 67.31 337.82)
 		)
 		(stroke
@@ -12506,16 +12504,6 @@
 			(type default)
 		)
 		(uuid "28115408-5225-4079-b4c8-ec9a8e968873")
-	)
-	(wire
-		(pts
-			(xy 72.39 297.18) (xy 90.17 297.18)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "281b0328-48f3-44c8-a2f5-1de0479e67dd")
 	)
 	(wire
 		(pts
@@ -14069,7 +14057,7 @@
 	)
 	(wire
 		(pts
-			(xy 530.86 87.63) (xy 541.02 87.63)
+			(xy 537.21 90.17) (xy 542.29 90.17)
 		)
 		(stroke
 			(width 0)
@@ -15279,7 +15267,7 @@
 	)
 	(wire
 		(pts
-			(xy 69.85 297.18) (xy 72.39 297.18)
+			(xy 69.85 297.18) (xy 90.17 297.18)
 		)
 		(stroke
 			(width 0)
@@ -15899,6 +15887,16 @@
 	)
 	(wire
 		(pts
+			(xy 537.21 90.17) (xy 537.21 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a1a451bc-9d4e-4790-aee2-bbd0449c5a7b")
+	)
+	(wire
+		(pts
 			(xy 218.44 86.36) (xy 210.82 86.36)
 		)
 		(stroke
@@ -16469,6 +16467,16 @@
 	)
 	(wire
 		(pts
+			(xy 539.75 87.63) (xy 539.75 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b6831632-504d-4ba2-baeb-8bc6ffdb1ce4")
+	)
+	(wire
+		(pts
 			(xy 449.58 344.17) (xy 452.12 344.17)
 		)
 		(stroke
@@ -16869,6 +16877,16 @@
 	)
 	(wire
 		(pts
+			(xy 537.21 87.63) (xy 530.86 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ca895f3d-99a0-41bc-a62a-a2c6e067f5fb")
+	)
+	(wire
+		(pts
 			(xy 426.72 378.46) (xy 426.72 377.19)
 		)
 		(stroke
@@ -16939,7 +16957,7 @@
 	)
 	(wire
 		(pts
-			(xy 530.86 82.55) (xy 541.02 82.55)
+			(xy 530.86 82.55) (xy 546.1 82.55)
 		)
 		(stroke
 			(width 0)
@@ -17239,7 +17257,7 @@
 	)
 	(wire
 		(pts
-			(xy 530.86 85.09) (xy 541.02 85.09)
+			(xy 539.75 87.63) (xy 542.29 87.63)
 		)
 		(stroke
 			(width 0)
@@ -17596,6 +17614,16 @@
 			(type default)
 		)
 		(uuid "e58311d0-b056-4315-9b89-5a726895b22d")
+	)
+	(wire
+		(pts
+			(xy 539.75 85.09) (xy 530.86 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e626f2c3-c02c-45f8-8361-d818c7071567")
 	)
 	(wire
 		(pts
@@ -19806,7 +19834,7 @@
 		(uuid "ca3d7a25-91a2-4eba-8ddb-5ee728208074")
 	)
 	(label "START_SYNC3"
-		(at 541.02 87.63 0)
+		(at 542.29 90.17 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -20108,7 +20136,7 @@
 		(uuid "e7b62754-4413-41a9-8365-f4ec6cbea032")
 	)
 	(label "START_SYNC2"
-		(at 541.02 85.09 0)
+		(at 542.29 87.63 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -27355,6 +27383,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+3.3V")
+		(at 556.26 82.55 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "48f85862-ff37-42ec-afb7-8fbb285ddb40")
+		(property "Reference" "#PWR066"
+			(at 556.26 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 556.006 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 556.26 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 556.26 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 556.26 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "bb317f7b-36d7-45f3-a96b-1e096a918241")
+		)
+		(instances
+			(project "DAQ"
+				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
+					(reference "#PWR066")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_name "ADS124S08IRHBT_1")
 		(lib_id "2025-01-27_01-32-37:ADS124S08IRHBT")
 		(at 182.88 88.9 0)
@@ -27869,7 +27962,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 72.39 293.37 0)
+		(at 72.39 293.37 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -27877,7 +27970,7 @@
 		(dnp no)
 		(uuid "4d49a9a2-42b4-44e5-8aa1-17500f041aad")
 		(property "Reference" "C86"
-			(at 75.184 292.1 0)
+			(at 71.12 290.576 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27886,7 +27979,7 @@
 			)
 		)
 		(property "Value" "3.3nF"
-			(at 74.93 294.132 0)
+			(at 73.152 290.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -27895,7 +27988,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder"
-			(at 73.3552 297.18 0)
+			(at 76.2 292.4048 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -35499,6 +35592,73 @@
 			(project "DAQ"
 				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
 					(reference "#PWR0132")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 549.91 82.55 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "97ceb9de-e20c-4ff2-8726-92d57a5fc841")
+		(property "Reference" "R43"
+			(at 549.656 80.518 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "20K"
+			(at 549.656 84.582 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "CRCW060320K0FKEA:RESC1508X50N"
+			(at 549.91 84.328 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 549.91 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 549.91 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "83cc7f2b-2e13-4907-8929-8e2e4f28e383")
+		)
+		(pin "2"
+			(uuid "7a7f703d-2dba-41ad-b944-269ce0a51830")
+		)
+		(instances
+			(project "DAQ"
+				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
+					(reference "R43")
 					(unit 1)
 				)
 			)
