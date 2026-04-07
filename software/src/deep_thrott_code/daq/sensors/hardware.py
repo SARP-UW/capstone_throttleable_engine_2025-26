@@ -1,0 +1,128 @@
+"""
+Sensor classes for converting analog voltage readings to physical values.
+"""
+
+import math
+import software.src.deep_thrott_code.daq.config as config
+from software.src.deep_thrott_code.daq.sensors.loadcell import Load_Cell
+from software.src.deep_thrott_code.daq.sensors.pt import Pressure_Transducer
+from software.src.deep_thrott_code.daq.sensors.rtd import RTD
+
+def read_voltage_single(self, ainp, vref=5, gain=1, settle_discard=True):
+    self.set_inpmux_single(ainp)
+    if not self.wait_drdy(0.5):
+        raise TimeoutError("DRDY timeout after MUX change")
+    first = self.read_raw_sample()
+    if settle_discard:
+        if not self.wait_drdy(0.5):
+            raise TimeoutError("DRDY timeout (settle discard)")
+    code = self.read_raw_sample()
+    volts = self.code_to_volts(code, vref=vref, gain=gain)
+    return volts
+
+def read_voltage_full(self, vref=5, gain=1):
+    voltages = []
+    skip_ains = (3, 5, 6, 7)
+
+    for i in range(12):
+        if i in skip_ains:
+            continue
+        try:
+            volts = self.read_voltage_single(i, vref=vref, gain=gain, settle_discard=True)
+            voltages.append(round(volts, 4))
+        except Exception as e:
+            print(f"Error reading ADC{self.id} AIN{i}: {e}")
+
+    return voltages
+
+def _adc_for_cfg(cfg, adc1, adc2):
+    """Return the ADC instance (adc1 or adc2) for the given config's ADC index."""
+    if cfg["ADC"] == 1:
+        return adc1
+    if cfg["ADC"] == 2:
+        return adc2
+    raise ValueError(f"Invalid ADC configuration: {cfg['ADC']}")
+
+
+def initialize_sensors(adc1, adc2):
+    sensor_labels = []
+    load_cells = []
+    for name, cfg in config.LOAD_CELLS.items():
+        if cfg["enabled"]:
+            print(f"Initializing Load Cell {name} with sig_plus_idx {cfg['SIG+']} and sig_minus_idx {cfg['SIG-']}")
+            selected_adc = _adc_for_cfg(cfg, adc1, adc2)
+            sensor = Load_Cell(
+                ADC=selected_adc,
+                sig_plus_idx=cfg["SIG+"],
+                sig_minus_idx=cfg["SIG-"],
+                max_load=cfg["max_load"],
+                excitation_voltage=cfg["excitation_voltage"],
+                sensitivity=cfg["sensitivity"],
+                offset=float(cfg.get("offset", 0)),
+            )
+            load_cells.append((name, sensor))
+            sensor_labels.append(name)
+
+    pressure_transducers = []
+    for name, cfg in config.PRESSURE_TRANSDUCERS.items():
+        if cfg["enabled"]:
+            print(f"Initializing Pressure Transducer {name} with sig_idx {cfg['SIG']}")
+            selected_adc = _adc_for_cfg(cfg, adc1, adc2)
+            sensor = Pressure_Transducer(
+                ADC=selected_adc,
+                sig_idx=cfg["SIG"],
+                excitation_voltage=cfg["excitation_voltage"],
+                V_max=cfg["V_max"],
+                V_min=cfg["V_min"],
+                V_span=cfg["V_span"],
+                P_min=cfg["P_min"],
+                P_max=cfg["P_max"],
+                offset=float(cfg.get("offset", 0)),
+            )
+            pressure_transducers.append((name, sensor))
+            sensor_labels.append(name)
+
+    rtds = []
+    for name, cfg in config.RTDS.items():
+        if cfg["enabled"]:
+            print(f"Initializing RTD {name} on ADC{cfg['ADC']} "
+                  f"L1=AIN{cfg['L1']} L2=AIN{cfg['L2']} "
+                  f"IDAC={cfg.get('idac_current_ua', 50)}µA "
+                  f"R0={cfg.get('r0', 1000)}Ω Rref={cfg.get('rref', 5600)}Ω")
+            selected_adc = _adc_for_cfg(cfg, adc1, adc2)
+            sensor = RTD(
+                ADC=selected_adc,
+                V_lead1_idx=cfg["L1"],
+                V_lead2_idx=cfg["L2"],
+                refp_ain=cfg.get("refp_ain", 7),
+                refn_ain=cfg.get("refn_ain", 6),
+                r0=cfg.get("r0", 1000.0),
+                rref=cfg.get("rref", 5600.0),
+                idac_current_ua=cfg.get("idac_current_ua", 50),
+                idac1_ain=cfg.get("idac1_ain", 5),
+                idac2_ain=cfg.get("idac2_ain", 3),
+                unit=cfg.get("unit", "°C"),
+                offset=float(cfg.get("offset", 0)),
+            )
+            rtds.append((name, sensor))
+            sensor_labels.append(name)
+
+    return sensor_labels, load_cells, pressure_transducers, rtds
+
+
+def read_sensors(load_cells, pressure_transducers, rtds):
+    sensor_values = []
+    csv_columns = []
+    for _, sensor in load_cells:
+        v_sig_plus, v_sig_minus, force = sensor.read()
+        csv_columns.extend([v_sig_plus, v_sig_minus, force])
+        sensor_values.append(force)
+    for _, sensor in pressure_transducers:
+        v_p_sig, pressure = sensor.read()
+        csv_columns.extend([v_p_sig, pressure])
+        sensor_values.append(pressure)
+    for _, sensor in rtds:
+        v_lead1, v_lead2, resistance, temperature = sensor.read()
+        csv_columns.extend([v_lead1, v_lead2, temperature])
+        sensor_values.append(temperature)
+    return csv_columns, sensor_values
