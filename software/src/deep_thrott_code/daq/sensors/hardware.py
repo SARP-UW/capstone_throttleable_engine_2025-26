@@ -4,10 +4,25 @@ Sensor classes for converting analog voltage readings to physical values.
 
 import math
 import software.src.deep_thrott_code.daq.config as config
-from software.src.deep_thrott_code.daq.loadcell import Load_Cell
-from software.src.deep_thrott_code.daq.pt import Pressure_Transducer
-from software.src.deep_thrott_code.daq.rtd import RTD
+from software.src.deep_thrott_code.daq.sensors.loadcell import Load_Cell
+from software.src.deep_thrott_code.daq.sensors.pt import Pressure_Transducer
+from software.src.deep_thrott_code.daq.sensors.rtd import RTD
 
+
+def read_voltage_full(self, vref=5, gain=1):
+    voltages = []
+    skip_ains = (3, 5, 6, 7)
+
+    for i in range(12):
+        if i in skip_ains:
+            continue
+        try:
+            volts = self.read_voltage_single(i, vref=vref, gain=gain, settle_discard=True)
+            voltages.append(round(volts, 4))
+        except Exception as e:
+            print(f"Error reading ADC{self.id} AIN{i}: {e}")
+
+    return voltages
 
 def _adc_for_cfg(cfg, adc1, adc2):
     """Return the ADC instance (adc1 or adc2) for the given config's ADC index."""
