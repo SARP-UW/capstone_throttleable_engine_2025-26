@@ -6,6 +6,7 @@ class ValveState(Enum):
     """
     CLOSED = "closed"
     OPEN = "open"
+    THROTTLING = "throttling"
 
 class Valve:
     """
@@ -31,9 +32,18 @@ class ThrottleValve(Valve):
     def __init__(self, valve_id: int, default_state, pwm_open: float):
         super().__init__(valve_id, default_state)
 
-    def open(self):
-        pass
-        # placeholder for signal to open valve, use pwm_open
+    def set_state(self, new_state: ValveState, pwm: float | None = None):
+        if self.state != new_state:
+            self.state = new_state
+            if new_state == ValveState.OPEN:
+                pass
+                # placeholder for signal to open valve, pwm = pwm_open
+            elif new_state == ValveState.THROTTLING:
+                pass
+                # placeholder for signal to close valve, pwm = pwm
+            else:
+                pass
+                # placeholder for signal to close valve, pwm = 0
 
     def throttle(self, pwm):
         pass
