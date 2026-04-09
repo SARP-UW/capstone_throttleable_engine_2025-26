@@ -4,6 +4,11 @@ Sensor classes for converting analog voltage readings to physical values.
 
 import math
 import software.src.deep_thrott_code.daq.config as config
+import time
+from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
+
+# TODO: edit owen's sensor classes to not to voltage and pressure conversion in the same method, 
+# split them up for producer and consumer loop 
 
 class Pressure_Transducer:
     """
@@ -52,3 +57,23 @@ class Pressure_Transducer:
         pressure = (sig_voltage - self.V_min) * ((self.P_max - self.P_min) / self.V_span) + self.P_min
 
         return pressure - self.offset
+    
+    def read_sample(self):
+        t_mono = time.perf_counter()
+        t_wall = time.time()
+
+        sig_voltage = self.ADC.read_voltage_single(self.sig_idx, settle_discard=config.ADC_SETTLE_DISCARD)
+        # edit this, it's not read voltage single
+        pressure = self._calculate_pressure(sig_voltage)
+        # this does not belong here
+
+        return RawSample(
+            sensor_name=f"pt_sig{self.sig_idx}",
+            sensor_kind="pressure",
+            conversion_type="pressure_voltage",
+            channel=self.sig_idx,
+            t_monotonic=t_mono,
+            t_wall=t_wall,
+            raw_count=sig_voltage,  # for now just put voltage here, will convert to counts later if needed
+            source="hardware"
+        )

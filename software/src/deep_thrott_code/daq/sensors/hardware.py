@@ -8,17 +8,6 @@ from software.src.deep_thrott_code.daq.sensors.loadcell import Load_Cell
 from software.src.deep_thrott_code.daq.sensors.pt import Pressure_Transducer
 from software.src.deep_thrott_code.daq.sensors.rtd import RTD
 
-def read_voltage_single(self, ainp, vref=5, gain=1, settle_discard=True):
-    self.set_inpmux_single(ainp)
-    if not self.wait_drdy(0.5):
-        raise TimeoutError("DRDY timeout after MUX change")
-    first = self.read_raw_sample()
-    if settle_discard:
-        if not self.wait_drdy(0.5):
-            raise TimeoutError("DRDY timeout (settle discard)")
-    code = self.read_raw_sample()
-    volts = self.code_to_volts(code, vref=vref, gain=gain)
-    return volts
 
 def read_voltage_full(self, vref=5, gain=1):
     voltages = []

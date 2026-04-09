@@ -3,6 +3,18 @@ from typing import Optional, Any
 import time
 
 @dataclass(slots=True)
+class RawSample:
+    sensor_name: str
+    sensor_kind: str
+    conversion_type: str
+    channel: int
+    t_monotonic: float
+    t_wall: float
+    raw_count: int
+    source: str = "hardware"
+
+
+@dataclass(slots=True)
 class Sample:
     sensor_name: str
     sensor_kind: str
