@@ -1,7 +1,7 @@
 import threading
 from sample import Sample
 
-class StateStore:
+class StoreState:
     def __init__(self):
         self._latest = {}
         self._lock = threading.Lock()

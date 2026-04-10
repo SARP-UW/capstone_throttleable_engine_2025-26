@@ -2,6 +2,8 @@
 Sensor classes for converting analog voltage readings to physical values.
 """
 
+# what are any of these used for?
+
 import math
 import software.src.deep_thrott_code.daq.config as config
 from software.src.deep_thrott_code.daq.sensors.loadcell import Load_Cell

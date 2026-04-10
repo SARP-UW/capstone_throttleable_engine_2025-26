@@ -10,7 +10,7 @@ from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
 # TODO: edit owen's sensor classes to not to voltage and pressure conversion in the same method, 
 # split them up for producer and consumer loop 
 
-class Pressure_Transducer:
+class PressureTransducer:
     """
     Pressure transducer sensor that reads voltage from a single analog input.
 
@@ -35,45 +35,48 @@ class Pressure_Transducer:
         self.P_max = P_max
         self.offset = float(offset)
 
-    def read(self):
-        sig_voltage = self.ADC.read_voltage_single(self.sig_idx, settle_discard=config.ADC_SETTLE_DISCARD)
-
-        # Placeholder calculation - to be implemented later
-        return sig_voltage, self._calculate_pressure(sig_voltage)
-
-    def _calculate_pressure(self, sig_voltage):
-        """
-        Calculate pressure from voltage reading.
-        Placeholder implementation - to be completed later.
-
-        Args:
-            sig_voltage (float): Signal voltage
-
-        Returns:
-            float: Calculated pressure
-        """
-
-        # Linear mapping
-        pressure = (sig_voltage - self.V_min) * ((self.P_max - self.P_min) / self.V_span) + self.P_min
-
-        return pressure - self.offset
+        # Add other attributes such as calibration and correct channel numbers
     
-    def read_sample(self):
+    def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
         t_wall = time.time()
 
-        sig_voltage = self.ADC.read_voltage_single(self.sig_idx, settle_discard=config.ADC_SETTLE_DISCARD)
-        # edit this, it's not read voltage single
-        pressure = self._calculate_pressure(sig_voltage)
-        # this does not belong here
+        raw_code = self.ADC.read_raw_single()
 
         return RawSample(
-            sensor_name=f"pt_sig{self.sig_idx}",
+            sensor_name=self.name,
             sensor_kind="pressure",
-            conversion_type="pressure_voltage",
+            conversion_type="pt",
             channel=self.sig_idx,
             t_monotonic=t_mono,
             t_wall=t_wall,
-            raw_count=sig_voltage,  # for now just put voltage here, will convert to counts later if needed
-            source="hardware"
+            raw_count=raw_code,
+            
+        )
+    
+    def code_to_voltage(self, code: int):
+        fs_code = (1 << 23) - 1
+        voltage = (code / fs_code) * (self.adc_vref / self.adc_gain)
+        return voltage
+
+    def convert_voltage_to_pressure(self, voltage: float):
+        frac = (voltage - self.V_min) / self.V_span
+        pressure = self.P_min + frac * (self.P_max - self.P_min)
+        return pressure
+
+    def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
+        code = raw_sample.raw_count
+
+        voltage = self.code_to_voltage(code)
+        pressure = self.convert_voltage_to_pressure(voltage)
+
+        return Sample(
+            sensor_name=raw_sample.sensor_name,
+            sensor_kind="pressure",
+            t_monotonic=raw_sample.t_monotonic,
+            t_wall=raw_sample.t_wall,
+            raw_value=code,
+            value=pressure,
+            units="psi",
+            source="simulated"
         )

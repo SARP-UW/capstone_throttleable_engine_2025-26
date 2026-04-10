@@ -38,6 +38,17 @@ def build_sensors():
     return sensors
 
 
+def build_sensor_map(sensors):
+    """
+    Build a mapping from sensor_id to sensor instance for the consumer loop.
+    This allows the consumer loop to call the correct conversion method based on the sensor type.
+    """
+    sensor_map = {}
+    for sensor in sensors:
+        sensor_map[sensor.name] = sensor
+    return sensor_map
+
+
 def main():
     sample_queue = queue.Queue(maxsize=1000)
     stop_event = threading.Event()
@@ -45,6 +56,7 @@ def main():
     logger = CsvLogger("daq_log.csv")
 
     sensors = build_sensors()
+    sensor_map = build_sensor_map(sensors)
 
     producer_thread = threading.Thread(
         target=producer_loop,
@@ -55,7 +67,7 @@ def main():
     
     consumer_thread = threading.Thread(
         target=consumer_loop,
-        args=(sample_queue, state_store, logger, stop_event),
+        args=(sample_queue, state_store, logger, stop_event, sensor_map),
         daemon=True,
         name="consumer",
     )

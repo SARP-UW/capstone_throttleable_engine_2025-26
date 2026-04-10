@@ -3,6 +3,30 @@ from services.sample import RawSample, Sample
 import time
 import math
 import random
+import math
+
+from sensors.rtd import RTD
+from sensors.pt import PressureTransducer
+
+# class SimulatedSensor:
+#     def __init__(self, sensor, generator):
+#         self.sensor = sensor
+#         self.generator = generator
+
+#     def read(self, t):
+#         return self.generator(t)
+
+# SENSOR_MAP = {
+#     0: SimulatedSensor(
+#         sensor=RTD(id=0, calibration=...),
+#         generator=lambda t: 100 + 5 * math.sin(t)
+#     ),
+#     1: SimulatedSensor(
+#         sensor=PressureTransducer(ADC=None, sig_idx=1, calibration=...),
+#         generator=lambda t: 300 + 10 * math.sin(0.2 * t)
+#     ),
+# }
+
 
 class SimulatedPressureSensor:
     def __init__(
@@ -76,55 +100,3 @@ class SimulatedPressureSensor:
         code = max(-(1 << 23), min((1 << 23) - 1, code))
         return code
 
-    # -----------------------
-    # Producer: generate raw sample
-    # -----------------------
-    def read_raw_sample(self) -> RawSample:
-        t_mono = time.perf_counter()
-        t_wall = time.time()
-        t = t_mono - self.t0
-
-        # 1. true pressure
-        pressure = self.pressure_profile(t)
-
-        # 2. pressure → voltage
-        voltage = self.pressure_to_voltage(pressure)
-
-        # 3. voltage → ADC count
-        raw_code = self.voltage_to_adc_code(voltage)
-
-        return RawSample(
-            sensor_name=self.name,
-            sensor_kind="pressure",
-            channel=0,
-            t_monotonic=t_mono,
-            t_wall=t_wall,
-            raw_count=raw_code,
-            source="simulated"
-        )
-
-    # -----------------------
-    # Consumer: convert raw → engineering units
-    # -----------------------
-    def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
-        code = raw_sample.raw_count
-
-        # ADC count → voltage
-        fs_code = (1 << 23) - 1
-        voltage = (code / fs_code) * (self.adc_vref / self.adc_gain)
-
-        # voltage → pressure
-        frac = (voltage - self.v_min) / (self.v_max - self.v_min)
-        pressure = self.p_min + frac * (self.p_max - self.p_min)
-
-        return Sample(
-            sensor_name=raw_sample.sensor_name,
-            sensor_kind="pressure",
-            t_monotonic=raw_sample.t_monotonic,
-            t_wall=raw_sample.t_wall,
-            raw_value=code,
-            value=pressure,
-            units="psi",
-            status="ok",
-            source="simulated"
-        )

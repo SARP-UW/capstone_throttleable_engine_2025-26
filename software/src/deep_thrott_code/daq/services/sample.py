@@ -11,17 +11,15 @@ class RawSample:
     t_monotonic: float
     t_wall: float
     raw_count: int
-    source: str = "hardware"
 
 
 @dataclass(slots=True)
 class Sample:
     sensor_name: str
-    sensor_kind: str
-    t_monotonic: float = field(default_factory=time.perf_counter)
-    t_wall: float = field(default_factory=time.time)
+    sensor_kind: str = ""
+    t_monotonic: float
+    t_wall: float 
     raw_value: Any = None  
     value: float = None       
-    units: str = ""                    
-    status: str = "ok"   
+    units: str = ""
     filtered_value: Optional[float] = None
