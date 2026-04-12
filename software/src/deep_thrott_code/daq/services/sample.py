@@ -3,13 +3,23 @@ from typing import Optional, Any
 import time
 
 @dataclass(slots=True)
-class Sample:
+class RawSample:
     sensor_name: str
     sensor_kind: str
-    t_monotonic: float = field(default_factory=time.perf_counter)
-    t_wall: float = field(default_factory=time.time)
+    conversion_type: str
+    channel: int
+    t_monotonic: float
+    t_wall: float
+    raw_count: int
+
+
+@dataclass(slots=True)
+class Sample:
+    sensor_name: str
+    sensor_kind: str = ""
+    t_monotonic: float
+    t_wall: float 
     raw_value: Any = None  
     value: float = None       
-    units: str = ""                    
-    status: str = "ok"   
+    units: str = ""
     filtered_value: Optional[float] = None

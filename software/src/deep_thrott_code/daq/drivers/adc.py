@@ -235,11 +235,6 @@ class ADS124S08:
         self.wreg(self.REG_INPMUX, [val])
 
     @staticmethod
-    def code_to_volts(code: int, vref: float = 5.0, gain: int = 1) -> float:
-        """Convert signed 24-bit code to input voltage."""
-        fs = (1 << 23) - 1
-        return (code / fs) * (vref / gain)
-
     def read_raw_single(self, ainp: int, settle_discard: bool = True) -> int:
         """
         Set MUX to AINp vs AINCOM and return one raw conversion code.
@@ -256,6 +251,18 @@ class ADS124S08:
                 raise TimeoutError("DRDY timeout after settle discard")
 
         return self.read_raw_sample()
+    
+    # def read_voltage_single(self, ainp, vref=5, gain=1, settle_discard=True):
+    #     self.set_inpmux_single(ainp)
+    #     if not self.wait_drdy(0.5):
+    #         raise TimeoutError("DRDY timeout after MUX change")
+    #     first = self.read_raw_sample()
+    #     if settle_discard:
+    #         if not self.wait_drdy(0.5):
+    #             raise TimeoutError("DRDY timeout (settle discard)")
+    #     code = self.read_raw_sample()
+    #     volts = self.code_to_volts(code, vref=vref, gain=gain)
+    #     return volts
 
     def read_raw_diff(self, ainp: int, ainn: int, settle_discard: bool = True) -> int:
         """

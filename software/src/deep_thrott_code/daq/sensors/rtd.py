@@ -4,6 +4,9 @@ Sensor classes for converting analog voltage readings to physical values.
 
 import math
 import software.src.deep_thrott_code.daq.config as config
+from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
+import time
+
 
 class RTD:
     """
@@ -44,25 +47,17 @@ class RTD:
     _VREF_INTERNAL = 2.5
     _FS = (1 << 23) - 1  # 8 388 607
 
-    def read(self):
-        """
-        Enable RTD excitation, read L1 and L2 single-ended voltages plus
-        the differential code across the RTD, disable RTD excitation, then
-        compute resistance and temperature.
+    def read_raw_sample(self) -> RawSample:
+        t_mono = time.perf_counter()
+        t_wall = time.time()
 
-        Resistance is computed as R = V_RTD / I_IDAC.  The IDAC current only
-        flows through the RTD (not through Rref), so a software-ratiometric
-        approach using Rref would give the wrong answer for this circuit
-        topology where the Rbias chain contributes extra current through Rref.
-
-        Returns:
-            (v_lead1, v_lead2, resistance, temperature)
-        """
         self.ADC.enable_rtd_mode(
             current_ua=self.idac_current_ua,
             idac1_ain=self.idac1_ain,
             idac2_ain=self.idac2_ain,
         )
+
+        # edit this to be more lightweight, edit RawSample attributes if needed
         try:
             v_lead1 = self.ADC.read_voltage_single(
                 self.V_lead1_idx, vref=2.5, settle_discard=config.ADC_SETTLE_DISCARD,
@@ -78,10 +73,44 @@ class RTD:
         finally:
             self.ADC.disable_rtd_mode()
 
-        resistance = self._code_to_resistance(code_rtd)
+        return RawSample(
+            sensor_name=self.name,
+            sensor_kind="temperature",
+            conversion_type="rtd",
+            channel=self.sig_idx,
+            t_monotonic=t_mono,
+            t_wall=t_wall,
+            raw_count=code_rtd
+        )
+
+    def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
+        """
+        Enable RTD excitation, read L1 and L2 single-ended voltages plus
+        the differential code across the RTD, disable RTD excitation, then
+        compute resistance and temperature.
+
+        Resistance is computed as R = V_RTD / I_IDAC.  The IDAC current only
+        flows through the RTD (not through Rref), so a software-ratiometric
+        approach using Rref would give the wrong answer for this circuit
+        topology where the Rbias chain contributes extra current through Rref.
+
+        Returns:
+            (v_lead1, v_lead2, resistance, temperature)
+        """
+
+        resistance = self._code_to_resistance(raw_sample.raw_count)
         temp_c = self._resistance_to_temperature(resistance)
         temperature = self._convert_unit(temp_c) - self.offset
-        return v_lead1, v_lead2, resistance, temperature
+        return Sample(
+            sensor_name=raw_sample.sensor_name,
+            sensor_kind="temperature",
+            t_monotonic=raw_sample.t_monotonic,
+            t_wall=raw_sample.t_wall,
+            raw_value=raw_sample.raw_count,
+            value=temperature,
+            units=self.unit,
+            source="simulated"
+        )
 
     def _code_to_resistance(self, code_rtd):
         """R = V_RTD / I_IDAC, where V_RTD is derived from the raw ADC code."""
