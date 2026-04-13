@@ -59,17 +59,17 @@ class RTD:
 
         # edit this to be more lightweight, edit RawSample attributes if needed
         try:
-            v_lead1 = self.ADC.read_voltage_single(
-                self.V_lead1_idx, vref=2.5, settle_discard=config.ADC_SETTLE_DISCARD,
-            )
-            v_lead2 = self.ADC.read_voltage_single(
-                self.V_lead2_idx, vref=2.5, settle_discard=config.ADC_SETTLE_DISCARD,
-            )
+            raw_lead1 = self.ADC.read_raw_single(self.V_lead1_idx, 
+                                                 settle_discard=config.ADC_SETTLE_DISCARD)
+            raw_lead2 = self.ADC.read_raw_single(self.V_lead2_idx, 
+                                                 settle_discard=config.ADC_SETTLE_DISCARD)
+            
             code_rtd = self.ADC.read_raw_diff(
                 self.V_lead1_idx,
                 self.V_lead2_idx,
                 settle_discard=config.ADC_SETTLE_DISCARD,
             )
+
         finally:
             self.ADC.disable_rtd_mode()
 
@@ -80,7 +80,9 @@ class RTD:
             channel=self.sig_idx,
             t_monotonic=t_mono,
             t_wall=t_wall,
-            raw_count=code_rtd
+            raw_count=code_rtd, 
+            raw_diff_1=raw_lead1, 
+            raw_diff_2=raw_lead2
         )
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
@@ -101,6 +103,10 @@ class RTD:
         resistance = self._code_to_resistance(raw_sample.raw_count)
         temp_c = self._resistance_to_temperature(resistance)
         temperature = self._convert_unit(temp_c) - self.offset
+
+        v_diff_1 = self.code_to_voltage(raw_sample.raw_diff_1)
+        v_diff_2 = self.code_to_voltage(raw_sample.raw_diff_2)
+
         return Sample(
             sensor_name=raw_sample.sensor_name,
             sensor_kind="temperature",
@@ -109,9 +115,15 @@ class RTD:
             raw_value=raw_sample.raw_count,
             value=temperature,
             units=self.unit,
-            source="simulated"
+            V_diff_1=v_diff_1,
+            V_diff_2=v_diff_2
         )
 
+    def code_to_voltage(self, code: int):
+        fs_code = (1 << 23) - 1
+        voltage = (code / fs_code) * (self.adc_vref / self.adc_gain)
+        return voltage
+    
     def _code_to_resistance(self, code_rtd):
         """R = V_RTD / I_IDAC, where V_RTD is derived from the raw ADC code."""
         v_rtd = (code_rtd / self._FS) * self._VREF_INTERNAL

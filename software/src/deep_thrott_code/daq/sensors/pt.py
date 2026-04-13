@@ -51,7 +51,6 @@ class PressureTransducer:
             t_monotonic=t_mono,
             t_wall=t_wall,
             raw_count=raw_code,
-            
         )
     
     def code_to_voltage(self, code: int):
