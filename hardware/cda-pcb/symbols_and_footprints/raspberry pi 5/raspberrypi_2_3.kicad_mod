@@ -1,7 +1,7 @@
 (footprint "raspberrypi_2_3"
-	(version 20240108)
+	(version 20241229)
 	(generator "pcbnew")
-	(generator_version "8.0")
+	(generator_version "9.0")
 	(layer "F.Cu")
 	(descr "RaspberryPi 2")
 	(tags "CONN")
@@ -24,18 +24,6 @@
 			(font
 				(size 2 2)
 				(thickness 0.25)
-			)
-		)
-	)
-	(property "Footprint" ""
-		(at 0 0 0)
-		(layer "F.Fab")
-		(hide yes)
-		(uuid "52d27bcb-1d4c-4a74-b4dc-00486996b5f2")
-		(effects
-			(font
-				(size 1.27 1.27)
-				(thickness 0.15)
 			)
 		)
 	)
@@ -483,28 +471,28 @@
 		(at -29 0)
 		(size 2.75 2.75)
 		(drill 2.75)
-		(layers "F&B.Cu" "*.Mask")
+		(layers "*.Cu" "*.Mask")
 		(uuid "4c5ee3dd-848a-4219-a131-5297bd03f339")
 	)
 	(pad "" np_thru_hole circle
 		(at -29 49)
 		(size 2.75 2.75)
 		(drill 2.75)
-		(layers "F&B.Cu" "*.Mask")
+		(layers "*.Cu" "*.Mask")
 		(uuid "2e83d60a-b54c-42d5-83fc-468f95565b8e")
 	)
 	(pad "" np_thru_hole circle
 		(at 29 0)
 		(size 2.75 2.75)
 		(drill 2.75)
-		(layers "F&B.Cu" "*.Mask")
+		(layers "*.Cu" "*.Mask")
 		(uuid "69516da7-bd5b-41e1-abc7-49f9221a8900")
 	)
 	(pad "" np_thru_hole circle
 		(at 29 49)
 		(size 2.722358 2.722358)
 		(drill 2.75)
-		(layers "F&B.Cu" "*.Mask")
+		(layers "*.Cu" "*.Mask")
 		(uuid "c35b41a6-3abf-495e-8676-151d0508f370")
 	)
 	(pad "1" thru_hole rect
@@ -827,26 +815,16 @@
 		(remove_unused_layers no)
 		(uuid "b389f677-dcf6-4939-b3ee-972cb4159718")
 	)
-	(model "unsorted/raspberryPi3b-simple.wrl"
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/symbols_and_footprints/raspberry pi 5/2648_RaspberryPi5.step"
 		(offset
-			(xyz 9.905999851 -24.58719963 -18.28799973)
+			(xyz 10 -24.5 -25)
 		)
 		(scale
 			(xyz 1 1 1)
 		)
 		(rotate
-			(xyz 90 180 180)
-		)
-	)
-	(model "Pin_Header/Pin_Header_Straight_Female_2x20_RaspPi.wrl"
-		(offset
-			(xyz 0 0 -6.349999905)
-		)
-		(scale
-			(xyz 1 1 1)
-		)
-		(rotate
-			(xyz 90 0 90)
+			(xyz -90 -0 -0)
 		)
 	)
 )
