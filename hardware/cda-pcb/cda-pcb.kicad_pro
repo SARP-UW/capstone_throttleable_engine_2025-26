@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 2.5,
-          "height": 5.0,
-          "width": 5.0
+          "drill": 0.2,
+          "height": 0.4,
+          "width": 0.4
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -188,7 +188,8 @@
         }
       ],
       "track_widths": [
-        0.0
+        0.0,
+        1.0
       ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
@@ -559,20 +560,28 @@
         "pattern": "+5V"
       },
       {
-        "netclass": "Default",
+        "netclass": "pwr_smol",
         "pattern": "+5Vs"
       },
       {
         "netclass": "pwr_smol",
-        "pattern": "10Vs"
+        "pattern": "+10Vs"
       },
       {
         "netclass": "pwr_large",
-        "pattern": "24V"
+        "pattern": "+24V"
       },
       {
-        "netclass": "Default",
+        "netclass": "pwr_smol",
         "pattern": "+6V"
+      },
+      {
+        "netclass": "pwr_smol",
+        "pattern": "+3.3V"
+      },
+      {
+        "netclass": "pwr_smol",
+        "pattern": "+11V"
       }
     ]
   },
