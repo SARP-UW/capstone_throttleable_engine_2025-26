@@ -1,21 +1,159 @@
-
-(footprint CAPC2012X145N (layer F.Cu) (tedit 67A1485F)
-  (descr "")
-  (attr smd)
-  (fp_text reference REF** (at -0.46 -1.32 0) (layer F.SilkS)
-    (effects (font (size 0.393700787402 0.393700787402) (thickness 0.15)))
-  )
-  (fp_text value CAPC2012X145N (at 1.54 1.32 0) (layer F.Fab)
-    (effects (font (size 0.393700787402 0.393700787402) (thickness 0.15)))
-  )
-  (pad 1 smd rect (at -0.9 0.0) (size 1.11 1.47) (layers F.Cu F.Mask F.Paste) (solder_mask_margin 0.102))
-  (pad 2 smd rect (at 0.9 0.0) (size 1.11 1.47) (layers F.Cu F.Mask F.Paste) (solder_mask_margin 0.102))
-  (fp_line (start 1.1 0.72) (end -1.1 0.72) (layer F.Fab) (width 0.127))
-  (fp_line (start 1.1 -0.72) (end -1.1 -0.72) (layer F.Fab) (width 0.127))
-  (fp_line (start 1.1 0.72) (end 1.1 -0.72) (layer F.Fab) (width 0.127))
-  (fp_line (start -1.1 0.72) (end -1.1 -0.72) (layer F.Fab) (width 0.127))
-  (fp_line (start -1.708 0.983) (end 1.708 0.983) (layer F.CrtYd) (width 0.05))
-  (fp_line (start -1.708 -0.983) (end 1.708 -0.983) (layer F.CrtYd) (width 0.05))
-  (fp_line (start -1.708 0.983) (end -1.708 -0.983) (layer F.CrtYd) (width 0.05))
-  (fp_line (start 1.708 0.983) (end 1.708 -0.983) (layer F.CrtYd) (width 0.05))
+(footprint "CAPC2012X145N"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at -0.46 -1.32 0)
+		(layer "F.SilkS")
+		(uuid "f5c01162-8767-47ed-8656-84f01515bf32")
+		(effects
+			(font
+				(size 0.393701 0.393701)
+				(thickness 0.098425)
+			)
+		)
+	)
+	(property "Value" "CAPC2012X145N"
+		(at 1.54 1.32 0)
+		(layer "F.Fab")
+		(uuid "1a379e43-7e4f-43c7-a1aa-a35b4cbf7998")
+		(effects
+			(font
+				(size 0.393701 0.393701)
+				(thickness 0.098425)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "68bdb45f-6936-4cee-9005-92ba0c097da0")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cbfeffc6-d669-480a-b324-72a88c4a364a")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_line
+		(start -1.708 -0.983)
+		(end 1.708 -0.983)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "32832092-cacd-4040-8488-3f6a527388ea")
+	)
+	(fp_line
+		(start -1.708 0.983)
+		(end -1.708 -0.983)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "9e478aa3-e7aa-40b6-8cb2-13f4f5c21f21")
+	)
+	(fp_line
+		(start -1.708 0.983)
+		(end 1.708 0.983)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "44d32cc2-b5d0-44ab-95dd-7b83358d78c1")
+	)
+	(fp_line
+		(start 1.708 0.983)
+		(end 1.708 -0.983)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "eb34d047-5b05-4881-bdbb-d99fbccd9d3b")
+	)
+	(fp_line
+		(start -1.1 0.72)
+		(end -1.1 -0.72)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "9e50fcb0-5235-44ae-bfa1-bf69ff12eabb")
+	)
+	(fp_line
+		(start 1.1 -0.72)
+		(end -1.1 -0.72)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "b493aca2-e574-4821-84cd-7b98d99dc1fb")
+	)
+	(fp_line
+		(start 1.1 0.72)
+		(end -1.1 0.72)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "58b54385-1e46-4c0d-8663-7d85ff4a6800")
+	)
+	(fp_line
+		(start 1.1 0.72)
+		(end 1.1 -0.72)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "4d4ae01b-2d5e-4c74-b5e2-0e79552d322a")
+	)
+	(pad "1" smd rect
+		(at -0.9 0)
+		(size 1.11 1.47)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "2da0207c-1ed2-4c01-bed2-afd5aeb7ac69")
+	)
+	(pad "2" smd rect
+		(at 0.9 0)
+		(size 1.11 1.47)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "c20501b5-e200-40a4-a317-3b1115060853")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/symbols_and_footprints/GRM21BC71E106KE11L/GRM21BC71E106KE11L.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz -90 -0 -0)
+		)
+	)
 )

@@ -1,4 +1,46 @@
-27229656803080935
+27265149762265940
+0603YC105JAT2A
+CAPC1608X94N
+
+
+0
+2
+2
+10090929-S154VLF
+AMPHENOL_10090929-S154VLF
+
+
+0
+17
+17
+0022272021
+MOLEX_0022272021
+
+
+0
+2
+2
+ABX00030
+MODULE_ABX00030
+
+
+0
+30
+30
+ADS124S08IRHBT
+QFN50P500X500X100-33N
+
+
+0
+38
+38
+ADS1258IRTCT
+QFN50P700X700X90-49N
+
+
+0
+49
+49
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -2810,6 +2852,27 @@ Buzzer_Beeper
 Speaker_CUI_CMR-1206S-67
 Speaker, 30mW, 300-7000Hz, IP67 face, 12x6x2,25mm, https://www.cuidevices.com/product/resource/cmr-12062s-67.pdf
 speaker CUI
+0
+2
+2
+CRCW060320K0FKEA
+RESC1508X50N
+
+
+0
+2
+2
+CRCW0603100KFKEA
+RESC1508X50N
+
+
+0
+2
+2
+CRCW0603120RFKEAHP
+RESC1608X55N
+
+
 0
 2
 2
@@ -71847,6 +71910,13 @@ Yellow 5381 Series LED
 0
 2
 2
+LM1086IS-5.0
+TO254P1524X483-4N
+
+
+0
+4
+4
 Module
 A20_OLINUXINO_LIME2
 A20 Olinuxino LIME2, 1.2GHz, 512-1024MB RAM, Micro-SD, NAND or eMMC, 1000Mbit Ethernet
@@ -96375,6 +96445,13 @@ WiFi IEEE802.11 b/g/n
 0
 44
 44
+RG1608N-102-D-T5
+RESC1608X50N
+
+
+0
+2
+2
 Relay_SMD
 Relay_2P2T_10x6mm_TE_IMxxG
 Signal Relay, 10x6mm, 2 Form C, Gull Wings, https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7F108-98001%7FZ.1%7Fpdf%7FEnglish%7FENG_DS_108-98001_Z.1.pdf
@@ -98699,6 +98776,34 @@ rotary encoder illuminated switch vertical
 0
 9
 8
+SARP logo
+sarp2
+
+
+0
+0
+0
+SARPLOGO2
+SARPLOGO2
+
+
+0
+0
+0
+SEN-13879
+SPARKFUN_SEN-13879
+
+
+0
+12
+12
+SMST12T1G
+SOT95P275X110-6N
+SC-74 CASE 318F-05
+TVS Diode (Uni-directional)
+0
+6
+6
 Sensor
 ASAIR_AM2302_P2.54mm_Lead2.75mm_TabDown
 Temperature and humidity module, http://akizukidenshi.com/download/ds/aosong/AM2302.pdf
@@ -100806,6 +100911,20 @@ Logo WEEE
 0
 0
 0
+TPS73801
+SOT127P706X180-6N
+
+
+0
+6
+6
+TPSM63602RDHDR
+CONV_TPSM63602RDHR
+
+
+0
+36
+36
 TerminalBlock
 TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm
 terminal block MaiXu MX126-5.0-02P, 2 pins, pitch 5mm, size 10.5x7.8mm, drill diameter 1.3mm, pad diameter 2.8mm, https://www.lcsc.com/datasheet/lcsc_datasheet_2309150913_MAX-MX126-5-0-03P-GN01-Cu-S-A_C5188435.pdf, script-generated using https://gitlab.com/kicad/libraries/kicad-footprint-generator/-/tree/master/scripts/TerminalBlock_MaiXu
@@ -107162,6 +107281,13 @@ igbt diode module
 0
 25
 25
+VJ0603Y104JXXAC
+CAPC1608X97N
+
+
+0
+2
+2
 Valve
 Valve_ECC-83-1
 Valve ECC-83-1 round pins
@@ -107946,3 +108072,17 @@ Varistor VF
 0
 2
 2
+raspberry pi 5
+raspberrypi_2_3
+RaspberryPi 2
+CONN
+0
+40
+40
+ul_SN74AHCT125RGYR
+RGY14_2P05X2P05
+
+SN74AHCT125RGYR 
+0
+19
+16

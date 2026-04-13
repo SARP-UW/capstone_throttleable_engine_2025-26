@@ -1,23 +1,179 @@
-
-(footprint CAPC3216X95N (layer F.Cu) (tedit 67A14942)
-  (descr "")
-  (attr smd)
-  (fp_text reference REF** (at -1.04 -1.48 0) (layer F.SilkS)
-    (effects (font (size 0.393700787402 0.393700787402) (thickness 0.15)))
-  )
-  (fp_text value CAPC3216X95N (at 0.71 1.48 0) (layer F.Fab)
-    (effects (font (size 0.393700787402 0.393700787402) (thickness 0.15)))
-  )
-  (pad 1 smd rect (at -1.445 0.0) (size 1.18 1.77) (layers F.Cu F.Mask F.Paste) (solder_mask_margin 0.102))
-  (pad 2 smd rect (at 1.445 0.0) (size 1.18 1.77) (layers F.Cu F.Mask F.Paste) (solder_mask_margin 0.102))
-  (fp_line (start 1.68 0.88) (end -1.68 0.88) (layer F.Fab) (width 0.127))
-  (fp_line (start 1.68 -0.88) (end -1.68 -0.88) (layer F.Fab) (width 0.127))
-  (fp_line (start 1.68 0.88) (end 1.68 -0.88) (layer F.Fab) (width 0.127))
-  (fp_line (start -1.68 0.88) (end -1.68 -0.88) (layer F.Fab) (width 0.127))
-  (fp_line (start -0.53 -0.88) (end 0.53 -0.88) (layer F.SilkS) (width 0.127))
-  (fp_line (start -0.53 0.88) (end 0.53 0.88) (layer F.SilkS) (width 0.127))
-  (fp_line (start -2.285 1.135) (end 2.285 1.135) (layer F.CrtYd) (width 0.05))
-  (fp_line (start -2.285 -1.135) (end 2.285 -1.135) (layer F.CrtYd) (width 0.05))
-  (fp_line (start -2.285 1.135) (end -2.285 -1.135) (layer F.CrtYd) (width 0.05))
-  (fp_line (start 2.285 1.135) (end 2.285 -1.135) (layer F.CrtYd) (width 0.05))
+(footprint "CAPC3216X95N"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at -1.04 -1.48 0)
+		(layer "F.SilkS")
+		(uuid "65a66485-93d9-4b79-ab95-0b2cbab3e94b")
+		(effects
+			(font
+				(size 0.393701 0.393701)
+				(thickness 0.098425)
+			)
+		)
+	)
+	(property "Value" "CAPC3216X95N"
+		(at 0.71 1.48 0)
+		(layer "F.Fab")
+		(uuid "f8a9f64a-a8ad-4ed3-887b-7199fd86f111")
+		(effects
+			(font
+				(size 0.393701 0.393701)
+				(thickness 0.098425)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "16d75642-b9e7-4aa5-a5f1-3d77a2290090")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "8dadae49-7a4f-4fd3-9861-fb289e0b400c")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_line
+		(start -0.53 -0.88)
+		(end 0.53 -0.88)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "ba8b9a3c-acb5-44ed-ad84-3365df5efa1b")
+	)
+	(fp_line
+		(start -0.53 0.88)
+		(end 0.53 0.88)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "8ab4c749-f8bc-4578-8e55-2866592573e2")
+	)
+	(fp_line
+		(start -2.285 -1.135)
+		(end 2.285 -1.135)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "1227cafc-a397-4785-bcb7-471da1e6c1a6")
+	)
+	(fp_line
+		(start -2.285 1.135)
+		(end -2.285 -1.135)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "bb098cf1-9a3b-4b8e-9ec6-95fc7a4aa720")
+	)
+	(fp_line
+		(start -2.285 1.135)
+		(end 2.285 1.135)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "f1b168e2-7577-467c-8a4e-3c32d164fb0c")
+	)
+	(fp_line
+		(start 2.285 1.135)
+		(end 2.285 -1.135)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "d338692c-e559-4492-a206-1bb9010ebaa5")
+	)
+	(fp_line
+		(start -1.68 0.88)
+		(end -1.68 -0.88)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "ae1251c3-0ca2-402e-b3f0-e3ac5e46d834")
+	)
+	(fp_line
+		(start 1.68 -0.88)
+		(end -1.68 -0.88)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "61b89883-6c82-4cc0-b0c1-1fa378236116")
+	)
+	(fp_line
+		(start 1.68 0.88)
+		(end -1.68 0.88)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "89f3ccad-c514-4d69-a848-f25b99c9b347")
+	)
+	(fp_line
+		(start 1.68 0.88)
+		(end 1.68 -0.88)
+		(stroke
+			(width 0.127)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "e1dbcaba-900b-41b0-8848-0cbf173af322")
+	)
+	(pad "1" smd rect
+		(at -1.445 0)
+		(size 1.18 1.77)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "a0c18b29-368a-4d6f-a443-468d7bccd24c")
+	)
+	(pad "2" smd rect
+		(at 1.445 0)
+		(size 1.18 1.77)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "2b385490-c323-497e-8603-8d6530fa0b59")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/symbols_and_footprints/GRM3195C2A163JA01D/CAPC3216X95N.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz -90 -0 -0)
+		)
+	)
 )
