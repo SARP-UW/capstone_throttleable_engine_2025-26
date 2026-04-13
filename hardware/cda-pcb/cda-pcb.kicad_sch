@@ -10280,6 +10280,17 @@
 		)
 		(uuid "7b09919c-ff8d-48f2-81f2-32ebd3dec50b")
 	)
+	(text "REPLACE WITH 2-WAY LOGIC SHIFTER"
+		(exclude_from_sim no)
+		(at 296.672 202.946 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "7f2e93eb-102c-43ec-aeeb-e7e85804801b")
+	)
 	(text "INPUT ESD and SURGE PROTECTION"
 		(exclude_from_sim no)
 		(at 276.606 32.766 0)
@@ -15627,7 +15638,7 @@
 	)
 	(wire
 		(pts
-			(xy 294.64 200.66) (xy 299.72 200.66)
+			(xy 294.64 200.66) (xy 304.8 200.66)
 		)
 		(stroke
 			(width 0)
@@ -19091,12 +19102,12 @@
 		(uuid "26ed059d-184a-4f60-a88b-902485d4d172")
 	)
 	(label "RX_PI"
-		(at 299.72 200.66 0)
+		(at 304.8 200.66 180)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right bottom)
 		)
 		(uuid "2790a0ec-dd6b-426a-a9f0-de114705cb0d")
 	)
@@ -38923,7 +38934,7 @@
 			)
 		)
 		(property "Value" "+10Vs"
-			(at 350.52 369.57 90)
+			(at 349.504 369.57 90)
 			(effects
 				(font
 					(size 1.27 1.27)

@@ -503,7 +503,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "DAQ.kicad_pro",
+    "filename": "cda-pcb.kicad_pro",
     "version": 3
   },
   "net_settings": {
