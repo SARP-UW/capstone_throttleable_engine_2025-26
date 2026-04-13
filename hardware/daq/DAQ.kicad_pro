@@ -559,7 +559,7 @@
         "pattern": "+5V"
       },
       {
-        "netclass": "pwr_smol",
+        "netclass": "Default",
         "pattern": "+5Vs"
       },
       {
