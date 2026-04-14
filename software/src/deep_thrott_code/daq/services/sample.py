@@ -6,7 +6,6 @@ import time
 class RawSample:
     sensor_name: str
     sensor_kind: str
-    conversion_type: str
     channel: int
     t_monotonic: float
     t_wall: float

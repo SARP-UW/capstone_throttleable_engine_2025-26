@@ -11,7 +11,7 @@ def producer_loop(sensor_list, sample_queue, stop_event, loop_hz: float):
         t_start = time.perf_counter()
 
         for sensor in sensor_list:
-            sample = sensor.read_sample()
+            sample = sensor.read_raw_sample()
             sample_queue.put(sample)
 
         elapsed = time.perf_counter() - t_start
