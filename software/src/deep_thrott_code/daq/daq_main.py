@@ -6,6 +6,7 @@ from services.loop import producer_loop
 from services.loop import consumer_loop
 from services.state_store import StateStore
 from services.logger import CsvLogger
+from sensors.sensors import initialize_sensors, build_sensors, build_sensor_map
 
 from sensors.simulated_sensor import SimulatedPressureSensor
 # later:
@@ -24,29 +25,7 @@ from sensors.simulated_sensor import SimulatedPressureSensor
 # TODO: - add read_sample method for all sensor classes
 #       - split up tasks in sensor classes so conversions aren't happening all in one method
 #       - edit consumer loop and batch processing functions
-
-
-def build_sensors():
-    """
-    Create and return the list of sensor objects.
-    Start with simulated sensors, then replace with real ones.
-    """
-    sensors = [
-        SimulatedPressureSensor(name="chamber_pressure", offset=200.0, amplitude=20.0, frequency_hz=0.2),
-        SimulatedPressureSensor(name="injector_pressure", offset=300.0, amplitude=10.0, frequency_hz=0.1),
-    ]
-    return sensors
-
-
-def build_sensor_map(sensors):
-    """
-    Build a mapping from sensor_id to sensor instance for the consumer loop.
-    This allows the consumer loop to call the correct conversion method based on the sensor type.
-    """
-    sensor_map = {}
-    for sensor in sensors:
-        sensor_map[sensor.name] = sensor
-    return sensor_map
+#       - status message for gui on initialization 
 
 
 def main():

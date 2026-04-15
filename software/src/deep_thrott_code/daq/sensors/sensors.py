@@ -9,23 +9,11 @@ import software.src.deep_thrott_code.daq.config as config
 from software.src.deep_thrott_code.daq.sensors.loadcell import Load_Cell
 from software.src.deep_thrott_code.daq.sensors.pt import Pressure_Transducer
 from software.src.deep_thrott_code.daq.sensors.rtd import RTD
+from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
+import time
+from sensors.simulated_sensor import SimulatedPressureSensor
 
-
-def read_voltage_full(self, vref=5, gain=1):
-    voltages = []
-    skip_ains = (3, 5, 6, 7)
-
-    for i in range(12):
-        if i in skip_ains:
-            continue
-        try:
-            volts = self.read_voltage_single(i, vref=vref, gain=gain, settle_discard=True)
-            voltages.append(round(volts, 4))
-        except Exception as e:
-            print(f"Error reading ADC{self.id} AIN{i}: {e}")
-
-    return voltages
-
+# what is this?? is it supposed to be in ADC class? 
 def _adc_for_cfg(cfg, adc1, adc2):
     """Return the ADC instance (adc1 or adc2) for the given config's ADC index."""
     if cfg["ADC"] == 1:
@@ -33,6 +21,29 @@ def _adc_for_cfg(cfg, adc1, adc2):
     if cfg["ADC"] == 2:
         return adc2
     raise ValueError(f"Invalid ADC configuration: {cfg['ADC']}")
+
+
+def build_sensors():
+    """
+    Create and return the list of sensor objects.
+    Start with simulated sensors, then replace with real ones.
+    """
+    sensors = [
+        SimulatedPressureSensor(name="chamber_pressure", offset=200.0, amplitude=20.0, frequency_hz=0.2),
+        SimulatedPressureSensor(name="injector_pressure", offset=300.0, amplitude=10.0, frequency_hz=0.1),
+    ]
+    return sensors
+
+
+def build_sensor_map(sensors):
+    """
+    Build a mapping from sensor_id to sensor instance for the consumer loop.
+    This allows the consumer loop to call the correct conversion method based on the sensor type.
+    """
+    sensor_map = {}
+    for sensor in sensors:
+        sensor_map[sensor.name] = sensor
+    return sensor_map
 
 
 def initialize_sensors(adc1, adc2):
@@ -100,7 +111,7 @@ def initialize_sensors(adc1, adc2):
 
     return sensor_labels, load_cells, pressure_transducers, rtds
 
-
+# what is this?
 def read_sensors(load_cells, pressure_transducers, rtds):
     sensor_values = []
     csv_columns = []
