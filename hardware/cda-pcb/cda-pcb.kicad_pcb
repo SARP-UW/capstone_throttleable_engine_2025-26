@@ -5359,7 +5359,7 @@
 			)
 		)
 		(property "Value" "Fiducial_1mm_Mask3mm"
-			(at 0 2.45 0)
+			(at -3 2.45 0)
 			(layer "F.Fab")
 			(uuid "7118bfa9-2aae-4cca-a763-6f760daaccf6")
 			(effects
@@ -25442,7 +25442,7 @@
 			)
 		)
 		(property "Value" "Fiducial_1mm_Mask3mm"
-			(at 0 2.45 0)
+			(at 4 2.45 0)
 			(layer "F.Fab")
 			(uuid "b78f6f28-8063-4428-b466-e5d892bcf44c")
 			(effects
@@ -41149,7 +41149,7 @@
 			)
 		)
 		(property "Value" "Fiducial_1mm_Mask3mm"
-			(at 0 2.45 0)
+			(at 3 -3 0)
 			(layer "F.Fab")
 			(uuid "7a859d42-fe89-44e4-95dd-8654f639aef0")
 			(effects
@@ -51894,6 +51894,15 @@
 		(free yes)
 		(net 2)
 		(uuid "222d25ab-372b-4a16-94f5-cc5c5dd7466e")
+	)
+	(via
+		(at 158.174699 72.987691)
+		(size 0.6)
+		(drill 0.3)
+		(layers "F.Cu" "B.Cu")
+		(free yes)
+		(net 2)
+		(uuid "2335c305-dbf7-4ba6-8f47-45dd125dc4ea")
 	)
 	(via
 		(at 96.357841 58.485941)
