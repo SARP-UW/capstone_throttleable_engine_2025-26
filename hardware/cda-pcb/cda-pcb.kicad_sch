@@ -10388,7 +10388,7 @@
 	)
 	(text "***maybe drop 10Vs to 9Vs or 9.5Vs"
 		(exclude_from_sim no)
-		(at 397.002 189.738 0)
+		(at 391.922 191.262 0)
 		(effects
 			(font
 				(size 1.778 1.778)
