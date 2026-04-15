@@ -1,4 +1,4 @@
-27265156726136573
+27302457847128219
 0603YC105JAT2A
 CAPC1608X94N
 
@@ -62348,6 +62348,146 @@ fiducial
 0
 2
 0
+Fiducials.pretty-master
+Fiducial_0.5mm_Dia_1mm_Outer
+Circular Fiducial, 0.5mm bare copper top; 1mm keepout (Level C)
+marker
+0
+1
+1
+Fiducials.pretty-master
+Fiducial_0.75mm_Dia_1.5mm_Outer
+Circular Fiducial, 0.75mm bare copper top; 1.5mm keepout (Level B)
+marker
+0
+1
+1
+Fiducials.pretty-master
+Fiducial_1mm_Dia_2.54mm_Outer_CopperBottom
+Circular Fiducial, 1mm bare copper bottom; 2.54mm keepout
+marker
+0
+1
+1
+Fiducials.pretty-master
+Fiducial_1mm_Dia_2.54mm_Outer_CopperTop
+Circular Fiducial, 1mm bare copper top; 2.54mm keepout
+marker
+0
+1
+1
+Fiducials.pretty-master
+Fiducial_1mm_Dia_2mm_Outer
+Circular Fiducial, 1mm bare copper top; 2mm keepout (Level A)
+marker
+0
+1
+1
+Fiducials.pretty-master
+Fiducial_Modern_CopperBottom
+Fiducial, Modern, Copper Bottom, Passermarke,
+Fiducial, Modern, Copper Bottom, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_Modern_CopperTop
+Fiducial, Modern, Copper Top, Passermarke,
+Fiducial, Modern, Copper Top, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_Modern_SilkscreenTop
+Fiducial, Modern, Silkscreen Top, Passermarke,
+Fiducial, Modern, Silkscreen Top, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_Small_CopperBottom_Type1
+Fiducial, Classical, Small, Copper Bottom, Typ 1, Passermarke,
+Fiducial, Classical, Small, Copper Bottom, Typ 1, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_Small_CopperBottom_Type2
+Fiducial, Classical, Small, Copper Bottom, Typ 2, Passermarke,
+Fiducial, Classical, Small, Copper Bottom, Typ 2, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_Small_CopperTop_Type1
+Fiducial, Classical, Small, Copper Top, Typ 1, Passermarke,
+Fiducial, Classical, Small, Copper Top, Typ 1, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_Small_CopperTop_Type2
+Fiducial, Classical, Small, Copper Top, Typ 2, Passermarke,
+Fiducial, Classical, Small, Copper Top, Typ 2, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_Small_SilkscreenTop_Type1
+Fiducial, Classical, Small, Copper Top, Typ 1, Passermarke,
+Fiducial, Classical, Small, Copper Top, Typ 1, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_Small_SilkscreenTop_Type2
+Fiducial, Classical, Small, Silkscreen Top, Typ 2, Passermarke,
+Fiducial, Classical, Small, Silkscreen Top, Typ 2, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_big_CopperBottom_Type1
+Fiducial, Classical, Big, Copper Bottom, Typ 1, Passermarke,
+Fiducial, Classical, Big, Copper Bottom, Typ 1, Passermarke, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_big_CopperBottom_Type2
+Fiducial, Classical, Big, Copper Bottom, Typ 2, Passermarke,
+Fiducial, Classical, Big, Copper Bottom, Typ 2, Passermarke, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_big_CopperTop_Type1
+Fiducial, Classical, Big, Copper Top, Typ 1, Passermarke,
+Fiducial, Classical, Big, Copper Top, Typ 1, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_big_CopperTop_Type2
+Fiducial, Classical, Big, Copper Top, Typ 2, Passermarke,
+Fiducial, Classical, Big, Copper Top, Typ 2, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_big_SilkscreenTop_Type1
+Fiducial, Classical, Big, Silkscreen Top, Typ 1, Passermarke,
+Fiducial, Classical, Big, Silkscreen Top, Typ 1, Passermarke,
+0
+1
+0
+Fiducials.pretty-master
+Fiducial_classic_big_SilkscreenTop_Type2
+Fiducial, Classical, Big, Silkscreen Top, Typ 2, Passermarke,
+Fiducial, Classical, Big, Silkscreen Top, Typ 2, Passermarke,
+0
+1
+0
 Filter
 Filter_1109-5_1.1x0.9mm
 5-pin SAW filter package - 1.1x0.9 mm Body; (see https://www.murata.com/~/media/webrenewal/support/library/catalog/products/filter/rf/p73e.ashx?la=en-gb)
@@ -100924,7 +101064,7 @@ CONV_TPSM63602RDHR
 
 0
 36
-36
+30
 TerminalBlock
 TerminalBlock_MaiXu_MX126-5.0-02P_1x02_P5.00mm
 terminal block MaiXu MX126-5.0-02P, 2 pins, pitch 5mm, size 10.5x7.8mm, drill diameter 1.3mm, pad diameter 2.8mm, https://www.lcsc.com/datasheet/lcsc_datasheet_2309150913_MAX-MX126-5-0-03P-GN01-Cu-S-A_C5188435.pdf, script-generated using https://gitlab.com/kicad/libraries/kicad-footprint-generator/-/tree/master/scripts/TerminalBlock_MaiXu
@@ -108086,3 +108226,10 @@ SN74AHCT125RGYR
 0
 19
 16
+wooper
+wooper
+
+
+0
+0
+0
