@@ -10386,9 +10386,9 @@
 		)
 		(uuid "42928448-3ce4-4bd2-903a-7a79cf6619df")
 	)
-	(text "***maybe drop 10Vs to 9Vs or 9.5Vs"
+	(text "10Vs is ~9.988V"
 		(exclude_from_sim no)
-		(at 391.922 191.262 0)
+		(at 407.924 199.898 0)
 		(effects
 			(font
 				(size 1.778 1.778)
@@ -10465,7 +10465,7 @@
 	)
 	(text "Clean 10V for load cell excitation"
 		(exclude_from_sim no)
-		(at 420.624 198.628 0)
+		(at 420.116 195.834 0)
 		(effects
 			(font
 				(size 1.778 1.778)
@@ -25285,7 +25285,7 @@
 				)
 			)
 		)
-		(property "Value" "3.3k"
+		(property "Value" "1.8k"
 			(at 405.638 221.234 90)
 			(effects
 				(font
@@ -27544,6 +27544,71 @@
 			(project "DAQ"
 				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
 					(reference "#PWR079")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+9V")
+		(at 400.05 354.33 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "3db2fd00-849c-41b9-b4f7-1fc2dd4466b9")
+		(property "Reference" "#PWR0186"
+			(at 396.24 354.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+10Vs"
+			(at 406.146 354.33 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 400.05 354.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 400.05 354.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+9V\""
+			(at 400.05 354.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "48d9e9cc-8b88-45b3-9353-85ad3c39150f")
+		)
+		(instances
+			(project "cda-pcb"
+				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
+					(reference "#PWR0186")
 					(unit 1)
 				)
 			)
@@ -37005,7 +37070,7 @@
 				)
 			)
 		)
-		(property "Value" "24k"
+		(property "Value" "13k"
 			(at 405.638 211.074 90)
 			(effects
 				(font
@@ -44606,71 +44671,6 @@
 			(project "DAQ"
 				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
 					(reference "R36")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+5V")
-		(at 400.05 354.33 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "d298344f-1b13-4bd8-b606-5e826cbaf237")
-		(property "Reference" "#PWR032"
-			(at 396.24 354.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+5Vs"
-			(at 405.384 354.33 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 400.05 354.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 400.05 354.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 400.05 354.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "cc6dc0ca-1f60-4830-914a-0bbd17e8dd11")
-		)
-		(instances
-			(project "DAQ"
-				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
-					(reference "#PWR032")
 					(unit 1)
 				)
 			)
