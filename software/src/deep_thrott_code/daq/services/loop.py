@@ -1,8 +1,7 @@
 import time
 from queue import Empty
-from collections import defaultdict
-from sample import RawSample, Sample
-from state_store import StateStore
+
+from .sample import RawSample
 
 def producer_loop(sensor_list, sample_queue, stop_event, loop_hz: float):
     dt = 1.0 / loop_hz

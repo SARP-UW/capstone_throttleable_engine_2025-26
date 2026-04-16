@@ -3,8 +3,8 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import software.src.deep_thrott_code.daq.config as config
-from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
+from .. import config
+from ..services.sample import RawSample, Sample
 import time
 
 class Load_Cell:
@@ -36,12 +36,19 @@ class Load_Cell:
         t_mono = time.perf_counter()
         t_wall = time.time()
 
-        sig_plus_raw = self.ADC.read_raw_single(self.sig_plus_idx, 
-                                                settle_discard=config.ADC_SETTLE_DISCARD)
-        sig_minus_raw = self.ADC.read_raw_single(self.sig_minus_idx, 
-                                                 settle_discard=config.ADC_SETTLE_DISCARD)
-        raw_signal = self.ADC.read_raw_diff(self.sig_plus_idx, self.sig_minus_idx, 
-                                            settle_discard=config.ADC_SETTLE_DISCARD)
+        sig_plus_raw = self.ADC.read_raw_single(
+            self.sig_plus_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
+        sig_minus_raw = self.ADC.read_raw_single(
+            self.sig_minus_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
+        raw_signal = self.ADC.read_raw_diff(
+            self.sig_plus_idx,
+            self.sig_minus_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
 
         return RawSample(
             sensor_name=self.name,

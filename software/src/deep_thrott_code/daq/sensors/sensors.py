@@ -4,14 +4,17 @@ Sensor classes for converting analog voltage readings to physical values.
 
 # what are any of these used for?
 
+from __future__ import annotations
+
 import math
-import software.src.deep_thrott_code.daq.config as config
-from software.src.deep_thrott_code.daq.sensors.loadcell import Load_Cell
-from software.src.deep_thrott_code.daq.sensors.pt import Pressure_Transducer
-from software.src.deep_thrott_code.daq.sensors.rtd import RTD
-from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
 import time
-from sensors.simulated_sensor import SimulatedPressureSensor
+
+from .. import config
+from ..services.sample import RawSample, Sample
+from .loadcell import Load_Cell
+from .pt import PressureTransducer
+from .rtd import RTD
+from .simulated_sensor import SimulatedLoadCellSensor, SimulatedPressureSensor, SimulatedRTDSensor
 
 # what is this?? is it supposed to be in ADC class? 
 def _adc_for_cfg(cfg, adc1, adc2):
@@ -29,8 +32,34 @@ def build_sensors():
     Start with simulated sensors, then replace with real ones.
     """
     sensors = [
-        SimulatedPressureSensor(name="chamber_pressure", offset=200.0, amplitude=20.0, frequency_hz=0.2),
-        SimulatedPressureSensor(name="injector_pressure", offset=300.0, amplitude=10.0, frequency_hz=0.1),
+        SimulatedPressureSensor(
+            name="chamber_pressure",
+            offset=200.0,
+            amplitude=20.0,
+            frequency_hz=0.2,
+            seed=0,
+        ),
+        SimulatedPressureSensor(
+            name="injector_pressure",
+            offset=300.0,
+            amplitude=10.0,
+            frequency_hz=0.1,
+            seed=1,
+        ),
+        SimulatedLoadCellSensor(
+            name="thrust",
+            max_load_n=1000.0,
+            amplitude_n=200.0,
+            frequency_hz=0.5,
+            seed=2,
+        ),
+        SimulatedRTDSensor(
+            name="tank_temp",
+            offset_c=20.0,
+            amplitude_c=2.0,
+            frequency_hz=0.02,
+            seed=3,
+        ),
     ]
     return sensors
 
@@ -70,7 +99,7 @@ def initialize_sensors(adc1, adc2):
         if cfg["enabled"]:
             print(f"Initializing Pressure Transducer {name} with sig_idx {cfg['SIG']}")
             selected_adc = _adc_for_cfg(cfg, adc1, adc2)
-            sensor = Pressure_Transducer(
+            sensor = PressureTransducer(
                 ADC=selected_adc,
                 sig_idx=cfg["SIG"],
                 excitation_voltage=cfg["excitation_voltage"],

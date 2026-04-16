@@ -3,8 +3,8 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import software.src.deep_thrott_code.daq.config as config
-from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
+from .. import config
+from ..services.sample import RawSample, Sample
 import time
 
 
@@ -59,15 +59,21 @@ class RTD:
 
         # edit this to be more lightweight, edit RawSample attributes if needed
         try:
-            raw_lead1 = self.ADC.read_raw_single(self.V_lead1_idx, 
-                                                 settle_discard=config.ADC_SETTLE_DISCARD)
-            raw_lead2 = self.ADC.read_raw_single(self.V_lead2_idx, 
-                                                 settle_discard=config.ADC_SETTLE_DISCARD)
-            
+            settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
+
+            raw_lead1 = self.ADC.read_raw_single(
+                self.V_lead1_idx,
+                settle_discard=settle_discard,
+            )
+            raw_lead2 = self.ADC.read_raw_single(
+                self.V_lead2_idx,
+                settle_discard=settle_discard,
+            )
+
             code_rtd = self.ADC.read_raw_diff(
                 self.V_lead1_idx,
                 self.V_lead2_idx,
-                settle_discard=config.ADC_SETTLE_DISCARD,
+                settle_discard=settle_discard,
             )
 
         finally:

@@ -2,13 +2,10 @@ import queue
 import threading
 import time
 
-from services.loop import producer_loop
-from services.loop import consumer_loop
-from services.state_store import StateStore
-from services.logger import CsvLogger
-from sensors.sensors import initialize_sensors, build_sensors, build_sensor_map
-
-from sensors.simulated_sensor import SimulatedPressureSensor
+from .services.loop import consumer_loop, producer_loop
+from .services.logger import CsvLogger
+from .services.state_store import StateStore
+from .sensors.sensors import build_sensor_map, build_sensors
 # later:
 # from drivers.ads124s08 import ADS124S08
 # from sensors.pt import PressureSensor
