@@ -38,8 +38,8 @@ P_tank_f = 3242543.676; % [Pa] fuel feed pressure, constant because regulated wi
 P_tank_ox = 3260949.847; % [Pa] ox feed pressure, constant because regulated with N2. source: Engine + Feed Speccing Sheet
 DeltaP_lines_f = 33.2 * psi_to_Pa; % [Pa] source: Engine + Feed Speccing Sheet
 DeltaP_lines_ox = 36 * psi_to_Pa; % [Pa] source: Engine + Feed Speccing Sheet
-P_feed_f = P_tank_f - DeltaP_lines_f; % [Pa] fuel feed pressure
-P_feed_ox = P_tank_ox - DeltaP_lines_ox; % [Pa] ox feed pressure
+P_1_f = P_tank_f - DeltaP_lines_f; % [Pa] fuel feed pressure
+P_1_ox = P_tank_ox - DeltaP_lines_ox; % [Pa] ox feed pressure
 
 
 
