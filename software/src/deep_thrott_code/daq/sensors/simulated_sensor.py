@@ -6,26 +6,6 @@ import time
 
 from ..services.sample import RawSample, Sample
 
-# class SimulatedSensor:
-#     def __init__(self, sensor, generator):
-#         self.sensor = sensor
-#         self.generator = generator
-
-#     def read(self, t):
-#         return self.generator(t)
-
-# SENSOR_MAP = {
-#     0: SimulatedSensor(
-#         sensor=RTD(id=0, calibration=...),
-#         generator=lambda t: 100 + 5 * math.sin(t)
-#     ),
-#     1: SimulatedSensor(
-#         sensor=PressureTransducer(ADC=None, sig_idx=1, calibration=...),
-#         generator=lambda t: 300 + 10 * math.sin(0.2 * t)
-#     ),
-# }
-
-
 class SimulatedPressureSensor:
     def __init__(
         self,
