@@ -27077,7 +27077,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "0022272021"
+		(property "Value" "436500227"
 			(at 313.182 248.92 0)
 			(effects
 				(font
@@ -27086,7 +27086,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "0022272021:MOLEX_0022272021"
+		(property "Footprint" "molex_microfit_3.0:CONN_SD-43650-010_02_MOL"
 			(at 313.69 256.54 0)
 			(effects
 				(font
