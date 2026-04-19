@@ -1,10 +1,16 @@
 from flask import Flask
-from gui.extensions import socketio
-from gui.routes import main_bp
-from gui.sockets import register_socket_handlers
+
+from .gui.extensions import socketio
+from .gui.routes import main_bp
+from .gui.sockets import register_socket_handlers
 
 def create_app(state_store, command_queue):
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder="gui/template",
+        static_folder="gui/static",
+        static_url_path="/static",
+    )
 
     app.config["SECRET_KEY"] = "dev"
 
