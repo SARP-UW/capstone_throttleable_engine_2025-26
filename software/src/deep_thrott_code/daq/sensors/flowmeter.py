@@ -3,7 +3,8 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import software.src.deep_thrott_code.daq.config as config
+
+from .. import config
 
 
 class Pressure_Transducer:
@@ -32,7 +33,10 @@ class Pressure_Transducer:
         self.offset = float(offset)
 
     def read(self):
-        sig_voltage = self.ADC.read_voltage_single(self.sig_idx, settle_discard=config.ADC_SETTLE_DISCARD)
+        sig_voltage = self.ADC.read_voltage_single(
+            self.sig_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
 
         # Placeholder calculation - to be implemented later
         return sig_voltage, self._calculate_pressure(sig_voltage)

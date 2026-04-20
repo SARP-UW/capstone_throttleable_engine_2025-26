@@ -1,7 +1,7 @@
 import threading
-from sample import Sample
+from .sample import Sample
 
-class StoreState:
+class StateStore:
     def __init__(self):
         self._latest = {}
         self._lock = threading.Lock()
@@ -20,3 +20,7 @@ class StoreState:
     def snapshot(self):
         with self._lock:
             return dict(self._latest)
+
+
+# Backward-compatible alias (older code used StoreState)
+StoreState = StateStore

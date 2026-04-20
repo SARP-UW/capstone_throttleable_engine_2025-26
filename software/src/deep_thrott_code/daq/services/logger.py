@@ -2,7 +2,7 @@ import csv
 import os
 from pathlib import Path
 
-
+# change logger to argument
 class CsvLogger:
     HEADER = [
         "sensor_name",
@@ -49,6 +49,8 @@ class CsvLogger:
             sample.sequence,
             sample.source,
         ]
+    
+    # make f3 + throttle loop write to row method
 
     def write(self, sample) -> None:
         self._buffer.append(self._sample_to_row(sample))

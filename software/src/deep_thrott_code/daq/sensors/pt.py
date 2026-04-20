@@ -3,9 +3,9 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import software.src.deep_thrott_code.daq.config as config
+from .. import config
 import time
-from software.src.deep_thrott_code.daq.services.sample import RawSample, Sample
+from ..services.sample import RawSample, Sample
 
 # TODO: edit owen's sensor classes to not to voltage and pressure conversion in the same method, 
 # split them up for producer and consumer loop 
@@ -51,7 +51,6 @@ class PressureTransducer:
             t_monotonic=t_mono,
             t_wall=t_wall,
             raw_count=raw_code,
-            
         )
     
     def code_to_voltage(self, code: int):

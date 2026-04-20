@@ -3,7 +3,9 @@ Sensor classes for converting analog voltage readings to physical values.
 """
 
 import math
-import software.src.deep_thrott_code.daq.config as config
+from .. import config
+from ..services.sample import RawSample, Sample
+import time
 
 class Load_Cell:
     """
@@ -24,13 +26,40 @@ class Load_Cell:
         self.sensitivity = sensitivity
         self.max_load = max_load
         self.offset = float(offset)
+    
+    def code_to_voltage(self, code: int):
+        fs_code = (1 << 23) - 1
+        voltage = (code / fs_code) * (self.adc_vref / self.adc_gain)
+        return voltage
+    
+    def read_raw_sample(self) -> RawSample:
+        t_mono = time.perf_counter()
+        t_wall = time.time()
 
-    def read(self):
-        sig_plus = self.ADC.read_voltage_single(self.sig_plus_idx, settle_discard=config.ADC_SETTLE_DISCARD)
-        sig_minus = self.ADC.read_voltage_single(self.sig_minus_idx, settle_discard=config.ADC_SETTLE_DISCARD)
+        sig_plus_raw = self.ADC.read_raw_single(
+            self.sig_plus_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
+        sig_minus_raw = self.ADC.read_raw_single(
+            self.sig_minus_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
+        raw_signal = self.ADC.read_raw_diff(
+            self.sig_plus_idx,
+            self.sig_minus_idx,
+            settle_discard=getattr(config, "ADC_SETTLE_DISCARD", True),
+        )
 
-        # Placeholder calculation - to be implemented later
-        return sig_plus, sig_minus, self._calculate_force(sig_plus, sig_minus)
+        return RawSample(
+            sensor_name=self.name,
+            sensor_kind="load_cell",
+            channel=self.sig_idx,
+            t_monotonic=t_mono,
+            t_wall=t_wall,
+            raw_count=raw_signal,
+            raw_diff_1=sig_plus_raw,
+            raw_diff_2=sig_minus_raw
+        )
 
     def _calculate_force(self, sig_plus, sig_minus):
         """
@@ -64,4 +93,27 @@ class Load_Cell:
         ratio = current_mv_per_v / self.sensitivity
 
         return (ratio * self.max_load) - self.offset
+    
+
+    def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
+        
+        force = self._calculate_force(
+            sig_plus=self.ADC.code_to_voltage(raw_sample.raw_diff_1),
+            sig_minus=self.ADC.code_to_voltage(raw_sample.raw_diff_2)
+        )
+
+        voltage_diff_1 = self.ADC.code_to_voltage(raw_sample.raw_diff_1)
+        voltage_diff_2 = self.ADC.code_to_voltage(raw_sample.raw_diff_2)
+
+        return Sample(
+            sensor_name=raw_sample.sensor_name,
+            sensor_kind="thrust",
+            t_monotonic=raw_sample.t_monotonic,
+            t_wall=raw_sample.t_wall,
+            raw_value=raw_sample.raw_count,
+            value=force,
+            units="N",
+            V_diff_1=voltage_diff_1,
+            V_diff_2=voltage_diff_2
+        )
 

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SARP Capstone GUI Mockup</title>
+  <style>
+    :root {
+      --bg: #d9d9d9;
+      --panel: #e8e8e8;
+      --border: #666;
+      --text: #111;
+      --surface: #efefef;
+      --tab-bg: #d8d8d8;
+      --tab-active: #bdbdbd;
+      --good: #2cff2c;
+      --warn: #ff9d00;
+      --bad: #ff1c1c;
+      --muted: #f4f4f4;
+      --blue: #2957ff;
+      --red: #ff2d2d;
+
+      --btn-green: #35ff25;
+      --btn-yellow: #ffec1b;
+      --btn-orange: #ff9c00;
+      --btn-red: #ff1f1f;
+    }
+
+    body.theme-dark {
+      --bg: #111;
+      --panel: #666;
+      --border: #d9d9d9;
+      --text: #f4f4f4;
+      --surface: #666;
+      --tab-bg: #666;
+      --tab-active: #d9d9d9;
+      --muted: #2a2a2a;
+    }
+
+    body.theme-baja {
+      /* Baja Blast palette (provided):
+         #34ffb9 #69ffcb #96ffdb #c7ffec #f3fffb */
+      --bg: #f3fffb;
+      --panel: #c7ffec;
+      --surface: #96ffdb;
+      --border: #34ffb9;
+      --text: #111;
+      --muted: #f3fffb;
+      --tab-bg: #c7ffec;
+      --tab-active: #69ffcb;
+      --blue: #34ffb9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 50px 90px 1fr auto;
+      gap: 8px;
+      padding: 8px;
+    }
+
+    .title-bar,
+    .top-row,
+    .main-row,
+    .message-bar,
+    .settings-panel {
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.35rem;
+      padding: 0 10px;
+      overflow: hidden;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 1.7fr 0.4fr 1.3fr;
+      gap: 10px;
+      padding: 6px;
+      align-items: stretch;
+    }
+
+    .meta-box,
+    .state-box,
+    .action-box,
+    .pid-tabs,
+    .side-panel {
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .meta-box {
+      padding: 6px 10px;
+      font-size: 0.7rem;
+      line-height: 1.25;
+      overflow: hidden;
+    }
+
+    .state-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2px;
+      padding: 6px;
+    }
+
+    .state-label { font-size: 1.05rem; font-weight: 400; }
+    .state-value { font-size: 1.2rem; font-weight: 700; }
+
+    .action-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .cmd-btn,
+    .mini-btn,
+    .step-btn {
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 0.95rem;
+      background: white;
+    }
+
+    .cmd-btn {
+      min-height: 0;
+      height: 100%;
+      font-size: 0.9rem;
+    }
+    .btn-green { background: var(--btn-green); }
+    .btn-yellow { background: var(--btn-yellow); }
+    .btn-orange { background: var(--btn-orange); }
+    .btn-red { background: var(--btn-red); }
+
+    .main-row {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 10px;
+      padding: 8px;
+      min-height: 0;
+    }
+
+    .pid-section {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 0;
+      min-height: 0;
+    }
+
+    .pid-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-bottom: none;
+      background: transparent;
+      border: none;
+    }
+
+    .tab {
+      border: 1px solid var(--border);
+      background: var(--tab-bg);
+      padding: 3px 14px;
+      font-size: 0.9rem;
+      margin-right: -1px;
+      user-select: none;
+    }
+
+    .tab.active { background: var(--tab-active); }
+
+    .pid-panel {
+      position: relative;
+      border: 1px solid var(--border);
+      background: white;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .pid-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      padding: 12px;
+      background: white;
+    }
+
+    .pid-canvas {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1200px;
+      height: 700px;
+      background: white;
+      border: 1px solid #bbb;
+      transform-origin: center;
+    }
+
+    .pid-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 112px;
+    }
+
+    .overlay-label {
+      font-size: 1.15rem;
+      font-weight: 400;
+      text-align: center;
+      background: rgba(255,255,255,0.85);
+      padding: 2px 6px;
+    }
+
+    .status-pill,
+    .sensor-box {
+      border: 1px solid var(--border);
+      text-align: center;
+      background: var(--good);
+    }
+
+    .status-pill {
+      font-size: 1rem;
+      padding: 4px 12px;
+      min-width: 104px;
+    }
+
+    .sensor-box {
+      font-size: 1.25rem;
+      padding: 6px 14px;
+      min-width: 124px;
+    }
+
+    .valve-controls {
+      display: none;
+    }
+
+    .mini-btn {
+      padding: 4px 12px;
+      font-size: 0.95rem;
+      min-width: 64px;
+      background: #fafafa;
+    }
+
+    .side-panel {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .legend-box {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.1;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      flex: 0 0 10px;
+    }
+
+    .legend-dot.good { background: var(--good); }
+    .legend-dot.warn { background: var(--warn); }
+    .legend-dot.bad { background: var(--bad); }
+
+    .side-title {
+      font-size: 1.05rem;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .step-btn {
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f4f4f4;
+      font-size: 0.95rem;
+    }
+
+    .step-arrow {
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+
+    .value-box {
+      border: 1px solid var(--border);
+      background: #f4f4f4;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    .message-bar {
+      padding: 6px 10px;
+      font-size: 0.95rem;
+    }
+
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .settings-panel {
+      position: relative;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+    }
+
+    .settings-toggle {
+      width: 100%;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: var(--muted);
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .settings-btn {
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: var(--muted);
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .settings-menu {
+      position: absolute;
+      right: 6px;
+      bottom: calc(100% + 6px);
+      width: calc(100% - 12px);
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 6px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      z-index: 50;
+    }
+
+    .settings-menu.hidden {
+      display: none;
+    }
+
+    .settings-icon {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .zoom-controls { display: none; }
+
+    @media (max-width: 1200px) {
+      .main-row { grid-template-columns: 1fr 190px; }
+      .bottom-row { grid-template-columns: 1fr 190px; }
+      .top-row { grid-template-columns: 1.3fr 0.7fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="title-bar">SARP Capstone Baja Blast Data Acquisition and Control Interface</div>
+
+    <div class="top-row">
+      <div class="meta-box">
+        <div><strong>TEST NAME:</strong> BAJA BLAST HOTFIRE 1</div>
+        <div><strong>DATE AND TIME:</strong> 4/15/2026 1:01 PM</div>
+        <div><strong>LOGGING DIRECTORY:</strong> PATH</div>
+        <div><strong>OPERATOR:</strong> ELYSE LIAN</div>
+      </div>
+
+      <div class="state-box">
+        <div class="state-label">SYSTEM STATE:</div>
+        <div class="state-value">IDLE</div>
+      </div>
+
+      <div class="action-box">
+        <button class="cmd-btn btn-green">START TEST</button>
+        <button class="cmd-btn btn-yellow">FINISH TEST</button>
+        <button class="cmd-btn btn-orange">FIRE</button>
+        <button class="cmd-btn btn-red">ABORT</button>
+      </div>
+    </div>
+
+    <div class="main-row">
+      <div class="pid-section">
+        <div class="pid-tabs">
+          <div class="tab active">Ethanol Line Control</div>
+          <div class="tab">Nitrous Line Control</div>
+          <div class="tab">Data Acquisition</div>
+        </div>
+
+        <div class="pid-panel">
+          <div class="pid-stage" id="pidStage">
+            <div class="pid-canvas" id="pidCanvas">
+              <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
+              <div class="overlay" style="left: 276px; top: 217px;">
+                <div class="overlay-label">PFFFV</div>
+                <div class="status-pill" id="status-PFFFV">OPEN</div>
+                <div class="valve-controls">
+                  <button class="mini-btn">OPEN</button>
+                  <button class="mini-btn">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 575px; top: 56px;">
+                <div class="overlay-label">FTVV</div>
+                <div class="status-pill" id="status-FTVV">OPEN</div>
+                <div class="valve-controls">
+                  <button class="mini-btn">OPEN</button>
+                  <button class="mini-btn">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 886px; top: 358px;">
+                <div class="overlay-label">FMCVTV</div>
+                <div class="status-pill" id="status-FMCVTV">OPEN</div>
+                <div class="valve-controls">
+                  <button class="mini-btn">OPEN</button>
+                  <button class="mini-btn">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 728px; top: 485px;">
+                <div class="overlay-label">FMV</div>
+                <div class="status-pill" id="status-FMV">OPEN</div>
+                <div class="valve-controls">
+                  <button class="mini-btn">OPEN</button>
+                  <button class="mini-btn">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 450px; top: 60px;">
+                <div class="overlay-label">PFF-PT</div>
+                <div class="sensor-box">400 PSI</div>
+              </div>
+
+              <div class="overlay" style="left: 700px; top: 195px;">
+                <div class="overlay-label">FT-PT</div>
+                <div class="sensor-box">400 PSI</div>
+              </div>
+
+              <div class="overlay" style="left: 1050px; top: 430px;">
+                <div class="overlay-label">FM-PT</div>
+                <div class="sensor-box">400 PSI</div>
+              </div>
+
+              <div class="overlay" style="left: 900px; top: 520px;">
+                <div class="overlay-label">FF-PT</div>
+                <div class="sensor-box">400 PSI</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="legend-box" aria-label="System status legend">
+          <div class="legend-row"><span class="legend-dot good" aria-hidden="true"></span><span>Nominal</span></div>
+          <div class="legend-row"><span class="legend-dot warn" aria-hidden="true"></span><span>Off-Nominal</span></div>
+          <div class="legend-row"><span class="legend-dot bad" aria-hidden="true"></span><span>Abort Immediately</span></div>
+        </div>
+
+        <div>
+          <div class="side-title">THROTTLE STEPS</div>
+          <div class="steps">
+            <button class="step-btn"><span>100</span><span class="step-arrow">▽</span></button>
+            <button class="step-btn"><span>90</span><span class="step-arrow">▽</span></button>
+            <button class="step-btn"><span>85</span><span class="step-arrow">▽</span></button>
+            <button class="step-btn"><span>80</span><span class="step-arrow">▽</span></button>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-title">VALVE POS</div>
+          <div class="value-box">50 DEG</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="message-bar" id="systemMessage">System message: Load Cell Initialization Complete... Initializing Flow Meter</div>
+
+      <div class="settings-panel">
+        <button class="settings-toggle" id="themeToggle" type="button" aria-haspopup="true" aria-expanded="false">
+          <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="M4.93 4.93l1.41 1.41"></path>
+            <path d="M17.66 17.66l1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="M4.93 19.07l1.41-1.41"></path>
+            <path d="M17.66 6.34l1.41-1.41"></path>
+          </svg>
+          <span id="themeLabel">Theme</span>
+        </button>
+
+        <div class="settings-menu hidden" id="themeMenu" role="menu" aria-label="Theme options">
+          <button class="settings-btn" type="button" data-theme="light" role="menuitem">Light mode</button>
+          <button class="settings-btn" type="button" data-theme="dark" role="menuitem">Dark mode</button>
+          <button class="settings-btn" type="button" data-theme="baja" role="menuitem">Baja Blast mode</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const pidCanvas = document.getElementById('pidCanvas');
+    const pidStage = document.getElementById('pidStage');
+
+    let scale = 1;
+
+    function applyScale() {
+      pidCanvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+
+    function fitCanvasToPanel() {
+      const stageWidth = pidStage.clientWidth - 24;
+      const stageHeight = pidStage.clientHeight - 24;
+      const fitScale = Math.min(stageWidth / 1200, stageHeight / 700);
+      scale = Math.min(fitScale, 1);
+      applyScale();
+    }
+
+    function setTheme(theme) {
+      document.body.classList.remove('theme-dark', 'theme-baja');
+      if (theme === 'dark') document.body.classList.add('theme-dark');
+      if (theme === 'baja') document.body.classList.add('theme-baja');
+      localStorage.setItem('guiTheme', theme);
+
+      const label = document.getElementById('themeLabel');
+      if (label) {
+        if (theme === 'dark') label.textContent = 'Dark';
+        else if (theme === 'baja') label.textContent = 'Baja Blast';
+        else label.textContent = 'Light';
+      }
+    }
+
+    const themeToggle = document.getElementById('themeToggle');
+    const themeMenu = document.getElementById('themeMenu');
+
+    function closeThemeMenu() {
+      if (!themeMenu || !themeToggle) return;
+      themeMenu.classList.add('hidden');
+      themeToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleThemeMenu() {
+      if (!themeMenu || !themeToggle) return;
+      const isHidden = themeMenu.classList.contains('hidden');
+      if (isHidden) {
+        themeMenu.classList.remove('hidden');
+        themeToggle.setAttribute('aria-expanded', 'true');
+      } else {
+        closeThemeMenu();
+      }
+    }
+
+    if (themeToggle) {
+      themeToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleThemeMenu();
+      });
+    }
+
+    document.querySelectorAll('[data-theme]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setTheme(btn.dataset.theme);
+        closeThemeMenu();
+      });
+    });
+
+    document.addEventListener('click', closeThemeMenu);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeThemeMenu();
+    });
+
+    const savedTheme = localStorage.getItem('guiTheme');
+    if (savedTheme) setTheme(savedTheme);
+
+    window.addEventListener('resize', fitCanvasToPanel);
+    window.addEventListener('load', fitCanvasToPanel);
+  </script>
+</body>
+</html>
