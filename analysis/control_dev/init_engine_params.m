@@ -71,3 +71,6 @@ theta_ff_table = [0,  10,   25,   40,   55];
 theta_bp = [0   5    10    15    20    30    40    50    60];
 % Corresponding CdA values (m^2)
 CdA_table = [0, 2e-6, 8e-6, 1.6e-5, 3e-5, 5e-5, 8e-5, 1.2e-4, 1.5e-4];
+
+
+k_noz = mdot_nom / sqrt(P_c_nom - P_amb);
