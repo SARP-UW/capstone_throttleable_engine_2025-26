@@ -56,6 +56,7 @@ def main(
     max_queue_ratio: float = 0.90,
 ) -> int:
     sample_queue: queue.Queue = queue.Queue(maxsize=1000)
+    gui_queue: queue.Queue = queue.Queue(maxsize=1000)
     stop_event = threading.Event()
     state_store = StateStore()
 
@@ -78,7 +79,7 @@ def main(
 
     consumer_thread = threading.Thread(
         target=consumer_loop,
-        args=(sample_queue, state_store, logger, stop_event, sensor_map),
+        args=(sample_queue, gui_queue, state_store, logger, stop_event, sensor_map),
         daemon=True,
         name="consumer",
     )

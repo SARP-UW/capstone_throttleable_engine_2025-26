@@ -27,6 +27,7 @@ from .sensors.sensors import build_sensor_map, build_sensors
 
 def main():
     sample_queue = queue.Queue(maxsize=1000)
+    gui_queue = queue.Queue(maxsize=100)
     stop_event = threading.Event()
     state_store = StateStore()
     logger = CsvLogger("daq_log.csv")
@@ -43,7 +44,7 @@ def main():
     
     consumer_thread = threading.Thread(
         target=consumer_loop,
-        args=(sample_queue, state_store, logger, stop_event, sensor_map),
+        args=(sample_queue, gui_queue, state_store, logger, stop_event, sensor_map),
         daemon=True,
         name="consumer",
     )

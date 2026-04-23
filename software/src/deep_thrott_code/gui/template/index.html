@@ -201,6 +201,10 @@
       background: white;
     }
 
+    .pid-stage.hidden {
+      display: none;
+    }
+
     .pid-canvas {
       position: absolute;
       left: 50%;
@@ -210,6 +214,57 @@
       background: white;
       border: 1px solid #bbb;
       transform-origin: center;
+    }
+
+    .daq-grid {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      padding: 10px;
+      background: white;
+    }
+
+    .daq-panel {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 0;
+    }
+
+    .daq-canvas-wrap {
+      padding: 8px;
+      min-height: 0;
+    }
+
+    .daq-canvas {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--border);
+      background: white;
+      display: block;
+    }
+
+    .daq-select {
+      border-top: 1px solid var(--border);
+      background: var(--muted);
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+
+    .daq-select select {
+      width: 100%;
+      max-width: 240px;
+      font-size: 0.95rem;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      background: white;
     }
 
     .pid-image {
@@ -256,6 +311,11 @@
       font-size: 1.25rem;
       padding: 6px 14px;
       min-width: 124px;
+      background: var(--muted);
+    }
+
+    .sensor-box.good {
+      background: var(--good);
     }
 
     .valve-controls {
@@ -449,14 +509,14 @@
     <div class="main-row">
       <div class="pid-section">
         <div class="pid-tabs">
-          <div class="tab active">Ethanol Line Control</div>
-          <div class="tab">Nitrous Line Control</div>
-          <div class="tab">Data Acquisition</div>
+          <div class="tab active" data-tab="ethanol">Ethanol Line Control</div>
+          <div class="tab" data-tab="nitrous">Nitrous Line Control</div>
+          <div class="tab" data-tab="daq">Data Acquisition</div>
         </div>
 
         <div class="pid-panel">
-          <div class="pid-stage" id="pidStage">
-            <div class="pid-canvas" id="pidCanvas">
+          <div class="pid-stage" id="pidStageEthanol" data-stage="ethanol">
+            <div class="pid-canvas" id="pidCanvasEthanol">
               <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
               <div class="overlay" style="left: 276px; top: 217px;">
                 <div class="overlay-label">PFFFV</div>
@@ -496,22 +556,62 @@
 
               <div class="overlay" style="left: 450px; top: 60px;">
                 <div class="overlay-label">PFF-PT</div>
-                <div class="sensor-box">400 PSI</div>
+                <div class="sensor-box good" id="sensor-PFF-PT" data-green-threshold-psi="450">400 PSI</div>
               </div>
 
               <div class="overlay" style="left: 700px; top: 195px;">
                 <div class="overlay-label">FT-PT</div>
-                <div class="sensor-box">400 PSI</div>
+                <div class="sensor-box good" id="sensor-FT-PT" data-green-threshold-psi="450">400 PSI</div>
               </div>
 
               <div class="overlay" style="left: 1050px; top: 430px;">
                 <div class="overlay-label">FM-PT</div>
-                <div class="sensor-box">400 PSI</div>
+                <div class="sensor-box good" id="sensor-FM-PT" data-green-threshold-psi="450">400 PSI</div>
               </div>
 
               <div class="overlay" style="left: 900px; top: 520px;">
                 <div class="overlay-label">FF-PT</div>
-                <div class="sensor-box">400 PSI</div>
+                <div class="sensor-box good" id="sensor-FF-PT" data-green-threshold-psi="450">400 PSI</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pid-stage hidden" id="pidStageNitrous" data-stage="nitrous">
+            <div style="padding: 16px; font-size: 1rem;">
+              Nitrous line diagram not yet provided.
+            </div>
+          </div>
+
+          <div class="pid-stage hidden" id="daqStage" data-stage="daq">
+            <div class="daq-grid">
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot1"></canvas></div>
+                <div class="daq-select"><select id="daqSelect1" aria-label="Select signal for plot 1"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot2"></canvas></div>
+                <div class="daq-select"><select id="daqSelect2" aria-label="Select signal for plot 2"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot3"></canvas></div>
+                <div class="daq-select"><select id="daqSelect3" aria-label="Select signal for plot 3"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot4"></canvas></div>
+                <div class="daq-select"><select id="daqSelect4" aria-label="Select signal for plot 4"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot5"></canvas></div>
+                <div class="daq-select"><select id="daqSelect5" aria-label="Select signal for plot 5"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot6"></canvas></div>
+                <div class="daq-select"><select id="daqSelect6" aria-label="Select signal for plot 6"></select></div>
               </div>
             </div>
           </div>
@@ -570,9 +670,18 @@
     </div>
   </div>
 
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
-    const pidCanvas = document.getElementById('pidCanvas');
-    const pidStage = document.getElementById('pidStage');
+    if (typeof window.io !== 'function') {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js';
+      document.head.appendChild(s);
+    }
+  </script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+  <script>
+    const pidCanvas = document.getElementById('pidCanvasEthanol');
+    const pidStage = document.getElementById('pidStageEthanol');
 
     let scale = 1;
 
@@ -581,12 +690,27 @@
     }
 
     function fitCanvasToPanel() {
+      if (!pidStage || pidStage.classList.contains('hidden')) return;
       const stageWidth = pidStage.clientWidth - 24;
       const stageHeight = pidStage.clientHeight - 24;
       const fitScale = Math.min(stageWidth / 1200, stageHeight / 700);
       scale = Math.min(fitScale, 1);
       applyScale();
     }
+
+    function setActiveTab(tabName) {
+      document.querySelectorAll('.tab[data-tab]').forEach((t) => {
+        t.classList.toggle('active', t.dataset.tab === tabName);
+      });
+      document.querySelectorAll('[data-stage]').forEach((stage) => {
+        stage.classList.toggle('hidden', stage.dataset.stage !== tabName);
+      });
+      fitCanvasToPanel();
+    }
+
+    document.querySelectorAll('.tab[data-tab]').forEach((t) => {
+      t.addEventListener('click', () => setActiveTab(t.dataset.tab));
+    });
 
     function setTheme(theme) {
       document.body.classList.remove('theme-dark', 'theme-baja');
