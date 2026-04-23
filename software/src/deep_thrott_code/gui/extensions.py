@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Any, Callable, Optional
 
 
@@ -37,6 +38,11 @@ try:
 	from flask_socketio import SocketIO  # type: ignore
 
 	socketio: Any = SocketIO(async_mode="threading")
-except Exception:
+
+except ImportError:
+	warnings.warn(
+		"flask_socketio is not installed; falling back to dummy SocketIO (no realtime updates).",
+		RuntimeWarning,
+	)
 	socketio = _DummySocketIO()
 
