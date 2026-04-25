@@ -6,6 +6,7 @@
 
 	let socketRef = null;
 	let telemetryFrozen = false;
+	let simulationEnabled = true;
 
 	function emitGuiCommand(payload) {
 		if (!socketRef) {
@@ -18,6 +19,48 @@
 			console.error('Failed to emit gui_command:', e);
 			setSystemMessage('System message: Failed to send command (see console).');
 		}
+	}
+
+	function getSavedTheme() {
+		const t = localStorage.getItem('guiTheme');
+		return t === 'dark' || t === 'baja' || t === 'light' ? t : 'light';
+	}
+
+	function applyTheme(theme) {
+		document.body.classList.remove('theme-dark', 'theme-baja');
+		if (theme === 'dark') document.body.classList.add('theme-dark');
+		if (theme === 'baja') document.body.classList.add('theme-baja');
+		localStorage.setItem('guiTheme', theme);
+		updateThemeTicks(theme);
+	}
+
+	function updateThemeTicks(theme) {
+		document.querySelectorAll('[data-theme-tick]').forEach((el) => {
+			const key = el.getAttribute('data-theme-tick');
+			el.textContent = key === theme ? '✓' : '';
+		});
+	}
+
+	function getSavedSimulationEnabled() {
+		const raw = localStorage.getItem('simulationEnabled');
+		if (raw === 'false') return false;
+		if (raw === 'true') return true;
+		return true;
+	}
+
+	function setSimulationEnabled(enabled) {
+		simulationEnabled = !!enabled;
+		localStorage.setItem('simulationEnabled', simulationEnabled ? 'true' : 'false');
+		updateSimulationTicks(simulationEnabled);
+		emitGuiCommand({ name: 'set_simulation', enabled: simulationEnabled });
+	}
+
+	function updateSimulationTicks(enabled) {
+		const mode = enabled ? 'enabled' : 'disabled';
+		document.querySelectorAll('[data-sim-tick]').forEach((el) => {
+			const key = el.getAttribute('data-sim-tick');
+			el.textContent = key === mode ? '✓' : '';
+		});
 	}
 
 	const MAX_POINTS = 300;
@@ -286,9 +329,7 @@
 		socket.on('connect', () => {
 			setSystemMessage('System message: Connected to DAQ stream.');
 
-			const toggleEl = document.getElementById('simulationToggle');
-			const enabled = toggleEl ? !!toggleEl.checked : true;
-			emitGuiCommand({ name: 'set_simulation', enabled });
+			emitGuiCommand({ name: 'set_simulation', enabled: simulationEnabled });
 		});
 		socket.on('disconnect', () => {
 			setSystemMessage('System message: Disconnected from DAQ stream.');
@@ -315,21 +356,7 @@
 		});
 	}
 
-	function initSimToggleAndTestButtons() {
-		const toggleEl = document.getElementById('simulationToggle');
-		const labelEl = document.getElementById('simulationLabel');
-		function updateLabel() {
-			if (!toggleEl || !labelEl) return;
-			labelEl.textContent = toggleEl.checked ? 'ON' : 'OFF';
-		}
-		updateLabel();
-		if (toggleEl) {
-			toggleEl.addEventListener('change', () => {
-				updateLabel();
-				emitGuiCommand({ name: 'set_simulation', enabled: !!toggleEl.checked });
-			});
-		}
-
+	function initTestButtons() {
 		const startBtn = document.getElementById('startTestBtn');
 		if (startBtn) {
 			startBtn.addEventListener('click', () => {
@@ -346,9 +373,76 @@
 		}
 	}
 
+	function initSettingsMenu() {
+		const toggle = document.getElementById('settingsToggle');
+		const menu = document.getElementById('settingsMenu');
+		const themeSubmenu = document.getElementById('themeSubmenu');
+		const simSubmenu = document.getElementById('simulationSubmenu');
+		if (!toggle || !menu) return;
+
+		function closeMenu() {
+			menu.classList.add('hidden');
+			toggle.setAttribute('aria-expanded', 'false');
+			if (themeSubmenu) themeSubmenu.classList.add('hidden');
+			if (simSubmenu) simSubmenu.classList.add('hidden');
+		}
+
+		function openMenu() {
+			menu.classList.remove('hidden');
+			toggle.setAttribute('aria-expanded', 'true');
+		}
+
+		function toggleMenu() {
+			if (menu.classList.contains('hidden')) openMenu();
+			else closeMenu();
+		}
+
+		function showSubmenu(which) {
+			if (themeSubmenu) themeSubmenu.classList.toggle('hidden', which !== 'theme');
+			if (simSubmenu) simSubmenu.classList.toggle('hidden', which !== 'simulation');
+		}
+
+		toggle.addEventListener('click', (e) => {
+			e.stopPropagation();
+			toggleMenu();
+		});
+
+		document.querySelectorAll('[data-settings-section]').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				openMenu();
+				showSubmenu(btn.getAttribute('data-settings-section'));
+			});
+		});
+
+		document.querySelectorAll('[data-theme]').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				applyTheme(btn.getAttribute('data-theme'));
+			});
+		});
+
+		document.querySelectorAll('[data-simulation]').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				const mode = btn.getAttribute('data-simulation');
+				setSimulationEnabled(mode === 'enabled');
+			});
+		});
+
+		document.addEventListener('click', closeMenu);
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') closeMenu();
+		});
+	}
+
 	window.addEventListener('load', () => {
+		simulationEnabled = getSavedSimulationEnabled();
+		applyTheme(getSavedTheme());
+		updateSimulationTicks(simulationEnabled);
+		initSettingsMenu();
 		initDaqControls();
-		initSimToggleAndTestButtons();
+		initTestButtons();
 		connectSocket();
 	});
 })();

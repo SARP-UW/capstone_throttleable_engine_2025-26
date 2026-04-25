@@ -689,9 +689,6 @@ class FlowMeterSensor(Sensor):
         raise NotImplementedError("FlowMeterSensor is not implemented yet")
 
 
-# ------------------------- Builders -------------------------
-
-
 def build_sensors(*, simulation: bool = True) -> list[Sensor]:
     """Create and return the list of sensor objects.
 

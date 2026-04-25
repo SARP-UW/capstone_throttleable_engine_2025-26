@@ -23,6 +23,7 @@ from .sensors.sensors import build_sensor_map, build_sensors
 #       - split up tasks in sensor classes so conversions aren't happening all in one method
 #       - edit consumer loop and batch processing functions
 #       - status message for gui on initialization 
+#       - make config file and also initialize sensor list
 
 
 def main():
