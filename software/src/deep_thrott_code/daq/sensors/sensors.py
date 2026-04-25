@@ -692,11 +692,18 @@ class FlowMeterSensor(Sensor):
 # ------------------------- Builders -------------------------
 
 
-def build_sensors() -> list[Sensor]:
+def build_sensors(*, simulation: bool = True) -> list[Sensor]:
     """Create and return the list of sensor objects.
 
-    Currently defaults to simulated sensors so the DAQ can run without hardware.
+    - simulation=True: returns simulated sensors (runs without hardware).
+    - simulation=False: hardware mode is not wired in the GUI runner yet.
     """
+    if not simulation:
+        raise NotImplementedError(
+            "ADC/hardware sensor initialization is not implemented in the GUI runner yet. "
+            "Turn Simulation Mode ON to run with fake data."
+        )
+
     return [
         SimulatedPressureSensor(
             name="chamber_pressure",

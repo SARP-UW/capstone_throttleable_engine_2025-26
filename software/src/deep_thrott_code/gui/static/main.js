@@ -4,6 +4,22 @@
 		if (el) el.textContent = text;
 	}
 
+	let socketRef = null;
+	let telemetryFrozen = false;
+
+	function emitGuiCommand(payload) {
+		if (!socketRef) {
+			setSystemMessage('System message: Not connected (command not sent).');
+			return;
+		}
+		try {
+			socketRef.emit('gui_command', payload);
+		} catch (e) {
+			console.error('Failed to emit gui_command:', e);
+			setSystemMessage('System message: Failed to send command (see console).');
+		}
+	}
+
 	const MAX_POINTS = 300;
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
 	let knownSensorNames = [];
@@ -240,6 +256,7 @@
 	}
 
 	function applyPacket(packet) {
+		if (telemetryFrozen) return;
 		if (!packet || typeof packet !== 'object') return;
 		const states = packet.states;
 		if (!states || typeof states !== 'object') return;
@@ -265,8 +282,13 @@
 		}
 
 		const socket = window.io();
+		socketRef = socket;
 		socket.on('connect', () => {
 			setSystemMessage('System message: Connected to DAQ stream.');
+
+			const toggleEl = document.getElementById('simulationToggle');
+			const enabled = toggleEl ? !!toggleEl.checked : true;
+			emitGuiCommand({ name: 'set_simulation', enabled });
 		});
 		socket.on('disconnect', () => {
 			setSystemMessage('System message: Disconnected from DAQ stream.');
@@ -275,13 +297,58 @@
 			console.error('Socket connect_error:', err);
 			setSystemMessage('System message: Socket connect error (see console).');
 		});
+
+		socket.on('command_accept', (msg) => {
+			if (msg && msg.name) setSystemMessage(`System message: Command accepted (${msg.name}).`);
+		});
+		socket.on('command_reject', (msg) => {
+			const reason = msg && msg.reason ? msg.reason : 'unknown';
+			setSystemMessage(`System message: Command rejected (${reason}).`);
+		});
+		socket.on('system_message', (msg) => {
+			const text = msg && msg.text ? msg.text : '';
+			if (text) setSystemMessage(`System message: ${text}`);
+		});
+
 		socket.on('daq_packet', (pkt) => {
 			applyPacket(pkt);
 		});
 	}
 
+	function initSimToggleAndTestButtons() {
+		const toggleEl = document.getElementById('simulationToggle');
+		const labelEl = document.getElementById('simulationLabel');
+		function updateLabel() {
+			if (!toggleEl || !labelEl) return;
+			labelEl.textContent = toggleEl.checked ? 'ON' : 'OFF';
+		}
+		updateLabel();
+		if (toggleEl) {
+			toggleEl.addEventListener('change', () => {
+				updateLabel();
+				emitGuiCommand({ name: 'set_simulation', enabled: !!toggleEl.checked });
+			});
+		}
+
+		const startBtn = document.getElementById('startTestBtn');
+		if (startBtn) {
+			startBtn.addEventListener('click', () => {
+				telemetryFrozen = false;
+				emitGuiCommand({ name: 'start_test' });
+			});
+		}
+		const stopBtn = document.getElementById('stopTestBtn');
+		if (stopBtn) {
+			stopBtn.addEventListener('click', () => {
+				telemetryFrozen = true;
+				emitGuiCommand({ name: 'stop_test' });
+			});
+		}
+	}
+
 	window.addEventListener('load', () => {
 		initDaqControls();
+		initSimToggleAndTestButtons();
 		connectSocket();
 	});
 })();

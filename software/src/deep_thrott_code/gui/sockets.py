@@ -45,6 +45,7 @@ def register_socket_handlers(
 
 	# Expose for other modules / debugging.
 	app.config["LATEST_STATES"] = latest_states
+	app.config["LATEST_LOCK"] = latest_lock
 	app.config["GUI_QUEUE"] = gui_queue
 	app.config["COMMAND_QUEUE"] = command_queue
 

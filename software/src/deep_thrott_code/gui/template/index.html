@@ -111,17 +111,84 @@
       overflow: hidden;
     }
 
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+      font-size: 0.8rem;
+    }
+
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-track {
+      width: 44px;
+      height: 22px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      position: relative;
+      flex: 0 0 44px;
+    }
+
+    .toggle-thumb {
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--border);
+      background: #f4f4f4;
+      border-radius: 50%;
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      transition: transform 0.12s ease;
+    }
+
+    .toggle input:checked + .toggle-track {
+      background: var(--good);
+    }
+
+    .toggle input:checked + .toggle-track .toggle-thumb {
+      transform: translateX(22px);
+    }
+
     .state-box {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;
+      align-items: stretch;
       gap: 2px;
       padding: 6px;
     }
 
     .state-label { font-size: 1.05rem; font-weight: 400; }
     .state-value { font-size: 1.2rem; font-weight: 700; }
+
+    .state-label,
+    .state-value {
+      text-align: center;
+    }
+
+    .state-box .meta-row {
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+
+    .state-box .toggle {
+      font-size: 0.9rem;
+    }
 
     .action-box {
       display: grid;
@@ -496,11 +563,20 @@
       <div class="state-box">
         <div class="state-label">SYSTEM STATE:</div>
         <div class="state-value">IDLE</div>
+
+        <div class="meta-row">
+          <div><strong>SIMULATION:</strong></div>
+          <label class="toggle" for="simulationToggle">
+            <input id="simulationToggle" type="checkbox" checked />
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+            <span id="simulationLabel">ON</span>
+          </label>
+        </div>
       </div>
 
       <div class="action-box">
-        <button class="cmd-btn btn-green">START TEST</button>
-        <button class="cmd-btn btn-yellow">FINISH TEST</button>
+        <button class="cmd-btn btn-green" id="startTestBtn">START TEST</button>
+        <button class="cmd-btn btn-yellow" id="stopTestBtn">STOP TEST</button>
         <button class="cmd-btn btn-orange">FIRE</button>
         <button class="cmd-btn btn-red">ABORT</button>
       </div>
