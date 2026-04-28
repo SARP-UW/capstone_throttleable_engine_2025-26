@@ -21,10 +21,14 @@ class Controller:
     """
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
+    valve_id_list = []
+
     def __init__(self, valve_list: list[Valve]):
         self.valve_list = valve_list
         self.q = queue.Queue()
         self.transitions = self._build_transitions()
+        self.sequences = self._build_sequences()
+        self.state = State.IDLE
 
     def _loop(self):
         while True:
@@ -54,9 +58,18 @@ class Controller:
             (State.SAFE, TransitionAction.EXIT_SAFE): State.IDLE,
         }
 
+    @staticmethod
+    def _build_sequences(self):
+        """
+        Defines the fill and fire sequences.
+        """
+        fill = []
+        return "sequences"
 
-    def execute_action(self, action_list: list[tuple[int, ValveState]]):
-        for action in action_list:
+    def get_state(self):
+        return self.state
+
+    def execute_action(self, action: str):
             pass
 
     def submit(self, gui_input):

@@ -100,7 +100,7 @@ def producer_loop(
             )
 
 
-def consumer_loop(sample_queue, store_state, logger, stop_event, sensor_map):
+def consumer_loop(sample_queue, gui_queue, store_state, logger, stop_event, sensor_map):
     while not stop_event.is_set():
         batch = []
         try:
@@ -126,4 +126,5 @@ def consumer_loop(sample_queue, store_state, logger, stop_event, sensor_map):
 
         for sample in processed_samples:
             store_state.update_sample(sample)
+            gui_queue.put(sample)
             logger.write(sample)

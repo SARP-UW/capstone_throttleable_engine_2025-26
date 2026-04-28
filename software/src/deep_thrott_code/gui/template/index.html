@@ -89,7 +89,7 @@
 
     .top-row {
       display: grid;
-      grid-template-columns: 1.7fr 0.4fr 1.3fr;
+      grid-template-columns: 1.6fr 0.35fr 1.55fr;
       gap: 10px;
       padding: 6px;
       align-items: stretch;
@@ -115,7 +115,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;
+      align-items: stretch;
       gap: 2px;
       padding: 6px;
     }
@@ -123,12 +123,48 @@
     .state-label { font-size: 1.05rem; font-weight: 400; }
     .state-value { font-size: 1.2rem; font-weight: 700; }
 
+    .state-label,
+    .state-value {
+      text-align: center;
+    }
+
+
     .action-box {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1.2fr;
       grid-template-rows: 1fr 1fr;
       gap: 6px;
       padding: 6px;
+    }
+
+    .action-box .start-btn {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .action-box .stop-btn {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .action-box .fill-btn {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .action-box .fire-btn {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .action-box .clear-btn {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .action-box .abort-btn {
+      grid-column: 3;
+      grid-row: 2;
     }
 
     .cmd-btn,
@@ -201,15 +237,70 @@
       background: white;
     }
 
+    .pid-stage.hidden {
+      display: none;
+    }
+
     .pid-canvas {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 1200px;
-      height: 700px;
+      width: 1700px;
+      height: 664px;
       background: white;
       border: 1px solid #bbb;
       transform-origin: center;
+    }
+
+    .daq-grid {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      padding: 10px;
+      background: white;
+    }
+
+    .daq-panel {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 0;
+    }
+
+    .daq-canvas-wrap {
+      padding: 8px;
+      min-height: 0;
+    }
+
+    .daq-canvas {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--border);
+      background: white;
+      display: block;
+    }
+
+    .daq-select {
+      border-top: 1px solid var(--border);
+      background: var(--muted);
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+
+    .daq-select select {
+      width: 100%;
+      max-width: 240px;
+      font-size: 0.95rem;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      background: white;
     }
 
     .pid-image {
@@ -239,34 +330,70 @@
       padding: 2px 6px;
     }
 
-    .status-pill,
     .sensor-box {
       border: 1px solid var(--border);
       text-align: center;
-      background: var(--good);
-    }
-
-    .status-pill {
-      font-size: 1rem;
-      padding: 4px 12px;
-      min-width: 104px;
     }
 
     .sensor-box {
       font-size: 1.25rem;
       padding: 6px 14px;
       min-width: 124px;
+      background: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.05;
+      gap: 2px;
+    }
+
+    .sensor-reading {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .sensor-deriv {
+      font-size: 0.85rem;
+      font-weight: 400;
+    }
+
+    .sensor-box.is-placeholder .sensor-reading,
+    .sensor-box.is-placeholder .sensor-deriv {
+      opacity: 0.6;
+    }
+
+    .sensor-box.good {
+      background: var(--good);
     }
 
     .valve-controls {
-      display: none;
+      display: flex;
+      gap: 6px;
     }
 
     .mini-btn {
       padding: 4px 12px;
       font-size: 0.95rem;
       min-width: 64px;
-      background: #fafafa;
+      background: var(--muted);
+      color: var(--text);
+    }
+
+    .mini-btn.is-active-open {
+      background: var(--btn-green);
+      cursor: default;
+      font-weight: 700;
+    }
+
+    .mini-btn.is-active-close {
+      background: var(--btn-red);
+      cursor: default;
+      font-weight: 700;
+    }
+
+    .mini-btn:disabled {
+      opacity: 1;
     }
 
     .side-panel {
@@ -381,7 +508,29 @@
       font-size: 0.9rem;
       padding: 6px 10px;
       width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       text-align: left;
+    }
+
+    .settings-submenu {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 6px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .settings-submenu.hidden {
+      display: none;
+    }
+
+    .settings-tick {
+      min-width: 18px;
+      text-align: right;
     }
 
     .settings-menu {
@@ -417,7 +566,7 @@
     @media (max-width: 1200px) {
       .main-row { grid-template-columns: 1fr 190px; }
       .bottom-row { grid-template-columns: 1fr 190px; }
-      .top-row { grid-template-columns: 1.3fr 0.7fr 1fr; }
+      .top-row { grid-template-columns: 1.2fr 0.5fr 1.3fr; }
     }
   </style>
 </head>
@@ -439,79 +588,162 @@
       </div>
 
       <div class="action-box">
-        <button class="cmd-btn btn-green">START TEST</button>
-        <button class="cmd-btn btn-yellow">FINISH TEST</button>
-        <button class="cmd-btn btn-orange">FIRE</button>
-        <button class="cmd-btn btn-red">ABORT</button>
+        <button class="cmd-btn btn-green start-btn" id="startLogBtn">START LOG</button>
+        <button class="cmd-btn btn-orange fill-btn" id="fillBtn">FILL</button>
+        <button class="cmd-btn btn-yellow stop-btn" id="stopLogBtn">STOP LOG</button>
+        <button class="cmd-btn btn-orange fire-btn" id="fireBtn">FIRE</button>
+        <button class="cmd-btn clear-btn" id="clearTestBtn">CLEAR TEST</button>
+        <button class="cmd-btn btn-red abort-btn" id="abortBtn">ABORT</button>
       </div>
     </div>
 
     <div class="main-row">
       <div class="pid-section">
         <div class="pid-tabs">
-          <div class="tab active">Ethanol Line Control</div>
-          <div class="tab">Nitrous Line Control</div>
-          <div class="tab">Data Acquisition</div>
+          <div class="tab active" data-tab="ethanol">Ethanol Line Control</div>
+          <div class="tab" data-tab="nitrous">Nitrous Line Control</div>
+          <div class="tab" data-tab="daq">Data Acquisition</div>
         </div>
 
         <div class="pid-panel">
-          <div class="pid-stage" id="pidStage">
-            <div class="pid-canvas" id="pidCanvas">
+          <div class="pid-stage" id="pidStageEthanol" data-stage="ethanol">
+            <div class="pid-canvas" id="pidCanvasEthanol">
               <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
-              <div class="overlay" style="left: 276px; top: 217px;">
-                <div class="overlay-label">PFFFV</div>
-                <div class="status-pill" id="status-PFFFV">OPEN</div>
+
+              <div class="overlay" style="left: 391px; top: 206px;" data-valve="LFFV">
+                <div class="overlay-label">LFFV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 575px; top: 56px;">
+              <div class="overlay" style="left: 814px; top: 53px;" data-valve="FTVV">
                 <div class="overlay-label">FTVV</div>
-                <div class="status-pill" id="status-FTVV">OPEN</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 886px; top: 358px;">
-                <div class="overlay-label">FMCVTV</div>
-                <div class="status-pill" id="status-FMCVTV">OPEN</div>
+              <div class="overlay" style="left: 1255px; top: 339px;" data-valve="FMCTV">
+                <div class="overlay-label">FMCTV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 728px; top: 485px;">
+              <div class="overlay" style="left: 1031px; top: 460px;" data-valve="FMV">
                 <div class="overlay-label">FMV</div>
-                <div class="status-pill" id="status-FMV">OPEN</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 450px; top: 60px;">
-                <div class="overlay-label">PFF-PT</div>
-                <div class="sensor-box">400 PSI</div>
+              <div class="overlay" style="left: 1255px; top: 522px;" data-valve="FIFV">
+                <div class="overlay-label">FIFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
               </div>
 
-              <div class="overlay" style="left: 700px; top: 195px;">
+              <div class="overlay" style="left: 640px; top: 600px;" data-valve="WMV">
+                <div class="overlay-label">WMV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 638px; top: 57px;">
+                <div class="overlay-label">LF-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 992px; top: 185px;">
                 <div class="overlay-label">FT-PT</div>
-                <div class="sensor-box">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
-              <div class="overlay" style="left: 1050px; top: 430px;">
+              <div class="overlay" style="left: 1488px; top: 408px;">
                 <div class="overlay-label">FM-PT</div>
-                <div class="sensor-box">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
-              <div class="overlay" style="left: 900px; top: 520px;">
-                <div class="overlay-label">FF-PT</div>
-                <div class="sensor-box">400 PSI</div>
+              <div class="overlay" style="left: 1565px; top: 350px;">
+                <div class="overlay-label">FI-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 985px; top: 545px;">
+                <div class="overlay-label">WM-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 1570px; top: 205px;">
+                <div class="overlay-label">CC-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pid-stage hidden" id="pidStageNitrous" data-stage="nitrous">
+            <div style="padding: 16px; font-size: 1rem;">
+              Nitrous line diagram not yet provided.
+            </div>
+          </div>
+
+          <div class="pid-stage hidden" id="daqStage" data-stage="daq">
+            <div class="daq-grid">
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot1"></canvas></div>
+                <div class="daq-select"><select id="daqSelect1" aria-label="Select signal for plot 1"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot2"></canvas></div>
+                <div class="daq-select"><select id="daqSelect2" aria-label="Select signal for plot 2"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot3"></canvas></div>
+                <div class="daq-select"><select id="daqSelect3" aria-label="Select signal for plot 3"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot4"></canvas></div>
+                <div class="daq-select"><select id="daqSelect4" aria-label="Select signal for plot 4"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot5"></canvas></div>
+                <div class="daq-select"><select id="daqSelect5" aria-label="Select signal for plot 5"></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot6"></canvas></div>
+                <div class="daq-select"><select id="daqSelect6" aria-label="Select signal for plot 6"></select></div>
               </div>
             </div>
           </div>
@@ -546,33 +778,62 @@
       <div class="message-bar" id="systemMessage">System message: Load Cell Initialization Complete... Initializing Flow Meter</div>
 
       <div class="settings-panel">
-        <button class="settings-toggle" id="themeToggle" type="button" aria-haspopup="true" aria-expanded="false">
+        <button class="settings-toggle" id="settingsToggle" type="button" aria-haspopup="true" aria-expanded="false">
           <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"></circle>
-            <path d="M12 2v2"></path>
-            <path d="M12 20v2"></path>
-            <path d="M4.93 4.93l1.41 1.41"></path>
-            <path d="M17.66 17.66l1.41 1.41"></path>
-            <path d="M2 12h2"></path>
-            <path d="M20 12h2"></path>
-            <path d="M4.93 19.07l1.41-1.41"></path>
-            <path d="M17.66 6.34l1.41-1.41"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-1.41 3.41h-1.99a1.65 1.65 0 0 0-1.51 1l-.02.06a2 2 0 0 1-3.7 0l-.02-.06a1.65 1.65 0 0 0-1.51-1H5.62a2 2 0 0 1-1.41-3.41l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1-1.51l-.06-.02a2 2 0 0 1 0-3.7l.06-.02A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 5.62 3.7h1.99a1.65 1.65 0 0 0 1.51-1l.02-.06a2 2 0 0 1 3.7 0l.02.06a1.65 1.65 0 0 0 1.51 1h1.99a2 2 0 0 1 1.41 3.41l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1 1.51l.06.02a2 2 0 0 1 0 3.7l-.06.02a1.65 1.65 0 0 0-1 1.51z"></path>
           </svg>
-          <span id="themeLabel">Theme</span>
+          <span>Settings</span>
         </button>
 
-        <div class="settings-menu hidden" id="themeMenu" role="menu" aria-label="Theme options">
-          <button class="settings-btn" type="button" data-theme="light" role="menuitem">Light mode</button>
-          <button class="settings-btn" type="button" data-theme="dark" role="menuitem">Dark mode</button>
-          <button class="settings-btn" type="button" data-theme="baja" role="menuitem">Baja Blast mode</button>
+        <div class="settings-menu hidden" id="settingsMenu" role="menu" aria-label="Settings">
+          <button class="settings-btn" type="button" data-settings-section="theme" role="menuitem">
+            <span>Color Scheme</span>
+            <span class="settings-tick" aria-hidden="true">▸</span>
+          </button>
+          <div class="settings-submenu hidden" id="themeSubmenu" aria-label="Color Scheme">
+            <button class="settings-btn" type="button" data-theme="light" role="menuitem">
+              <span>Light</span><span class="settings-tick" data-theme-tick="light" aria-hidden="true"></span>
+            </button>
+            <button class="settings-btn" type="button" data-theme="dark" role="menuitem">
+              <span>Dark</span><span class="settings-tick" data-theme-tick="dark" aria-hidden="true"></span>
+            </button>
+            <button class="settings-btn" type="button" data-theme="baja" role="menuitem">
+              <span>Baja Blast</span><span class="settings-tick" data-theme-tick="baja" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <button class="settings-btn" type="button" data-settings-section="simulation" role="menuitem">
+            <span>Simulation Mode</span>
+            <span class="settings-tick" aria-hidden="true">▸</span>
+          </button>
+          <div class="settings-submenu hidden" id="simulationSubmenu" aria-label="Simulation Mode">
+            <button class="settings-btn" type="button" data-simulation="enabled" role="menuitem">
+              <span>Enable</span><span class="settings-tick" data-sim-tick="enabled" aria-hidden="true"></span>
+            </button>
+            <button class="settings-btn" type="button" data-simulation="disabled" role="menuitem">
+              <span>Disable</span><span class="settings-tick" data-sim-tick="disabled" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const pidCanvas = document.getElementById('pidCanvas');
-    const pidStage = document.getElementById('pidStage');
+    // Prefer the server-hosted Socket.IO client to guarantee version compatibility.
+    // Fallback to CDN only if the server doesn't provide it (e.g., flask_socketio not installed).
+    if (typeof window.io !== 'function') {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+      document.head.appendChild(s);
+    }
+  </script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+  <script>
+    const pidCanvas = document.getElementById('pidCanvasEthanol');
+    const pidStage = document.getElementById('pidStageEthanol');
 
     let scale = 1;
 
@@ -581,69 +842,27 @@
     }
 
     function fitCanvasToPanel() {
+      if (!pidStage || pidStage.classList.contains('hidden')) return;
       const stageWidth = pidStage.clientWidth - 24;
       const stageHeight = pidStage.clientHeight - 24;
-      const fitScale = Math.min(stageWidth / 1200, stageHeight / 700);
+      const fitScale = Math.min(stageWidth / 1700, stageHeight / 664);
       scale = Math.min(fitScale, 1);
       applyScale();
     }
 
-    function setTheme(theme) {
-      document.body.classList.remove('theme-dark', 'theme-baja');
-      if (theme === 'dark') document.body.classList.add('theme-dark');
-      if (theme === 'baja') document.body.classList.add('theme-baja');
-      localStorage.setItem('guiTheme', theme);
-
-      const label = document.getElementById('themeLabel');
-      if (label) {
-        if (theme === 'dark') label.textContent = 'Dark';
-        else if (theme === 'baja') label.textContent = 'Baja Blast';
-        else label.textContent = 'Light';
-      }
-    }
-
-    const themeToggle = document.getElementById('themeToggle');
-    const themeMenu = document.getElementById('themeMenu');
-
-    function closeThemeMenu() {
-      if (!themeMenu || !themeToggle) return;
-      themeMenu.classList.add('hidden');
-      themeToggle.setAttribute('aria-expanded', 'false');
-    }
-
-    function toggleThemeMenu() {
-      if (!themeMenu || !themeToggle) return;
-      const isHidden = themeMenu.classList.contains('hidden');
-      if (isHidden) {
-        themeMenu.classList.remove('hidden');
-        themeToggle.setAttribute('aria-expanded', 'true');
-      } else {
-        closeThemeMenu();
-      }
-    }
-
-    if (themeToggle) {
-      themeToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleThemeMenu();
+    function setActiveTab(tabName) {
+      document.querySelectorAll('.tab[data-tab]').forEach((t) => {
+        t.classList.toggle('active', t.dataset.tab === tabName);
       });
+      document.querySelectorAll('[data-stage]').forEach((stage) => {
+        stage.classList.toggle('hidden', stage.dataset.stage !== tabName);
+      });
+      fitCanvasToPanel();
     }
 
-    document.querySelectorAll('[data-theme]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setTheme(btn.dataset.theme);
-        closeThemeMenu();
-      });
+    document.querySelectorAll('.tab[data-tab]').forEach((t) => {
+      t.addEventListener('click', () => setActiveTab(t.dataset.tab));
     });
-
-    document.addEventListener('click', closeThemeMenu);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeThemeMenu();
-    });
-
-    const savedTheme = localStorage.getItem('guiTheme');
-    if (savedTheme) setTheme(savedTheme);
 
     window.addEventListener('resize', fitCanvasToPanel);
     window.addEventListener('load', fitCanvasToPanel);
