@@ -1,0 +1,73 @@
+
+schema_version: 1
+
+calibration_profiles:
+	pressure_transducers:
+		generic_linear_psi:
+			units: psi
+			type: linear
+			# psi = m * raw + b
+			m: 1.0
+			b: 0.0
+
+		v_to_psi_0p5_4p5V_0_500psi:
+			units: psi
+			type: volts_to_psi
+			v_min: 0.5
+			v_max: 4.5
+			psi_min: 0.0
+			psi_max: 500.0
+
+
+calibration:
+	pressure_transducers:
+		LF-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+		FT-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+		FM-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+		FI-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+		WM-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+		CC-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+
+
+limits:
+	pressure_transducers:
+		LF-PT:
+			green_max_psi: 450
+			warn_max_psi: 500
+			hard_abort_psi: 525
+			hard_abort_min_psi: null
+
+		FT-PT:
+			green_max_psi: 450
+			warn_max_psi: 500
+			hard_abort_psi: 525
+			hard_abort_min_psi: null
+
+		FM-PT:
+			green_max_psi: 450
+			warn_max_psi: 500
+			hard_abort_psi: 525
+			hard_abort_min_psi: null
+
+		FI-PT:
+			green_max_psi: 450
+			warn_max_psi: 500
+			hard_abort_psi: 525
+			hard_abort_min_psi: null
+
+		WM-PT:
+			green_max_psi: 450
+			warn_max_psi: 500
+			hard_abort_psi: 525
+			hard_abort_min_psi: null
+
+		CC-PT:
+			green_max_psi: 450
+			warn_max_psi: 500
+			hard_abort_psi: 525
+			hard_abort_min_psi: null
+
+
+gui:
+	pressure_rate_units: psi_per_min
+

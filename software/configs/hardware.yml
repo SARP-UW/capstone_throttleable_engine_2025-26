@@ -1,0 +1,120 @@
+
+schema_version: 1
+
+adcs:
+	ADC1:
+		model: ADS124S08IRHBT
+		transport: spi
+		spi_bus: null          
+		spi_device: null      
+		cs_gpio: null        
+		drdy_gpio: null       
+		reset_gpio: null      
+		notes: "DC #1"
+
+	ADC2:
+		model: ADS124S08IRHBT
+		transport: spi
+		spi_bus: null
+		spi_device: null
+		cs_gpio: null
+		drdy_gpio: null
+		reset_gpio: null
+		notes: "ADC #2"
+
+	ADC3:
+		model: ADS124S08IRHBT
+		transport: spi
+		spi_bus: null
+		spi_device: null
+		cs_gpio: null
+		drdy_gpio: null
+		reset_gpio: null
+		notes: "ADC #3"
+
+sensors:
+	pressure_transducers:
+		LF-PT:
+			enabled: true
+			adc_id: ADC1
+			signal_mode: single_ended
+			ain: null
+			notes: "L Fuel pressure transducer"
+
+		FT-PT:
+			enabled: true
+			adc_id: ADC1
+			signal_mode: single_ended
+			ain: null
+			notes: "Fuel tank pressure transducer"
+
+		FM-PT:
+			enabled: true
+			adc_id: ADC2
+			signal_mode: single_ended
+			ain: null
+			notes: "Fuel main pressure transducer"
+
+		FI-PT:
+			enabled: true
+			adc_id: ADC2
+			signal_mode: single_ended
+			ain: null
+			notes: "Fuel injector pressure transducer"
+
+		WM-PT:
+			enabled: true
+			adc_id: ADC3
+			signal_mode: single_ended
+			ain: null
+			notes: "Water main pressure transducer"
+
+		CC-PT:
+			enabled: true
+			adc_id: ADC3
+			signal_mode: single_ended
+			ain: null
+			notes: "Combustion chamber pressure transducer"
+
+actuators:
+	solenoids:
+		WMV:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Water main valve"
+
+		FMV:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel main valve"
+
+		FMCTV:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel control/throttle valve"
+
+		FIFV:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel igniter/fill valve"
+
+		FTVV:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel tank vent valve"
+
