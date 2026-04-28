@@ -6,7 +6,7 @@ import threading
 from pathlib import Path
 
 
-class _DaqController:
+class GUIController:
     def __init__(
         self,
         *,
@@ -178,15 +178,25 @@ def main() -> None:
     from deep_thrott_code.gui import create_gui_app  # noqa: PLC0415
     from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
 
-    gui_queue: queue.Queue = queue.Queue(maxsize=1000)
-    command_queue: queue.Queue = queue.Queue(maxsize=100)
-    app = create_gui_app(gui_queue=gui_queue, command_queue=command_queue)
+    if getattr(socketio, "is_dummy", False):
+        print(
+            "WARNING: flask_socketio is not installed for this Python interpreter; "
+            "running without realtime updates. Install `flask-socketio` (and deps) "
+            "or run using the conda environment that has it."
+        )
 
-    controller = _DaqController(gui_queue=gui_queue, command_queue=command_queue, socketio=socketio, app=app)
+    gui_queue: queue.Queue = queue.Queue(maxsize=1000)
+    # command_queue: raw string commands intended for an eventual F3 loop (e.g., "fill", "fire").
+    command_queue: queue.Queue = queue.Queue(maxsize=100)
+    # control_queue: structured GUI control commands for this GUI controller.
+    control_queue: queue.Queue = queue.Queue(maxsize=100)
+    app = create_gui_app(gui_queue=gui_queue, command_queue=command_queue, control_queue=control_queue)
+
+    controller = GUIController(gui_queue=gui_queue, command_queue=control_queue, socketio=socketio, app=app)
 
     def command_loop() -> None:
         while True:
-            payload = command_queue.get()
+            payload = control_queue.get()
             try:
                 if not isinstance(payload, dict):
                     controller._emit("Ignored non-object command payload.")
@@ -195,15 +205,15 @@ def main() -> None:
                 name = payload.get("name")
                 if name == "set_simulation":
                     controller.set_simulation_enabled(bool(payload.get("enabled")))
-                elif name == "start_test":
+                elif name == "start_log":
                     controller.start()
-                elif name == "stop_test":
+                elif name == "stop_log":
                     controller.stop()
                 else:
                     controller._emit(f"Unknown command: {name}")
             finally:
                 try:
-                    command_queue.task_done()
+                    control_queue.task_done()
                 except Exception:
                     pass
 

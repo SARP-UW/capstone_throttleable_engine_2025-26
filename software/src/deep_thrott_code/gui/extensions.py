@@ -11,6 +11,8 @@ class _DummySocketIO:
 	Keeps the GUI runnable even if `flask_socketio` isn't installed yet.
 	"""
 
+	is_dummy = True
+
 	def init_app(self, app: Any, **_: Any) -> None:  # noqa: ANN401
 		self._app = app
 
@@ -33,11 +35,15 @@ class _DummySocketIO:
 	def emit(self, *_: Any, **__: Any) -> None:  # noqa: ANN401
 		return None
 
-
 try:
 	from flask_socketio import SocketIO  # type: ignore
-
-	socketio: Any = SocketIO(async_mode="threading")
+	socketio: Any = SocketIO(
+		async_mode="threading",
+		cors_allowed_origins="*",
+		logger=True,
+		engineio_logger=True,
+	)
+	socketio.is_dummy = False
 
 except ImportError:
 	warnings.warn(

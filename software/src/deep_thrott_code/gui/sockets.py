@@ -26,6 +26,7 @@ def register_socket_handlers(
 	*,
 	gui_queue: queue.Queue | None = None,
 	command_queue: queue.Queue | None = None,
+	control_queue: queue.Queue | None = None,
 ) -> None:
 	"""Register Socket.IO event handlers + start the 10Hz GUI loop.
 
@@ -48,6 +49,7 @@ def register_socket_handlers(
 	app.config["LATEST_LOCK"] = latest_lock
 	app.config["GUI_QUEUE"] = gui_queue
 	app.config["COMMAND_QUEUE"] = command_queue
+	app.config["CONTROL_QUEUE"] = control_queue
 
 	def drain_gui_queue() -> int:
 		if gui_queue is None:
@@ -116,15 +118,26 @@ def register_socket_handlers(
 			socketio.emit("command_reject", {"ok": False, "reason": "missing_name"})
 			return
 
-		if command_queue is None:
-			socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
-			return
-
-		try:
-			command_queue.put(payload, timeout=0.1)
-		except Exception:
-			socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
-			return
+		# Commands intended for the F3 loop: enqueue a raw string.
+		if name in {"fill", "fire"}:
+			if command_queue is None:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
+				return
+			try:
+				command_queue.put(name, timeout=0.1)
+			except Exception:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
+				return
+		else:
+			# GUI control commands: enqueue the full payload object.
+			if control_queue is None:
+				socketio.emit("command_reject", {"ok": False, "reason": "control_queue_not_configured"})
+				return
+			try:
+				control_queue.put(payload, timeout=0.1)
+			except Exception:
+				socketio.emit("command_reject", {"ok": False, "reason": "control_queue_full"})
+				return
 
 		socketio.emit("command_accept", {"ok": True, "name": name})
 

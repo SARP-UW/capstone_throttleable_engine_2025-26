@@ -89,7 +89,7 @@
 
     .top-row {
       display: grid;
-      grid-template-columns: 1.7fr 0.4fr 1.3fr;
+      grid-template-columns: 1.6fr 0.35fr 1.55fr;
       gap: 10px;
       padding: 6px;
       align-items: stretch;
@@ -131,10 +131,37 @@
 
     .action-box {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1.2fr;
       grid-template-rows: 1fr 1fr;
       gap: 6px;
       padding: 6px;
+    }
+
+    .action-box .start-btn {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .action-box .stop-btn {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .action-box .fill-btn {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .action-box .fire-btn {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .action-box .abort-btn {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      font-size: 1.05rem;
+      font-weight: 700;
     }
 
     .cmd-btn,
@@ -215,8 +242,8 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 1200px;
-      height: 700px;
+      width: 1700px;
+      height: 664px;
       background: white;
       border: 1px solid #bbb;
       transform-origin: center;
@@ -300,17 +327,9 @@
       padding: 2px 6px;
     }
 
-    .status-pill,
     .sensor-box {
       border: 1px solid var(--border);
       text-align: center;
-      background: var(--good);
-    }
-
-    .status-pill {
-      font-size: 1rem;
-      padding: 4px 12px;
-      min-width: 104px;
     }
 
     .sensor-box {
@@ -325,14 +344,32 @@
     }
 
     .valve-controls {
-      display: none;
+      display: flex;
+      gap: 6px;
     }
 
     .mini-btn {
       padding: 4px 12px;
       font-size: 0.95rem;
       min-width: 64px;
-      background: #fafafa;
+      background: var(--muted);
+      color: var(--text);
+    }
+
+    .mini-btn.is-active-open {
+      background: var(--btn-green);
+      cursor: default;
+      font-weight: 700;
+    }
+
+    .mini-btn.is-active-close {
+      background: var(--btn-red);
+      cursor: default;
+      font-weight: 700;
+    }
+
+    .mini-btn:disabled {
+      opacity: 1;
     }
 
     .side-panel {
@@ -505,7 +542,7 @@
     @media (max-width: 1200px) {
       .main-row { grid-template-columns: 1fr 190px; }
       .bottom-row { grid-template-columns: 1fr 190px; }
-      .top-row { grid-template-columns: 1.3fr 0.7fr 1fr; }
+      .top-row { grid-template-columns: 1.2fr 0.5fr 1.3fr; }
     }
   </style>
 </head>
@@ -527,10 +564,11 @@
       </div>
 
       <div class="action-box">
-        <button class="cmd-btn btn-green" id="startTestBtn">START TEST</button>
-        <button class="cmd-btn btn-yellow" id="stopTestBtn">STOP TEST</button>
-        <button class="cmd-btn btn-orange">FIRE</button>
-        <button class="cmd-btn btn-red">ABORT</button>
+        <button class="cmd-btn btn-green start-btn" id="startLogBtn">START LOG</button>
+        <button class="cmd-btn btn-orange fill-btn" id="fillBtn">FILL</button>
+        <button class="cmd-btn btn-yellow stop-btn" id="stopLogBtn">STOP LOG</button>
+        <button class="cmd-btn btn-orange fire-btn" id="fireBtn">FIRE</button>
+        <button class="cmd-btn btn-red abort-btn" id="abortBtn">ABORT</button>
       </div>
     </div>
 
@@ -546,60 +584,83 @@
           <div class="pid-stage" id="pidStageEthanol" data-stage="ethanol">
             <div class="pid-canvas" id="pidCanvasEthanol">
               <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
-              <div class="overlay" style="left: 276px; top: 217px;">
-                <div class="overlay-label">PFFFV</div>
-                <div class="status-pill" id="status-PFFFV">OPEN</div>
+
+              <div class="overlay" style="left: 391px; top: 206px;" data-valve="LFFV">
+                <div class="overlay-label">LFFV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 575px; top: 56px;">
+              <div class="overlay" style="left: 814px; top: 53px;" data-valve="FTVV">
                 <div class="overlay-label">FTVV</div>
-                <div class="status-pill" id="status-FTVV">OPEN</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 886px; top: 358px;">
-                <div class="overlay-label">FMCVTV</div>
-                <div class="status-pill" id="status-FMCVTV">OPEN</div>
+              <div class="overlay" style="left: 1255px; top: 339px;" data-valve="FMCTV">
+                <div class="overlay-label">FMCTV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 728px; top: 485px;">
+              <div class="overlay" style="left: 1031px; top: 460px;" data-valve="FMV">
                 <div class="overlay-label">FMV</div>
-                <div class="status-pill" id="status-FMV">OPEN</div>
                 <div class="valve-controls">
-                  <button class="mini-btn">OPEN</button>
-                  <button class="mini-btn">CLOSE</button>
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 450px; top: 60px;">
-                <div class="overlay-label">PFF-PT</div>
-                <div class="sensor-box good" id="sensor-PFF-PT" data-green-threshold-psi="450">400 PSI</div>
+              <div class="overlay" style="left: 1255px; top: 522px;" data-valve="FIFV">
+                <div class="overlay-label">FIFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
               </div>
 
-              <div class="overlay" style="left: 700px; top: 195px;">
+              <div class="overlay" style="left: 640px; top: 600px;" data-valve="WMV">
+                <div class="overlay-label">WMV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 638px; top: 57px;">
+                <div class="overlay-label">LF-PT</div>
+                <div class="sensor-box good" id="sensor-LF-PT" data-green-threshold-psi="450">400 PSI</div>
+              </div>
+
+              <div class="overlay" style="left: 992px; top: 185px;">
                 <div class="overlay-label">FT-PT</div>
                 <div class="sensor-box good" id="sensor-FT-PT" data-green-threshold-psi="450">400 PSI</div>
               </div>
 
-              <div class="overlay" style="left: 1050px; top: 430px;">
+              <div class="overlay" style="left: 1488px; top: 408px;">
                 <div class="overlay-label">FM-PT</div>
                 <div class="sensor-box good" id="sensor-FM-PT" data-green-threshold-psi="450">400 PSI</div>
               </div>
 
-              <div class="overlay" style="left: 900px; top: 520px;">
-                <div class="overlay-label">FF-PT</div>
-                <div class="sensor-box good" id="sensor-FF-PT" data-green-threshold-psi="450">400 PSI</div>
+              <div class="overlay" style="left: 1565px; top: 350px;">
+                <div class="overlay-label">FI-PT</div>
+                <div class="sensor-box good" id="sensor-FI-PT" data-green-threshold-psi="450">400 PSI</div>
+              </div>
+
+              <div class="overlay" style="left: 985px; top: 545px;">
+                <div class="overlay-label">WM-PT</div>
+                <div class="sensor-box good" id="sensor-WM-PT" data-green-threshold-psi="450">400 PSI</div>
+              </div>
+
+              <div class="overlay" style="left: 1570px; top: 205px;">
+                <div class="overlay-label">CC-PT</div>
+                <div class="sensor-box good" id="sensor-CC-PT" data-green-threshold-psi="450">400 PSI</div>
               </div>
             </div>
           </div>
@@ -716,11 +777,13 @@
     </div>
   </div>
 
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script>
+    // Prefer the server-hosted Socket.IO client to guarantee version compatibility.
+    // Fallback to CDN only if the server doesn't provide it (e.g., flask_socketio not installed).
     if (typeof window.io !== 'function') {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js';
+      s.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
       document.head.appendChild(s);
     }
   </script>
@@ -739,7 +802,7 @@
       if (!pidStage || pidStage.classList.contains('hidden')) return;
       const stageWidth = pidStage.clientWidth - 24;
       const stageHeight = pidStage.clientHeight - 24;
-      const fitScale = Math.min(stageWidth / 1200, stageHeight / 700);
+      const fitScale = Math.min(stageWidth / 1700, stageHeight / 664);
       scale = Math.min(fitScale, 1);
       applyScale();
     }

@@ -7,8 +7,6 @@ import queue
 import threading
 import time
 
-
-
 if TYPE_CHECKING:
 	# These imports are ONLY for IDE/type hints.
 	# We keep this main skeleton “light” and not runnable yet.
@@ -16,7 +14,6 @@ if TYPE_CHECKING:
 
 	from deep_thrott_code.daq.services.sample import RawSample, Sample
 	from deep_thrott_code.daq.services.state_store import StateStore
-
 
 # ---------------------------------------------------------------------
 # CPU pinning notes (Raspberry Pi / Linux)
@@ -27,24 +24,20 @@ CPU_CORE_2_THROTTLE = 1
 CPU_CORE_3_DAQ_PRODUCER = 2
 CPU_CORE_4_DAQ_CONSUMER_AND_F3 = 3
 
-
 def pin_current_thread_to_cpu(cpu_index: int) -> None:
 	"""Best-effort pinning for the *calling thread* (Linux-only).
 
 	- Raspberry Pi: works.
 	- Windows/macOS: safe no-op.
 	"""
-
 	try:
 		os.sched_setaffinity(0, {int(cpu_index)})
 	except Exception:
 		return
 
-
 # ---------------------------------------------------------------------
 # Main outline
 # ---------------------------------------------------------------------
-
 
 def main() -> None:
 	"""Outline

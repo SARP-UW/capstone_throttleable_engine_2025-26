@@ -77,11 +77,68 @@
 	];
 
 	const bindings = [
-		{ sensorName: 'chamber_pressure', elementId: 'sensor-PFF-PT' },
+		{ sensorName: 'chamber_pressure', elementId: 'sensor-CC-PT' },
 		{ sensorName: 'injector_pressure', elementId: 'sensor-FT-PT' },
 		{ sensorName: 'chamber_pressure', elementId: 'sensor-FM-PT' },
-		{ sensorName: 'injector_pressure', elementId: 'sensor-FF-PT' },
+		{ sensorName: 'injector_pressure', elementId: 'sensor-FI-PT' },
+		{ sensorName: 'injector_pressure', elementId: 'sensor-LF-PT' },
+		{ sensorName: 'injector_pressure', elementId: 'sensor-WM-PT' },
 	];
+
+	const valveStateByName = new Map(); // valveName -> 'open' | 'closed'
+
+	function setValveUiState(valveName, state) {
+		const overlay = document.querySelector(`[data-valve="${CSS.escape(valveName)}"]`);
+		if (!overlay) return;
+		const status = overlay.querySelector('.status-pill');
+		const openBtn = overlay.querySelector('[data-valve-action="open"]');
+		const closeBtn = overlay.querySelector('[data-valve-action="close"]');
+		const isOpen = state === 'open';
+
+		if (status) status.textContent = isOpen ? 'OPEN' : 'CLOSED';
+
+		if (openBtn instanceof HTMLButtonElement) {
+			openBtn.disabled = isOpen;
+			openBtn.classList.toggle('is-active-open', isOpen);
+			openBtn.classList.toggle('is-active-close', false);
+		}
+		if (closeBtn instanceof HTMLButtonElement) {
+			closeBtn.disabled = !isOpen;
+			closeBtn.classList.toggle('is-active-close', !isOpen);
+			closeBtn.classList.toggle('is-active-open', false);
+		}
+	}
+
+	function setValveState(valveName, state) {
+		const normalized = state === 'closed' ? 'closed' : 'open';
+		valveStateByName.set(valveName, normalized);
+		setValveUiState(valveName, normalized);
+	}
+
+	function initValveControls() {
+		document.querySelectorAll('[data-valve]').forEach((overlay) => {
+			const valveName = overlay.getAttribute('data-valve');
+			if (!valveName) return;
+			if (!valveStateByName.has(valveName)) valveStateByName.set(valveName, 'open');
+
+			const openBtn = overlay.querySelector('[data-valve-action="open"]');
+			const closeBtn = overlay.querySelector('[data-valve-action="close"]');
+			if (openBtn) {
+				openBtn.addEventListener('click', (e) => {
+					e.preventDefault();
+					setValveState(valveName, 'open');
+				});
+			}
+			if (closeBtn) {
+				closeBtn.addEventListener('click', (e) => {
+					e.preventDefault();
+					setValveState(valveName, 'closed');
+				});
+			}
+
+			setValveUiState(valveName, valveStateByName.get(valveName));
+		});
+	}
 
 	function setPressureBox(el, valuePsi) {
 		if (!el) return;
@@ -324,7 +381,23 @@
 			return;
 		}
 
-		const socket = window.io();
+		// If the user opens the HTML directly (file://) or via a different server,
+		// `io()` will try to connect to the wrong origin. Default to the GUI server.
+		let socketUrl;
+		try {
+			if (window.location.protocol === 'file:' || !window.location.hostname) {
+				socketUrl = 'http://127.0.0.1:5000';
+			}
+		} catch (_) {
+			socketUrl = 'http://127.0.0.1:5000';
+		}
+
+		const socketOpts = {
+			path: '/socket.io',
+			transports: ['polling'],
+			timeout: 5000,
+		};
+		const socket = socketUrl ? window.io(socketUrl, socketOpts) : window.io(socketOpts);
 		socketRef = socket;
 		socket.on('connect', () => {
 			setSystemMessage('System message: Connected to DAQ stream.');
@@ -336,7 +409,8 @@
 		});
 		socket.on('connect_error', (err) => {
 			console.error('Socket connect_error:', err);
-			setSystemMessage('System message: Socket connect error (see console).');
+			const detail = (err && (err.message || err.description)) ? (err.message || err.description) : String(err);
+			setSystemMessage(`System message: Socket connect error: ${detail}`);
 		});
 
 		socket.on('command_accept', (msg) => {
@@ -357,18 +431,32 @@
 	}
 
 	function initTestButtons() {
-		const startBtn = document.getElementById('startTestBtn');
+		const startBtn = document.getElementById('startLogBtn');
 		if (startBtn) {
 			startBtn.addEventListener('click', () => {
 				telemetryFrozen = false;
-				emitGuiCommand({ name: 'start_test' });
+				emitGuiCommand({ name: 'start_log' });
 			});
 		}
-		const stopBtn = document.getElementById('stopTestBtn');
+		const stopBtn = document.getElementById('stopLogBtn');
 		if (stopBtn) {
 			stopBtn.addEventListener('click', () => {
 				telemetryFrozen = true;
-				emitGuiCommand({ name: 'stop_test' });
+				emitGuiCommand({ name: 'stop_log' });
+			});
+		}
+
+		const fillBtn = document.getElementById('fillBtn');
+		if (fillBtn) {
+			fillBtn.addEventListener('click', () => {
+				emitGuiCommand({ name: 'fill' });
+			});
+		}
+
+		const fireBtn = document.getElementById('fireBtn');
+		if (fireBtn) {
+			fireBtn.addEventListener('click', () => {
+				emitGuiCommand({ name: 'fire' });
 			});
 		}
 	}
@@ -443,6 +531,7 @@
 		initSettingsMenu();
 		initDaqControls();
 		initTestButtons();
+		initValveControls();
 		connectSocket();
 	});
 })();
