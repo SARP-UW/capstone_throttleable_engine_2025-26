@@ -77,15 +77,33 @@
 	];
 
 	const bindings = [
+		// Keep these two tied to the simulated snapshot keys.
 		{ sensorName: 'chamber_pressure', elementId: 'sensor-CC-PT' },
-		{ sensorName: 'injector_pressure', elementId: 'sensor-FT-PT' },
-		{ sensorName: 'chamber_pressure', elementId: 'sensor-FM-PT' },
 		{ sensorName: 'injector_pressure', elementId: 'sensor-FI-PT' },
-		{ sensorName: 'injector_pressure', elementId: 'sensor-LF-PT' },
-		{ sensorName: 'injector_pressure', elementId: 'sensor-WM-PT' },
+
+		// Untied PTs: expect distinct sensor names from the DAQ state store.
+		{ sensorName: 'LF-PT', elementId: 'sensor-LF-PT' },
+		{ sensorName: 'FT-PT', elementId: 'sensor-FT-PT' },
+		{ sensorName: 'FM-PT', elementId: 'sensor-FM-PT' },
+		{ sensorName: 'WM-PT', elementId: 'sensor-WM-PT' },
 	];
 
 	const valveStateByName = new Map(); // valveName -> 'open' | 'closed'
+	const prevPressureBySensor = new Map(); // sensorName -> { t: number, v: number }
+
+	function resetAllSensorBoxes() {
+		document.querySelectorAll('.sensor-box').forEach((el) => {
+			el.classList.remove('good');
+			el.classList.add('is-placeholder');
+			el.innerHTML = '<div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div>';
+		});
+	}
+
+	function clearAllPlotHistories() {
+		historyBySensor.clear();
+		prevPressureBySensor.clear();
+		renderAllPlots();
+	}
 
 	function setValveUiState(valveName, state) {
 		const overlay = document.querySelector(`[data-valve="${CSS.escape(valveName)}"]`);
@@ -140,10 +158,26 @@
 		});
 	}
 
-	function setPressureBox(el, valuePsi) {
+	function computePressureRatePsiPerMin(sensorName, tSeconds, valuePsi) {
+		if (!sensorName) return null;
+		if (!Number.isFinite(tSeconds) || !Number.isFinite(valuePsi)) return null;
+		const prev = prevPressureBySensor.get(sensorName);
+		prevPressureBySensor.set(sensorName, { t: tSeconds, v: valuePsi });
+		if (!prev) return null;
+		const dt = tSeconds - prev.t;
+		if (!(dt > 0)) return null;
+		// psi/min
+		return ((valuePsi - prev.v) / dt) * 60;
+	}
+
+	function setPressureBox(el, valuePsi, ratePsiPerMin) {
 		if (!el) return;
+		el.classList.remove('is-placeholder');
 		const rounded = Math.round(valuePsi);
-		el.textContent = `${rounded} PSI`;
+		const rateText = Number.isFinite(ratePsiPerMin)
+			? `${ratePsiPerMin >= 0 ? '+' : ''}${ratePsiPerMin.toFixed(1)} psi/min`
+			: '-- psi/min';
+		el.innerHTML = `<div class="sensor-reading">${rounded} PSI</div><div class="sensor-deriv">${rateText}</div>`;
 
 		const thresholdStr = el.dataset.greenThresholdPsi;
 		const thresholdPsi = thresholdStr ? Number(thresholdStr) : NaN;
@@ -245,7 +279,6 @@
 
 		const w = canvas.width;
 		const h = canvas.height;
-		ctx.clearRect(0, 0, w, h);
 
 		// Background
 		ctx.fillStyle = '#ffffff';
@@ -361,13 +394,22 @@
 		const states = packet.states;
 		if (!states || typeof states !== 'object') return;
 
+		const fallbackT = typeof packet.t_wall === 'number' ? packet.t_wall : Date.now() / 1000;
+		const pressureRateBySensorName = new Map();
+
 		for (const { sensorName, elementId } of bindings) {
 			const state = states[sensorName];
 			if (!state || typeof state !== 'object') continue;
 			const value = state.value;
 			if (typeof value !== 'number') continue;
+			const t = typeof state.t_monotonic === 'number' ? state.t_monotonic : fallbackT;
+			let rate = pressureRateBySensorName.get(sensorName);
+			if (rate === undefined) {
+				rate = computePressureRatePsiPerMin(sensorName, t, value);
+				pressureRateBySensorName.set(sensorName, rate);
+			}
 			const el = document.getElementById(elementId);
-			setPressureBox(el, value);
+			setPressureBox(el, value, rate);
 		}
 
 		ingestPacketForPlots(packet);
@@ -459,6 +501,14 @@
 				emitGuiCommand({ name: 'fire' });
 			});
 		}
+
+		const clearBtn = document.getElementById('clearTestBtn');
+		if (clearBtn) {
+			clearBtn.addEventListener('click', () => {
+				resetAllSensorBoxes();
+				clearAllPlotHistories();
+			});
+		}
 	}
 
 	function initSettingsMenu() {
@@ -528,6 +578,7 @@
 		simulationEnabled = getSavedSimulationEnabled();
 		applyTheme(getSavedTheme());
 		updateSimulationTicks(simulationEnabled);
+		resetAllSensorBoxes();
 		initSettingsMenu();
 		initDaqControls();
 		initTestButtons();

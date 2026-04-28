@@ -157,11 +157,14 @@
       grid-row: 2;
     }
 
+    .action-box .clear-btn {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
     .action-box .abort-btn {
       grid-column: 3;
-      grid-row: 1 / span 2;
-      font-size: 1.05rem;
-      font-weight: 700;
+      grid-row: 2;
     }
 
     .cmd-btn,
@@ -337,6 +340,27 @@
       padding: 6px 14px;
       min-width: 124px;
       background: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.05;
+      gap: 2px;
+    }
+
+    .sensor-reading {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .sensor-deriv {
+      font-size: 0.85rem;
+      font-weight: 400;
+    }
+
+    .sensor-box.is-placeholder .sensor-reading,
+    .sensor-box.is-placeholder .sensor-deriv {
+      opacity: 0.6;
     }
 
     .sensor-box.good {
@@ -568,6 +592,7 @@
         <button class="cmd-btn btn-orange fill-btn" id="fillBtn">FILL</button>
         <button class="cmd-btn btn-yellow stop-btn" id="stopLogBtn">STOP LOG</button>
         <button class="cmd-btn btn-orange fire-btn" id="fireBtn">FIRE</button>
+        <button class="cmd-btn clear-btn" id="clearTestBtn">CLEAR TEST</button>
         <button class="cmd-btn btn-red abort-btn" id="abortBtn">ABORT</button>
       </div>
     </div>
@@ -635,32 +660,50 @@
 
               <div class="overlay" style="left: 638px; top: 57px;">
                 <div class="overlay-label">LF-PT</div>
-                <div class="sensor-box good" id="sensor-LF-PT" data-green-threshold-psi="450">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
               <div class="overlay" style="left: 992px; top: 185px;">
                 <div class="overlay-label">FT-PT</div>
-                <div class="sensor-box good" id="sensor-FT-PT" data-green-threshold-psi="450">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
               <div class="overlay" style="left: 1488px; top: 408px;">
                 <div class="overlay-label">FM-PT</div>
-                <div class="sensor-box good" id="sensor-FM-PT" data-green-threshold-psi="450">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
               <div class="overlay" style="left: 1565px; top: 350px;">
                 <div class="overlay-label">FI-PT</div>
-                <div class="sensor-box good" id="sensor-FI-PT" data-green-threshold-psi="450">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
               <div class="overlay" style="left: 985px; top: 545px;">
                 <div class="overlay-label">WM-PT</div>
-                <div class="sensor-box good" id="sensor-WM-PT" data-green-threshold-psi="450">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
 
               <div class="overlay" style="left: 1570px; top: 205px;">
                 <div class="overlay-label">CC-PT</div>
-                <div class="sensor-box good" id="sensor-CC-PT" data-green-threshold-psi="450">400 PSI</div>
+                <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450">
+                  <div class="sensor-reading">-- PSI</div>
+                  <div class="sensor-deriv">-- psi/min</div>
+                </div>
               </div>
             </div>
           </div>
