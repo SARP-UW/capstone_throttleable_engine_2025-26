@@ -8,8 +8,6 @@ import threading
 import time
 
 if TYPE_CHECKING:
-	# These imports are ONLY for IDE/type hints.
-	# We keep this main skeleton “light” and not runnable yet.
 	from queue import Queue
 
 	from deep_thrott_code.daq.services.sample import RawSample, Sample
@@ -43,25 +41,25 @@ def main() -> None:
 	"""Outline
 
 		This function will:
-
-		1) Create shared objects:
-				 - stop_event
-				 - sensor_state_store (existing StateStore)
-				 - system_state_store
-				 - queues: sample_queue, gui_queue, command_queue
-
-		2) Configure “mode” (simulation vs hardware):
+		- Load config files
+			- hardware.yml
+			- conversions.yml
+		- Initialize hardware drivers and ADCs
+		- Create shared objects:
+			- stop_event
+			- sensor_state_store 
+			- system_state_store
+			- queues: sample_queue, gui_queue, command_queue
+		- Configure “mode” (simulation vs hardware):
 				 - build_sensors(simulation=...)
 				 - build_sensor_map(...)
-
-		3) Start threads:
+		- Start threads:
 				 - DAQ producer thread
 				 - DAQ consumer thread
 				 - Throttle loop thread
 				 - F3 loop thread
-				 - GUI thread
-
-		4) Handle shutdown:
+		- Start Socket.IO server 
+		- Handle shutdown:
 				 - Ctrl+C sets stop_event
 				 - join threads
 				 - close CSV logger
