@@ -39,11 +39,11 @@ def pin_current_thread_to_cpu(cpu_index: int) -> None:
 
 def main() -> None:
 	"""Outline
-
 		This function will:
 		- Load config files
 			- hardware.yml
 			- conversions.yml
+			- sequences.yml
 		- Initialize hardware drivers and ADCs
 		- Create shared objects:
 			- stop_event
@@ -154,7 +154,6 @@ def main() -> None:
 		daq["logger"].close()
 		print("DAQ stopped cleanly.")
 		return
-
 	return
 
 if __name__ == "__main__":

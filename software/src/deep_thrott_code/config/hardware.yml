@@ -76,7 +76,7 @@ sensors:
 			notes: "Combustion chamber pressure transducer"
 
 actuators:
-	solenoids:
+	valves:
 		WMV:
 			enabled: true
 			mode: on_off
