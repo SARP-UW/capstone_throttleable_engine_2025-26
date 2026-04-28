@@ -76,8 +76,6 @@ def main() -> None:
 
 	simulation = True
 	loop_hz = 50.0
-	producer_cpu = CPU_CORE_3_DAQ_PRODUCER
-	consumer_cpu = CPU_CORE_4_DAQ_CONSUMER_AND_F3
 
 	# Queue sizing copied from daq_main (tune later)
 	sample_queue: queue.Queue = queue.Queue(maxsize=1000)
@@ -91,13 +89,13 @@ def main() -> None:
 	sensor_map = build_sensor_map(sensors)
 
 	def daq_producer_entrypoint() -> None:
-		# Core 3
-		pin_current_thread_to_cpu(producer_cpu)
+		# once inside the producer loop thread, pin it to core 3
+		pin_current_thread_to_cpu(CPU_CORE_3_DAQ_PRODUCER)
 		producer_loop(sensors, sample_queue, stop_event, loop_hz)
 
 	def daq_consumer_entrypoint() -> None:
-		# Core 4
-		pin_current_thread_to_cpu(consumer_cpu)
+		# once inside the consumer loop thread, pin it to core 4
+		pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
 		consumer_loop(sample_queue, gui_queue, sensor_state_store, logger, stop_event, sensor_map)
 
 	daq_producer_thread = threading.Thread(
