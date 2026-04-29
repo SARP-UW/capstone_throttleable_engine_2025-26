@@ -1,6 +1,7 @@
 from .valve import Valve, ThrottleValve, ValveState
 import queue
 from enum import Enum
+import yaml
 
 class State(Enum):
     IDLE = "idle"
@@ -27,8 +28,8 @@ class Controller:
         self.hardware_config_path = hardware_config_path
         self.q = queue.Queue()
         self.transitions = self._build_transitions()
-        self.sequences = self._build_sequences(sequence_config_path)
-        self.valve_list = self._build_valve_list(hardware_config_path)
+        self.fill_sequence, self.fire_sequence = self._build_sequences(sequence_config_path)
+        self.actuator_list = self._build_actuator_list(hardware_config_path)
         self.state = State.IDLE
 
     def _loop(self):
@@ -67,25 +68,35 @@ class Controller:
         Args:
             sequence_config_path (str): path to the sequences config file
         """
-        fill = []
-        return "sequences"
+
+        with open(sequence_config_path, "r") as f:
+            sequence_config = yaml.safe_load(f)
+            fill_sequence = sequence_config.get("fill")
+            fire_sequence = sequence_config.get("fire")
+        return fill_sequence, fire_sequence
 
     @staticmethod
-    def _build_valve_list(self, hardware_config_path: str):
+    def _build_actuator_list(self, hardware_config_path: str):
         """
-        Builds the valve list based on the hardware config.
+        Builds the actuator list based on the hardware config.
 
         Args:
             hardware_config_path (str): path to the hardware config file
         """
 
-        return "valve_list"
+        with open(hardware_config_path, "r") as f:
+            hardware_config = yaml.safe_load(f)
+            actuator_list = hardware_config.get("actuators")
+        return actuator_list
 
     def get_state(self):
         return self.state
 
     def _execute_action(self, action: str, valve_id=None, valve_state=None):
-            pass
+        if action in (State.FILL.value, State.FIRE.value):
+            for step in self.fill_sequence.get("steps"):
+                valve_id = step.get("valve_id")
+                current_valve = self.valve_list.get(valve_id)
 
     def submit(self, gui_input):
         self.q.put(gui_input)
