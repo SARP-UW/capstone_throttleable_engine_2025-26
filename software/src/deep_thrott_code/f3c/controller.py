@@ -35,14 +35,18 @@ class Controller:
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
 
-    def __init__(self, hardware_config_path: str, sequence_config_path: str):
+    def __init__(self, hardware_config_path: str, sequence_config_path: str, q, system_state: State):
         self.sequence_config_path = sequence_config_path
         self.hardware_config_path = hardware_config_path
-        self.q = queue.Queue()
+        self.q = q
         self.transitions = self._build_transitions()
         self.sequences = self._build_sequences(sequence_config_path)
         self.actuator_list = self._build_actuator_list(hardware_config_path)
         self.state = State.IDLE
+        self.fill_executed = False
+        self.fire_executed = False
+        self.current_step = StepStatus.READY
+        self.step_list
 
     def _loop(self):
         while True:
@@ -74,17 +78,13 @@ class Controller:
                 self.state = sequence_state
 
                 # loop through each step in sequence
-                sequence = self.sequences.get(action)
-                for step in sequence.get("steps"):
+                current_sequence = self.sequences.get(action)
+                for step in current_sequence.get("steps"):
 
                     # check state at each step to catch aborts
                     if self.state == sequence_state:
                         valve_id = step.get("valve_id")
                         current_valve = self.actuator_list.get(valve_id)
-
-
-    def submit(self, gui_input):
-        self.q.put(gui_input)
 
     def shutdown(self):
         self.q.put(None)
@@ -143,18 +143,3 @@ class Controller:
             for valve_id, actuator_info in actuator_info_list.items():
                 actuator_list[valve_id] = Valve(valve_id, actuator_info.get("default_state"), actuator_info.get("pin"))
         return actuator_list
-
-    def get_state(self):
-        return self.state
-
-    def _execute_action(self, action: str, valve_id=None, valve_state=None):
-        if action in (State.FILL.value, State.FIRE.value):
-            for step in self.fill_sequence.get("steps"):
-                valve_id = step.get("valve_id")
-                current_valve = self.valve_list.get(valve_id)
-
-    def submit(self, gui_input):
-        self.q.put(gui_input)
-
-    def shutdown(self):
-        self.q.put(None)
