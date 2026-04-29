@@ -45,7 +45,7 @@ class ThrottleValve(Valve):
                 pass
                 # placeholder for signal to close valve, pwm = 0
 
-    def throttle(self, pwm):
+    def throttle(self, angle: float):
         pass
         # placeholder for throttling method, where actual actuation will take place
 

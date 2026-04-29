@@ -21,13 +21,14 @@ class Controller:
     """
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
-    valve_id_list = []
 
-    def __init__(self, valve_list: list[Valve]):
-        self.valve_list = valve_list
+    def __init__(self, hardware_config_path: str, sequence_config_path: str):
+        self.sequence_config_path = sequence_config_path
+        self.hardware_config_path = hardware_config_path
         self.q = queue.Queue()
         self.transitions = self._build_transitions()
-        self.sequences = self._build_sequences()
+        self.sequences = self._build_sequences(sequence_config_path)
+        self.valve_list = self._build_valve_list(hardware_config_path)
         self.state = State.IDLE
 
     def _loop(self):
@@ -59,17 +60,31 @@ class Controller:
         }
 
     @staticmethod
-    def _build_sequences(self):
+    def _build_sequences(self, sequence_config_path: str):
         """
-        Defines the fill and fire sequences.
+        Builds the fill and fire sequences based on the sequences config file.
+
+        Args:
+            sequence_config_path (str): path to the sequences config file
         """
         fill = []
         return "sequences"
 
+    @staticmethod
+    def _build_valve_list(self, hardware_config_path: str):
+        """
+        Builds the valve list based on the hardware config.
+
+        Args:
+            hardware_config_path (str): path to the hardware config file
+        """
+
+        return "valve_list"
+
     def get_state(self):
         return self.state
 
-    def execute_action(self, action: str):
+    def _execute_action(self, action: str, valve_id=None, valve_state=None):
             pass
 
     def submit(self, gui_input):
