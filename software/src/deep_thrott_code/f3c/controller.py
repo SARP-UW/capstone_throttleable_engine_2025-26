@@ -12,10 +12,13 @@ class State(Enum):
     SAFE = "safe"
 
 class TransitionAction(Enum):
+    """
+    Define the valid actions that can be taken. GUI can provide these in the form of strings.
+    """
     END = "end"                  # when hitting the end of a sequence
     ABORT = "abort"              # when the user aborts a sequence
-    START_FILL = "start_fill"    # when a fill sequence starts
-    START_FIRE = "start_fire"    # when a fire sequences starts
+    FILL = "fill"    # when a fill sequence starts
+    FIRE = "fire"    # when a fire sequences starts
     AUTO = "auto"                # when automatically going to the next step (no user input)
     EXIT_SAFE = "exit_safe"      # when the system is allowed to exit safe mode (must receive user input)
 
@@ -29,7 +32,7 @@ class Controller:
         self.hardware_config_path = hardware_config_path
         self.q = queue.Queue()
         self.transitions = self._build_transitions()
-        self.fill_sequence, self.fire_sequence = self._build_sequences(sequence_config_path)
+        self.sequences = self._build_sequences(sequence_config_path)
         self.actuator_list = self._build_actuator_list(hardware_config_path)
         self.state = State.IDLE
         self.thread = None
@@ -49,11 +52,33 @@ class Controller:
         return self.state
 
     def _execute_action(self, action: str, valve_id=None, valve_state=None):
-        if action == State.FILL.value:
-            transition = TransitionAction.START_FILL
-            for step in self.fill_sequence.get("steps"):
-                valve_id = step.get("valve_id")
-                current_valve = self.actuator_list.get(valve_id)
+        """
+        Method for executing any type of action.
+        Args:
+            action (str): action to execute, comes from GUI
+            valve_id (int): valve id of the valve for single valve actuation, None by default
+            valve_state (ValveState): valve state of the valve for single valve actuation, None by default
+        """
+        # if trying to fill or fire
+        if action in (State.FILL.value, State.FIRE.value):
+            transition_key = (self.state, TransitionAction(action))
+
+            # if desired action is a valid, defined transition from current state
+            if transition_key in self.transitions:
+
+                # update system state to reflect command
+                sequence_state = self.transitions.get(transition_key)
+                self.state = sequence_state
+
+                # loop through each step in sequence
+                sequence = self.sequences.get(action)
+                for step in sequence.get("steps"):
+
+                    # check state at each step to catch aborts
+                    if self.state == sequence_state:
+                        valve_id = step.get("valve_id")
+                        current_valve = self.actuator_list.get(valve_id)
+
 
     def submit(self, gui_input):
         self.q.put(gui_input)
@@ -62,7 +87,7 @@ class Controller:
         self.q.put(None)
 
     @staticmethod
-    def _build_transitions():
+    def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
         """
         Defines the allowed transitions between states. Provided the current state and the action that will be executed, 
         the dict provides what next state the system should enter.
@@ -71,8 +96,8 @@ class Controller:
         Value: next state
         """""
         return {
-            (State.IDLE, TransitionAction.START_FILL): State.FILL,
-            (State.IDLE, TransitionAction.START_FIRE): State.FIRE,
+            (State.IDLE, TransitionAction.FILL): State.FILL,
+            (State.IDLE, TransitionAction.FIRE): State.FIRE,
             (State.FILL, TransitionAction.END): State.IDLE,
             (State.FILL, TransitionAction.ABORT): State.SAFE,
             (State.FIRE, TransitionAction.END): State.IDLE,
@@ -94,9 +119,9 @@ class Controller:
         with open(sequence_config_path, "r") as f:
             sequence_config = yaml.safe_load(f)
             sequences = sequence_config.get("sequences")
-            fill_sequence = next(s for s in sequences if s["name"] == "fill")
-            fire_sequence = next(s for s in sequences if s["name"] == "fire")
-        return fill_sequence, fire_sequence
+
+            sequence_dict = {s["name"]: s for s in sequences}
+        return sequence_dict
 
     @staticmethod
     def _build_actuator_list(hardware_config_path: str):
