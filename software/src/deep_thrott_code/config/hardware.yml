@@ -80,7 +80,6 @@ actuators:
 		wmv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Water main valve"
@@ -88,7 +87,6 @@ actuators:
 		ftvv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: false
 			notes: "Fuel tank vent valve"
@@ -96,7 +94,6 @@ actuators:
 		fmv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Fuel main valve"
@@ -104,7 +101,6 @@ actuators:
 		fmctv:
 			enabled: true
 			mode: throttle
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Fuel main control/throttle valve"
@@ -112,7 +108,6 @@ actuators:
 		fifv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: false
 			notes: "Fuel igniter flow valve"
@@ -120,7 +115,6 @@ actuators:
 		lffv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Pressurant fuel filling flow valve"
@@ -128,7 +122,6 @@ actuators:
 		xffv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Pressurant oxidizer filling flow valve"
@@ -136,7 +129,6 @@ actuators:
 		offv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Oxidizer filling flow valve"
@@ -144,7 +136,6 @@ actuators:
 		omv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Oxidizer main valve"
@@ -152,7 +143,6 @@ actuators:
 		omctv:
 			enabled: true
 			mode: throttle
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Oxidizer main control/throttle valve"
@@ -160,7 +150,6 @@ actuators:
 		otvv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: false
 			notes: "Oxidizer tank vent valve"
@@ -168,7 +157,6 @@ actuators:
 		oifv:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: false
 			notes: "Oxidizer igniter flow valve"
@@ -176,7 +164,6 @@ actuators:
 		sparker:
 			enabled: true
 			mode: on_off
-			driver: gpio
 			pin: null
 			active_high: true
 			notes: "Igniter sparker"
