@@ -2,6 +2,8 @@ from .valve import Valve, ThrottleValve, ValveState
 import queue
 from enum import Enum
 import yaml
+from collections import deque
+import time
 
 class State(Enum):
     IDLE = "idle"
@@ -45,8 +47,9 @@ class Controller:
         self.state = State.IDLE
         self.fill_executed = False
         self.fire_executed = False
-        self.current_step = StepStatus.READY
-        self.step_list
+        self.step_status = StepStatus.READY
+        self.current_step = None
+        self.step_list = deque(maxlen=100)
 
     def _loop(self):
         while True:
@@ -85,6 +88,28 @@ class Controller:
                     if self.state == sequence_state:
                         valve_id = step.get("valve_id")
                         current_valve = self.actuator_list.get(valve_id)
+                        self.step_status = StepStatus.EXECUTING
+                        self.current_step = (step.get("valve_id"), step.get("action"))
+
+                        # if the valve for this step is a throttle valve
+                        if isinstance(current_valve, ThrottleValve):
+                            # TO DO: throttling implementation
+                            pass
+                        else:
+                            valve_goal_state = ValveState(step.get("action"))
+
+                            # valve actuation command
+                            current_valve.set_state(valve_goal_state)
+
+                            # wait for delay specified in step (can be 0.0)
+                            time.sleep(step.get("time_delay"))
+                            if step.get("user_input"):
+                                self.step_status = StepStatus.WAITING_USER
+                                self.q.put(self.step_status)
+                                self.q.get()
+
+                            self.step_list.append(self.current_step)
+                            self.step_status = StepStatus.READY
 
     def shutdown(self):
         self.q.put(None)
