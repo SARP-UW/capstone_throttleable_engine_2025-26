@@ -77,7 +77,7 @@ sensors:
 
 actuators:
 	valves:
-		WMV:
+		wmv:
 			enabled: true
 			mode: on_off
 			driver: gpio
@@ -85,31 +85,7 @@ actuators:
 			active_high: true
 			notes: "Water main valve"
 
-		FMV:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Fuel main valve"
-
-		FMCTV:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Fuel control/throttle valve"
-
-		FIFV:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Fuel igniter/fill valve"
-
-		FTVV:
+		ftvv:
 			enabled: true
 			mode: on_off
 			driver: gpio
@@ -117,3 +93,90 @@ actuators:
 			active_high: true
 			notes: "Fuel tank vent valve"
 
+		fmv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel main valve"
+
+		fmctv:
+			enabled: true
+			mode: throttle
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel main control/throttle valve"
+
+		fifv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Fuel igniter flow valve"
+
+		lffv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Pressurant fuel filling flow valve"
+
+		xffv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Pressurant oxidizer filling flow valve"
+
+		offv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Oxidizer filling flow valve"
+
+		omv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Oxidizer main valve"
+
+		omctv:
+			enabled: true
+			mode: throttle
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Oxidizer main control/throttle valve"
+
+		otvv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Oxidizer tank vent valve"
+
+		oifv:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Oxidizer igniter flow valve"
+
+		sparker:
+			enabled: true
+			mode: on_off
+			driver: gpio
+			pin: null
+			active_high: true
+			notes: "Igniter sparker"
