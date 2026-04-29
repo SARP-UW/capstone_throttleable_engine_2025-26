@@ -49,6 +49,10 @@ def create_backend_app(
 	gui_queue: queue.Queue,
 	command_queue: queue.Queue,
 	control_queue: queue.Queue,
+	f3_to_gui_queue: queue.Queue | None = None,
+	gui_to_f3_queue: queue.Queue | None = None,
+	get_system_snapshot: Callable[[], dict] | None = None,
+	sequence_defs: list[dict] | None = None,
 ) -> Flask:
 	# Local imports to keep this module importable in more environments.
 	from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
@@ -64,6 +68,10 @@ def create_backend_app(
 		gui_queue=gui_queue,
 		command_queue=command_queue,
 		control_queue=control_queue,
+		f3_to_gui_queue=f3_to_gui_queue,
+		gui_to_f3_queue=gui_to_f3_queue,
+		get_system_snapshot=get_system_snapshot,
+		sequence_defs=sequence_defs,
 	)
 	return app
 

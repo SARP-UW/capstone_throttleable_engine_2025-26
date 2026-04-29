@@ -58,6 +58,10 @@
 
     * { box-sizing: border-box; }
 
+    html {
+      font-size: 13px;
+    }
+
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -210,9 +214,10 @@
       display: flex;
       align-items: center;
       gap: 0;
+      padding: 6px 6px 0 6px;
+      border: 1px solid var(--border);
       border-bottom: none;
-      background: transparent;
-      border: none;
+      background: var(--surface);
     }
 
     .tab {
@@ -229,6 +234,7 @@
     .pid-panel {
       position: relative;
       border: 1px solid var(--border);
+      border-top: none;
       background: white;
       overflow: hidden;
       min-height: 0;
@@ -385,6 +391,10 @@
       color: var(--text);
     }
 
+    .side-panel .mini-btn {
+      font-size: 0.85rem;
+    }
+
     .mini-btn.is-active-open {
       background: var(--btn-green);
       cursor: default;
@@ -408,11 +418,74 @@
       gap: 18px;
     }
 
+    .sequence-tabs {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 6px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .sequence-tabs details {
+      border: 1px solid var(--border);
+      background: var(--muted);
+      padding: 6px;
+    }
+
+    .sequence-tabs summary {
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.85rem;
+      list-style: none;
+    }
+
+    .sequence-tabs summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .sequence-tabs summary::marker {
+      content: '';
+    }
+
+    .sequence-tabs summary.seq-active {
+      font-weight: 700;
+    }
+
+    .sequence-step {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+      align-items: center;
+      padding: 4px 2px;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+
+    .sequence-step:first-child {
+      border-top: none;
+    }
+
+    .sequence-step .step-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sequence-step.is-current .step-text {
+      font-weight: 700;
+    }
+
+    .sequence-placeholder {
+      font-size: 0.82rem;
+      opacity: 0.8;
+    }
+
     .legend-box {
       border: 1px solid var(--border);
       background: var(--surface);
       padding: 10px 12px;
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       display: grid;
       grid-template-columns: 1fr;
       gap: 6px;
@@ -438,7 +511,7 @@
     .legend-dot.bad { background: var(--bad); }
 
     .side-title {
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: 400;
       text-align: center;
       margin-bottom: 6px;
@@ -469,7 +542,7 @@
       background: #f4f4f4;
       padding: 8px 10px;
       text-align: center;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
     }
 
     .message-bar {
@@ -589,7 +662,7 @@
 
       <div class="state-box">
         <div class="state-label">SYSTEM STATE:</div>
-        <div class="state-value">IDLE</div>
+        <div class="state-value" id="systemStateValue">IDLE</div>
       </div>
 
       <div class="action-box">
@@ -756,19 +829,10 @@
       </div>
 
       <div class="side-panel">
-        <div class="legend-box" aria-label="System status legend">
-          <div class="legend-row"><span class="legend-dot good" aria-hidden="true"></span><span>Nominal</span></div>
-          <div class="legend-row"><span class="legend-dot warn" aria-hidden="true"></span><span>Off-Nominal</span></div>
-          <div class="legend-row"><span class="legend-dot bad" aria-hidden="true"></span><span>Abort Immediately</span></div>
-        </div>
-
         <div>
-          <div class="side-title">THROTTLE STEPS</div>
-          <div class="steps">
-            <button class="step-btn"><span>100</span><span class="step-arrow">▽</span></button>
-            <button class="step-btn"><span>90</span><span class="step-arrow">▽</span></button>
-            <button class="step-btn"><span>85</span><span class="step-arrow">▽</span></button>
-            <button class="step-btn"><span>80</span><span class="step-arrow">▽</span></button>
+          <div class="side-title">SEQUENCES</div>
+          <div class="sequence-tabs" id="sequenceTabs">
+            <div class="sequence-placeholder">Loading sequences...</div>
           </div>
         </div>
 
@@ -825,17 +889,65 @@
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Prefer the server-hosted Socket.IO client to guarantee version compatibility.
-    // Fallback to CDN only if the server doesn't provide it (e.g., flask_socketio not installed).
-    if (typeof window.io !== 'function') {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
-      document.head.appendChild(s);
-    }
+    (function () {
+      function _trimTrailingSlashes(s) {
+        return String(s || '').replace(/\/+$/, '');
+      }
+
+      function deriveBackendBaseUrl() {
+        try {
+          const explicit = typeof window.__BACKEND_SOCKET_URL__ === 'string' ? window.__BACKEND_SOCKET_URL__.trim() : '';
+          if (explicit) return _trimTrailingSlashes(explicit);
+        } catch (_) {
+          // ignore
+        }
+        try {
+          if (window.location.protocol === 'file:' || !window.location.hostname) return 'http://127.0.0.1:6001';
+          return `${window.location.protocol}//${window.location.hostname}:6001`;
+        } catch (_) {
+          return 'http://127.0.0.1:6001';
+        }
+      }
+
+      function loadScript(src, cb) {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => cb(null);
+        s.onerror = () => cb(new Error(`Failed to load ${src}`));
+        document.head.appendChild(s);
+      }
+
+      function loadMainJs() {
+        const main = document.createElement('script');
+        main.src = "{{ url_for('static', filename='main.js') }}";
+        main.async = true;
+        document.head.appendChild(main);
+      }
+
+      const backendBase = deriveBackendBaseUrl();
+      const candidates = [
+        `${backendBase}/socket.io/socket.io.js`,
+        'https://cdn.socket.io/4.7.5/socket.io.min.js',
+      ];
+
+      (function tryLoad(i) {
+        if (i >= candidates.length) {
+          console.error('Socket.IO client failed to load from all sources.');
+          loadMainJs();
+          return;
+        }
+        loadScript(candidates[i], (err) => {
+          if (!err && typeof window.io === 'function') {
+            loadMainJs();
+            return;
+          }
+          tryLoad(i + 1);
+        });
+      })(0);
+    })();
   </script>
-  <script src="{{ url_for('static', filename='main.js') }}"></script>
   <script>
     const pidCanvas = document.getElementById('pidCanvasEthanol');
     const pidStage = document.getElementById('pidStageEthanol');

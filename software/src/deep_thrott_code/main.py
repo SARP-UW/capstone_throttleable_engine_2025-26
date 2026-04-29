@@ -3,10 +3,12 @@ from __future__ import annotations
 import os
 import queue
 import threading
+from pathlib import Path
 
 from deep_thrott_code.backend_app import DaqRuntime, create_backend_app, drain_queue, emit_system as _emit_system, parse_args
 from deep_thrott_code.backend_service import BackendController
 from deep_thrott_code.gui.extensions import socketio
+from deep_thrott_code.sequence_runtime import SequenceRuntime, load_sequences_yaml
 
 
 # ---------------------------------------------------------------------
@@ -44,6 +46,39 @@ def main() -> None:
 	gui_queue: queue.Queue = queue.Queue(maxsize=1000)
 	command_queue: queue.Queue = queue.Queue(maxsize=100)
 	control_queue: queue.Queue = queue.Queue(maxsize=100)
+	f3_to_gui_queue: queue.Queue = queue.Queue(maxsize=100)
+	gui_to_f3_queue: queue.Queue = queue.Queue(maxsize=100)
+
+	# -----------------------------------------------------------------
+	# Sequence definitions + manual execute handshake (GUI-driven)
+	# -----------------------------------------------------------------
+	# NOTE: This is a lightweight runner that drives the GUI tabs and
+	# the manual-execute handshake *without* editing `f3c/controller.py`.
+	# TODO: Replace with real F3C controller integration.
+	
+	sequences_path = Path(__file__).resolve().parent / "config" / "sequences.yaml"
+	try:
+		sequences = load_sequences_yaml(sequences_path)
+	except Exception as e:
+		_emit_system(f"Failed to load sequences.yaml: {e}")
+		sequences = {"idle": {}}  # type: ignore[assignment]
+		sequence_runtime = None
+		sequence_defs_for_gui: list[dict] = []
+		get_system_snapshot = None
+	else:
+		sequence_runtime = SequenceRuntime(
+			sequences=sequences,
+			command_queue=command_queue,
+			f3_to_gui_queue=f3_to_gui_queue,
+			gui_to_f3_queue=gui_to_f3_queue,
+		)
+		sequence_defs_for_gui = sequence_runtime.get_sequence_defs_for_gui()
+		get_system_snapshot = sequence_runtime.snapshot
+		threading.Thread(
+			target=sequence_runtime.loop_forever,
+			daemon=True,
+			name="sequence_runtime",
+		).start()
 
 	sample_queue: queue.Queue = queue.Queue(maxsize=1000)
 	daq = DaqRuntime(
@@ -64,7 +99,15 @@ def main() -> None:
 	# TODO: F3C loop add
 	# -----------------------------------------------------------------
 
-	app = create_backend_app(gui_queue=gui_queue, command_queue=command_queue, control_queue=control_queue)
+	app = create_backend_app(
+		gui_queue=gui_queue,
+		command_queue=command_queue,
+		control_queue=control_queue,
+		f3_to_gui_queue=f3_to_gui_queue,
+		gui_to_f3_queue=gui_to_f3_queue,
+		get_system_snapshot=get_system_snapshot,
+		sequence_defs=sequence_defs_for_gui,
+	)
 	controller = BackendController(
 		control_queue=control_queue,
 		emit_system=_emit_system,

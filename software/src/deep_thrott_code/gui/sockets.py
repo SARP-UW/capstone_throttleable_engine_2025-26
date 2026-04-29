@@ -27,6 +27,10 @@ def register_socket_handlers(
 	gui_queue: queue.Queue | None = None,
 	command_queue: queue.Queue | None = None,
 	control_queue: queue.Queue | None = None,
+	f3_to_gui_queue: queue.Queue | None = None,
+	gui_to_f3_queue: queue.Queue | None = None,
+	get_system_snapshot: Any | None = None,  # callable -> dict
+	sequence_defs: list[dict[str, Any]] | None = None,
 ) -> None:
 	"""Register Socket.IO event handlers + start the 10Hz GUI loop.
 
@@ -50,6 +54,10 @@ def register_socket_handlers(
 	app.config["GUI_QUEUE"] = gui_queue
 	app.config["COMMAND_QUEUE"] = command_queue
 	app.config["CONTROL_QUEUE"] = control_queue
+	app.config["F3_TO_GUI_QUEUE"] = f3_to_gui_queue
+	app.config["GUI_TO_F3_QUEUE"] = gui_to_f3_queue
+	app.config["GET_SYSTEM_SNAPSHOT"] = get_system_snapshot
+	app.config["SEQUENCE_DEFS"] = sequence_defs
 
 	def drain_gui_queue() -> int:
 		if gui_queue is None:
@@ -77,16 +85,56 @@ def register_socket_handlers(
 			states_copy = dict(latest_states)
 		return {"t_wall": time.time(), "states": states_copy}
 
+	def build_system_packet() -> dict[str, Any]:
+		snap: dict[str, Any] = {}
+		getter = app.config.get("GET_SYSTEM_SNAPSHOT")
+		if callable(getter):
+			try:
+				maybe = getter()
+				if isinstance(maybe, dict):
+					snap = maybe
+			except Exception:
+				pass
+		snap.setdefault("t_wall", time.time())
+		return snap
+
+	def drain_f3_to_gui_queue() -> None:
+		q = app.config.get("F3_TO_GUI_QUEUE")
+		if q is None:
+			return
+		while True:
+			try:
+				msg = q.get_nowait()
+			except queue.Empty:
+				break
+			else:
+				try:
+					q.task_done()
+				except Exception:
+					pass
+				if isinstance(msg, dict) and msg.get("type") == "manual_step_required":
+					try:
+						socketio.emit("manual_step_required", msg)
+					except Exception:
+						pass
+
 	def gui_loop_thread() -> None:
 		period_s = 0.1
 		next_tick = time.perf_counter()
 		while True:
 			drain_gui_queue()
+			drain_f3_to_gui_queue()
 			packet = build_packet()
 			try:
 				socketio.emit("daq_packet", packet)
 			except Exception:
 				# Keep the thread alive even if Socket.IO isn't ready.
+				pass
+
+			sys_packet = build_system_packet()
+			try:
+				socketio.emit("system_packet", sys_packet)
+			except Exception:
 				pass
 
 			next_tick += period_s
@@ -106,6 +154,41 @@ def register_socket_handlers(
 		socketio.emit("server_hello", {"ok": True})
 		# Send an immediate packet so the UI doesn't wait up to 100ms.
 		socketio.emit("daq_packet", build_packet())
+		# Send system state + sequence definitions immediately.
+		try:
+			defs = app.config.get("SEQUENCE_DEFS")
+			if isinstance(defs, list):
+				socketio.emit("sequence_definitions", {"sequences": defs})
+		except Exception:
+			pass
+		socketio.emit("system_packet", build_system_packet())
+
+	@socketio.on("manual_step_execute")
+	def _on_manual_step_execute(payload: Any) -> None:  # noqa: ANN401
+		q = app.config.get("GUI_TO_F3_QUEUE")
+		if q is None:
+			socketio.emit("command_reject", {"ok": False, "reason": "gui_to_f3_queue_not_configured"})
+			return
+		if not isinstance(payload, dict):
+			socketio.emit("command_reject", {"ok": False, "reason": "payload_not_object"})
+			return
+		seq = payload.get("sequence")
+		step_index = payload.get("step_index")
+		if not isinstance(seq, str) or step_index is None:
+			socketio.emit("command_reject", {"ok": False, "reason": "missing_sequence_or_step"})
+			return
+		try:
+			idx = int(step_index)
+		except Exception:
+			socketio.emit("command_reject", {"ok": False, "reason": "bad_step_index"})
+			return
+
+		try:
+			q.put({"type": "manual_step_execute", "sequence": seq, "step_index": idx}, timeout=0.1)
+		except Exception:
+			socketio.emit("command_reject", {"ok": False, "reason": "gui_to_f3_queue_full"})
+			return
+		socketio.emit("command_accept", {"ok": True, "name": "manual_step_execute"})
 
 	@socketio.on("gui_command")
 	def _on_gui_command(payload: Any) -> None:  # noqa: ANN401

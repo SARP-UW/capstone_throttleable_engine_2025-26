@@ -4,9 +4,116 @@
 		if (el) el.textContent = text;
 	}
 
+	function setSystemStateValue(text) {
+		const el = document.getElementById('systemStateValue');
+		if (el) el.textContent = text || 'IDLE';
+	}
+
 	let socketRef = null;
 	let telemetryFrozen = false;
 	let simulationEnabled = true;
+	let sequenceDefs = null;
+	let systemSnapshot = null;
+	let pendingSequenceCommand = null; // 'fill' | 'fire' | null
+	let pendingSinceMs = 0;
+	let pendingManualExecute = null; // { sequence: string, step_index: number } | null
+
+	function getCompletedStepsSet(history, sequenceKey) {
+		const set = new Set();
+		if (!Array.isArray(history)) return set;
+		for (const rec of history) {
+			if (!rec || typeof rec !== 'object') continue;
+			if (rec.sequence !== sequenceKey) continue;
+			if (rec.status !== 'COMPLETED') continue;
+			if (typeof rec.step_index === 'number') set.add(rec.step_index);
+		}
+		return set;
+	}
+
+	function renderSequenceTabs() {
+		const host = document.getElementById('sequenceTabs');
+		if (!host) return;
+		if (!sequenceDefs || !Array.isArray(sequenceDefs)) {
+			host.innerHTML = '<div class="sequence-placeholder">Loading sequences...</div>';
+			return;
+		}
+
+		const snap = systemSnapshot && typeof systemSnapshot === 'object' ? systemSnapshot : {};
+		const activeKey = typeof snap.active_sequence === 'string' ? snap.active_sequence : 'idle';
+		const currentIdx = typeof snap.current_step_index === 'number' ? snap.current_step_index : null;
+		const waiting = snap.waiting_manual && typeof snap.waiting_manual === 'object' ? snap.waiting_manual : null;
+		const waitingSeq = waiting && typeof waiting.sequence === 'string' ? waiting.sequence : null;
+		const waitingIdx = waiting && typeof waiting.step_index === 'number' ? waiting.step_index : null;
+		const isManualStillPending =
+			pendingManualExecute &&
+			waitingSeq === pendingManualExecute.sequence &&
+			waitingIdx === pendingManualExecute.step_index;
+		if (pendingManualExecute && !isManualStillPending) pendingManualExecute = null;
+
+		host.innerHTML = '';
+		for (const seq of sequenceDefs) {
+			if (!seq || typeof seq !== 'object') continue;
+			const key = typeof seq.key === 'string' ? seq.key : '';
+			const name = typeof seq.name === 'string' ? seq.name : key.toUpperCase();
+			const steps = Array.isArray(seq.steps) ? seq.steps : [];
+
+			const details = document.createElement('details');
+			// Keep the active sequence expanded by default.
+			details.open = key === activeKey;
+			const summary = document.createElement('summary');
+			summary.textContent = name;
+			if (key === activeKey) summary.classList.add('seq-active');
+			details.appendChild(summary);
+
+			const completed = getCompletedStepsSet(snap.history, key);
+			for (const step of steps) {
+				if (!step || typeof step !== 'object') continue;
+				const idx = typeof step.index === 'number' ? step.index : null;
+				const valve = typeof step.valve === 'string' ? step.valve : '';
+				const action = typeof step.action === 'string' ? step.action : '';
+				const userInput = !!step.user_input;
+
+				const row = document.createElement('div');
+				row.className = 'sequence-step';
+				if (key === activeKey && idx !== null && idx === currentIdx) row.classList.add('is-current');
+
+				const left = document.createElement('div');
+				left.className = 'step-text';
+				let prefix = '';
+				if (idx !== null && completed.has(idx)) prefix = '✓ ';
+				else if (key === activeKey && idx !== null && idx === currentIdx) prefix = '▶ ';
+				else if (waitingSeq === key && idx !== null && idx === waitingIdx) prefix = '⏸ ';
+
+				left.textContent = `${prefix}${valve} ${action}${userInput ? ' (manual)' : ''}`;
+				row.appendChild(left);
+
+				const right = document.createElement('div');
+				if (waitingSeq === key && idx !== null && idx === waitingIdx) {
+					const btn = document.createElement('button');
+					btn.type = 'button';
+					btn.className = 'mini-btn';
+					const pending = pendingManualExecute && pendingManualExecute.sequence === key && pendingManualExecute.step_index === idx;
+					btn.textContent = pending ? 'Waiting…' : 'Execute';
+					btn.disabled = !!pending;
+					btn.addEventListener('click', () => {
+						if (!socketRef) {
+							setSystemMessage('System message: Not connected (manual execute not sent).');
+							return;
+						}
+						pendingManualExecute = { sequence: key, step_index: idx };
+						renderSequenceTabs();
+						setSystemMessage('System message: Manual execute sent.');
+						socketRef.emit('manual_step_execute', { sequence: key, step_index: idx });
+					});
+					right.appendChild(btn);
+				}
+				row.appendChild(right);
+				details.appendChild(row);
+			}
+
+			host.appendChild(details);
+		}
+	}
 
 	function emitGuiCommand(payload) {
 		if (!socketRef) {
@@ -433,11 +540,22 @@
 			// ignore
 		}
 		try {
-			if (!socketUrl && (window.location.protocol === 'file:' || !window.location.hostname)) {
-				socketUrl = 'http://127.0.0.1:5000';
+			// Two-process default: if the GUI is being served on :5000, the backend
+			// Socket.IO server is expected on the same host at :6001.
+			if (!socketUrl && window.location && window.location.protocol && window.location.hostname) {
+				if (window.location.protocol !== 'file:' && window.location.port !== '6001') {
+					socketUrl = `${window.location.protocol}//${window.location.hostname}:6001`;
+				}
 			}
 		} catch (_) {
-			if (!socketUrl) socketUrl = 'http://127.0.0.1:5000';
+			// ignore
+		}
+		try {
+			if (!socketUrl && (window.location.protocol === 'file:' || !window.location.hostname)) {
+				socketUrl = 'http://127.0.0.1:6001';
+			}
+		} catch (_) {
+			if (!socketUrl) socketUrl = 'http://127.0.0.1:6001';
 		}
 
 		const socketOpts = {
@@ -467,10 +585,57 @@
 		socket.on('command_reject', (msg) => {
 			const reason = msg && msg.reason ? msg.reason : 'unknown';
 			setSystemMessage(`System message: Command rejected (${reason}).`);
+			if (pendingSequenceCommand) {
+				pendingSequenceCommand = null;
+				pendingSinceMs = 0;
+				const fillBtn = document.getElementById('fillBtn');
+				const fireBtn = document.getElementById('fireBtn');
+				if (fillBtn) fillBtn.disabled = false;
+				if (fireBtn) fireBtn.disabled = false;
+			}
+			if (pendingManualExecute) {
+				pendingManualExecute = null;
+				renderSequenceTabs();
+			}
 		});
 		socket.on('system_message', (msg) => {
 			const text = msg && msg.text ? msg.text : '';
 			if (text) setSystemMessage(`System message: ${text}`);
+		});
+
+		socket.on('sequence_definitions', (msg) => {
+			const seqs = msg && Array.isArray(msg.sequences) ? msg.sequences : null;
+			if (seqs !== null) {
+				sequenceDefs = seqs;
+				renderSequenceTabs();
+			}
+		});
+
+		socket.on('system_packet', (pkt) => {
+			systemSnapshot = pkt && typeof pkt === 'object' ? pkt : null;
+			const state = systemSnapshot && typeof systemSnapshot.system_state === 'string' ? systemSnapshot.system_state : 'IDLE';
+			setSystemStateValue(state);
+			renderSequenceTabs();
+
+			// Handshake: if we have a pending Fill/Fire, wait until the backend
+			// reports the sequence as active.
+			if (pendingSequenceCommand) {
+				const active = systemSnapshot && typeof systemSnapshot.active_sequence === 'string' ? systemSnapshot.active_sequence : '';
+				if (active === pendingSequenceCommand) {
+					pendingSequenceCommand = null;
+					pendingSinceMs = 0;
+					const fillBtn = document.getElementById('fillBtn');
+					const fireBtn = document.getElementById('fireBtn');
+					if (fillBtn) fillBtn.disabled = false;
+					if (fireBtn) fireBtn.disabled = false;
+				}
+			}
+		});
+
+		socket.on('manual_step_required', (msg) => {
+			const text = msg && msg.message ? msg.message : 'Manual step required.';
+			setSystemMessage(`System message: ${text}`);
+			// The UI will also show an Execute button via system_packet.waiting_manual.
 		});
 
 		socket.on('daq_packet', (pkt) => {
@@ -497,6 +662,12 @@
 		const fillBtn = document.getElementById('fillBtn');
 		if (fillBtn) {
 			fillBtn.addEventListener('click', () => {
+				pendingSequenceCommand = 'fill';
+				pendingSinceMs = Date.now();
+				fillBtn.disabled = true;
+				const fireBtn = document.getElementById('fireBtn');
+				if (fireBtn) fireBtn.disabled = true;
+				setSystemMessage('System message: Fill requested; waiting for backend state change...');
 				emitGuiCommand({ name: 'fill' });
 			});
 		}
@@ -504,6 +675,12 @@
 		const fireBtn = document.getElementById('fireBtn');
 		if (fireBtn) {
 			fireBtn.addEventListener('click', () => {
+				pendingSequenceCommand = 'fire';
+				pendingSinceMs = Date.now();
+				fireBtn.disabled = true;
+				const fillBtn = document.getElementById('fillBtn');
+				if (fillBtn) fillBtn.disabled = true;
+				setSystemMessage('System message: Fire requested; waiting for backend state change...');
 				emitGuiCommand({ name: 'fire' });
 			});
 		}

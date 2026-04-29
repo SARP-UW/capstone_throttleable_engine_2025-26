@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument(
         "--backend",
         default="",
-        help="Backend Socket.IO base URL (e.g. http://pi-host:6000). If empty, uses same-origin.",
+        help="Backend Socket.IO base URL (e.g. http://pi-host:6001). If empty, frontend derives http(s)://<gui-host>:6001.",
     )
     parser.add_argument("--debug", action="store_true", help="Enable Flask debug")
     args = parser.parse_args()
