@@ -2,7 +2,6 @@ from .valve import Valve, ThrottleValve, ValveState
 import queue
 from enum import Enum
 import yaml
-import threading
 
 class State(Enum):
     IDLE = "idle"
@@ -22,6 +21,15 @@ class TransitionAction(Enum):
     AUTO = "auto"                # when automatically going to the next step (no user input)
     EXIT_SAFE = "exit_safe"      # when the system is allowed to exit safe mode (must receive user input)
 
+
+class StepStatus(Enum):
+    READY = "ready"
+    WAITING_USER = "waiting_user"
+    # WAITING_CONDITION = "waiting_condition"
+    EXECUTING = "executing"
+    COMPLETED = "completed"
+    ABORTED = "aborted"
+
 class Controller:
     """
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
@@ -35,11 +43,6 @@ class Controller:
         self.sequences = self._build_sequences(sequence_config_path)
         self.actuator_list = self._build_actuator_list(hardware_config_path)
         self.state = State.IDLE
-        self.thread = None
-
-    def start(self):
-        self.thread = threading.Thread(target=self._loop, daemon=True)
-        self.thread.start()
 
     def _loop(self):
         while True:
@@ -107,6 +110,7 @@ class Controller:
             (State.SAFE, TransitionAction.EXIT_SAFE): State.IDLE,
         }
 
+
     @staticmethod
     def _build_sequences(sequence_config_path: str):
         """
@@ -139,3 +143,18 @@ class Controller:
             for valve_id, actuator_info in actuator_info_list.items():
                 actuator_list[valve_id] = Valve(valve_id, actuator_info.get("default_state"), actuator_info.get("pin"))
         return actuator_list
+
+    def get_state(self):
+        return self.state
+
+    def _execute_action(self, action: str, valve_id=None, valve_state=None):
+        if action in (State.FILL.value, State.FIRE.value):
+            for step in self.fill_sequence.get("steps"):
+                valve_id = step.get("valve_id")
+                current_valve = self.valve_list.get(valve_id)
+
+    def submit(self, gui_input):
+        self.q.put(gui_input)
+
+    def shutdown(self):
+        self.q.put(None)
