@@ -90,7 +90,7 @@ actuators:
 			mode: on_off
 			driver: gpio
 			pin: null
-			active_high: true
+			active_high: false
 			notes: "Fuel tank vent valve"
 
 		fmv:
@@ -114,7 +114,7 @@ actuators:
 			mode: on_off
 			driver: gpio
 			pin: null
-			active_high: true
+			active_high: false
 			notes: "Fuel igniter flow valve"
 
 		lffv:
@@ -162,7 +162,7 @@ actuators:
 			mode: on_off
 			driver: gpio
 			pin: null
-			active_high: true
+			active_high: false
 			notes: "Oxidizer tank vent valve"
 
 		oifv:
@@ -170,7 +170,7 @@ actuators:
 			mode: on_off
 			driver: gpio
 			pin: null
-			active_high: true
+			active_high: false
 			notes: "Oxidizer igniter flow valve"
 
 		sparker:
