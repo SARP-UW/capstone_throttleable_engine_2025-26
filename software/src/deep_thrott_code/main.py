@@ -1,158 +1,86 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import os
 import queue
 import threading
-import time
 
-if TYPE_CHECKING:
-	from queue import Queue
+from deep_thrott_code.backend_app import DaqRuntime, create_backend_app, drain_queue, emit_system as _emit_system, parse_args
+from deep_thrott_code.backend_service import BackendController
+from deep_thrott_code.gui.extensions import socketio
 
-	from deep_thrott_code.daq.services.sample import RawSample, Sample
-	from deep_thrott_code.daq.services.state_store import StateStore
 
 # ---------------------------------------------------------------------
 # CPU pinning notes (Raspberry Pi / Linux)
 # ---------------------------------------------------------------------
+
+# - Core 0: OS + GUI server
+# - Core 1: throttle control loop (placeholder)
+# - Core 2: DAQ producer
+# - Core 3: DAQ consumer + F3C loop (placeholder)
 
 CPU_CORE_1_OS_AND_GUI = 0
 CPU_CORE_2_THROTTLE = 1
 CPU_CORE_3_DAQ_PRODUCER = 2
 CPU_CORE_4_DAQ_CONSUMER_AND_F3 = 3
 
-def pin_current_thread_to_cpu(cpu_index: int) -> None:
-	"""Best-effort pinning for the *calling thread* (Linux-only).
 
-	- Raspberry Pi: works.
-	- Windows/macOS: safe no-op.
-	"""
+def pin_current_thread_to_cpu(cpu_index: int) -> None:
+	"""Best-effort pinning for the *calling thread* (Linux-only)."""
 	try:
 		os.sched_setaffinity(0, {int(cpu_index)})
 	except Exception:
 		return
 
-# ---------------------------------------------------------------------
-# Main outline
-# ---------------------------------------------------------------------
 
 def main() -> None:
-	"""Outline
-		This function will:
-		- Load config files
-			- hardware.yml
-			- conversions.yml
-			- sequences.yml
-		- Initialize hardware drivers and ADCs
-		- Create shared objects:
-			- stop_event
-			- sensor_state_store 
-			- system_state_store
-			- queues: sample_queue, gui_queue, command_queue
-		- Configure “mode” (simulation vs hardware):
-				 - build_sensors(simulation=...)
-				 - build_sensor_map(...)
-		- Start threads:
-				 - DAQ producer thread
-				 - DAQ consumer thread
-				 - Throttle loop thread
-				 - F3 loop thread
-		- Start Socket.IO server 
-		- Handle shutdown:
-				 - Ctrl+C sets stop_event
-				 - join threads
-				 - close CSV logger
-	"""
+	cfg = parse_args()
 
-	# -----------------------------------------------------------------
-	# 1) Start DAQ
-	# -----------------------------------------------------------------
+	if getattr(socketio, "is_dummy", False):
+		raise RuntimeError(
+			"flask_socketio is required for the backend service. "
+			"Install `flask-socketio` (and deps) in this environment."
+		)
 
-	from deep_thrott_code.daq.services.loop import consumer_loop, producer_loop
-	from deep_thrott_code.daq.services.logger import CsvLogger
-	from deep_thrott_code.daq.services.state_store import StateStore
-	from deep_thrott_code.daq.sensors.sensors import build_sensor_map, build_sensors
+	gui_queue: queue.Queue = queue.Queue(maxsize=1000)
+	command_queue: queue.Queue = queue.Queue(maxsize=100)
+	control_queue: queue.Queue = queue.Queue(maxsize=100)
 
-	simulation = True
-	loop_hz = 50.0
-
-	# Queue sizing copied from daq_main (tune later)
 	sample_queue: queue.Queue = queue.Queue(maxsize=1000)
-	gui_queue: queue.Queue = queue.Queue(maxsize=100)
-
-	stop_event = threading.Event()
-	sensor_state_store = StateStore()
-	logger = CsvLogger("daq_log.csv")
-
-	sensors = build_sensors(simulation=simulation)
-	sensor_map = build_sensor_map(sensors)
-
-	def daq_producer_entrypoint() -> None:
-		# once inside the producer loop thread, pin it to core 3
-		pin_current_thread_to_cpu(CPU_CORE_3_DAQ_PRODUCER)
-		producer_loop(sensors, sample_queue, stop_event, loop_hz)
-
-	def daq_consumer_entrypoint() -> None:
-		# once inside the consumer loop thread, pin it to core 4
-		pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
-		consumer_loop(sample_queue, gui_queue, sensor_state_store, logger, stop_event, sensor_map)
-
-	daq_producer_thread = threading.Thread(
-		target=daq_producer_entrypoint,
-		daemon=True,
-		name="daq_producer",
-	)
-	daq_consumer_thread = threading.Thread(
-		target=daq_consumer_entrypoint,
-		daemon=True,
-		name="daq_consumer",
+	daq = DaqRuntime(
+		gui_queue=gui_queue,
+		sample_queue=sample_queue,
+		emit_system_fn=_emit_system,
+		drain_queue_fn=drain_queue,
+		pin_thread_to_cpu=pin_current_thread_to_cpu,
+		producer_cpu=CPU_CORE_3_DAQ_PRODUCER,
+		consumer_cpu=CPU_CORE_4_DAQ_CONSUMER_AND_F3,
 	)
 
-	threads = [daq_producer_thread, daq_consumer_thread]
-	for t in threads:
-		t.start()
-
-	daq = {
-		"threads": threads,
-		"stop_event": stop_event,
-		"sample_queue": sample_queue,
-		"gui_queue": gui_queue,
-		"sensor_state_store": sensor_state_store,
-		"logger": logger,
-	}
-	print("DAQ started (from deep_thrott_code.main).")
+	# -----------------------------------------------------------------
+	# TODO: Throttle control loop add
+	# -----------------------------------------------------------------
 
 	# -----------------------------------------------------------------
-	# 2) Throttle control loop (TODO)
+	# TODO: F3C loop add
 	# -----------------------------------------------------------------
-	# throttle_thread = threading.Thread(...)
-	# throttle_thread.start()
 
-	# -----------------------------------------------------------------
-	# 3) F3 loop (TODO)
-	# -----------------------------------------------------------------
-	#
-	# def f3_entrypoint() -> None:
-	#     pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
-	#     f3_loop_placeholder()
+	app = create_backend_app(gui_queue=gui_queue, command_queue=command_queue, control_queue=control_queue)
+	controller = BackendController(
+		control_queue=control_queue,
+		emit_system=_emit_system,
+		start_log=daq.start,
+		stop_log=daq.stop,
+		is_running=daq.is_running,
+	)
 
-	try:
-		while True:
-			time.sleep(1.0)
-			snapshot = daq["sensor_state_store"].snapshot()
-			if "chamber_pressure" in snapshot:
-				pc = snapshot["chamber_pressure"]
-				print(f"Pc = {pc.value:.2f} {pc.units} [{pc.status}]")
-	except KeyboardInterrupt:
-		print("\nStopping DAQ...")
-		daq["stop_event"].set()
-		for t in daq["threads"]:
-			t.join(timeout=2.0)
-		daq["logger"].close()
-		print("DAQ stopped cleanly.")
-		return
-	return
+	controller.set_simulation_enabled(cfg.simulation)
+	threading.Thread(target=controller.command_loop_forever, daemon=True, name="backend_command_loop").start()
+
+	if cfg.autostart:
+		daq.start(cfg.simulation)
+
+	print(f"Backend listening on http://{cfg.host}:{cfg.port} (Socket.IO)")
+	socketio.run(app, host=cfg.host, port=cfg.port, debug=cfg.debug, use_reloader=False)
 
 if __name__ == "__main__":
 	main()
