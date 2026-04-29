@@ -427,11 +427,17 @@
 		// `io()` will try to connect to the wrong origin. Default to the GUI server.
 		let socketUrl;
 		try {
-			if (window.location.protocol === 'file:' || !window.location.hostname) {
+			const explicit = typeof window.__BACKEND_SOCKET_URL__ === 'string' ? window.__BACKEND_SOCKET_URL__.trim() : '';
+			if (explicit) socketUrl = explicit;
+		} catch (_) {
+			// ignore
+		}
+		try {
+			if (!socketUrl && (window.location.protocol === 'file:' || !window.location.hostname)) {
 				socketUrl = 'http://127.0.0.1:5000';
 			}
 		} catch (_) {
-			socketUrl = 'http://127.0.0.1:5000';
+			if (!socketUrl) socketUrl = 'http://127.0.0.1:5000';
 		}
 
 		const socketOpts = {
