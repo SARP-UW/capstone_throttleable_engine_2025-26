@@ -2,6 +2,7 @@ from .valve import Valve, ThrottleValve, ValveState
 import queue
 from enum import Enum
 import yaml
+import threading
 
 class State(Enum):
     IDLE = "idle"
@@ -31,16 +32,37 @@ class Controller:
         self.fill_sequence, self.fire_sequence = self._build_sequences(sequence_config_path)
         self.actuator_list = self._build_actuator_list(hardware_config_path)
         self.state = State.IDLE
+        self.thread = None
+
+    def start(self):
+        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread.start()
 
     def _loop(self):
         while True:
             gui_input = self.q.get()
             if gui_input is None:
                 break
-            self.execute_action(gui_input)
+            self._execute_action(gui_input)
+
+    def get_state(self):
+        return self.state
+
+    def _execute_action(self, action: str, valve_id=None, valve_state=None):
+        if action == State.FILL.value:
+            transition = TransitionAction.START_FILL
+            for step in self.fill_sequence.get("steps"):
+                valve_id = step.get("valve_id")
+                current_valve = self.actuator_list.get(valve_id)
+
+    def submit(self, gui_input):
+        self.q.put(gui_input)
+
+    def shutdown(self):
+        self.q.put(None)
 
     @staticmethod
-    def _build_transitions(self):
+    def _build_transitions():
         """
         Defines the allowed transitions between states. Provided the current state and the action that will be executed, 
         the dict provides what next state the system should enter.
@@ -61,7 +83,7 @@ class Controller:
         }
 
     @staticmethod
-    def _build_sequences(self, sequence_config_path: str):
+    def _build_sequences(sequence_config_path: str):
         """
         Builds the fill and fire sequences based on the sequences config file.
 
@@ -71,12 +93,13 @@ class Controller:
 
         with open(sequence_config_path, "r") as f:
             sequence_config = yaml.safe_load(f)
-            fill_sequence = sequence_config.get("fill")
-            fire_sequence = sequence_config.get("fire")
+            sequences = sequence_config.get("sequences")
+            fill_sequence = next(s for s in sequences if s["name"] == "fill")
+            fire_sequence = next(s for s in sequences if s["name"] == "fire")
         return fill_sequence, fire_sequence
 
     @staticmethod
-    def _build_actuator_list(self, hardware_config_path: str):
+    def _build_actuator_list(hardware_config_path: str):
         """
         Builds the actuator list based on the hardware config.
 
@@ -86,20 +109,8 @@ class Controller:
 
         with open(hardware_config_path, "r") as f:
             hardware_config = yaml.safe_load(f)
-            actuator_list = hardware_config.get("actuators")
+            actuator_info_list = hardware_config.get("actuators").get("valves")
+            actuator_list = {}
+            for valve_id, actuator_info in actuator_info_list.items():
+                actuator_list[valve_id] = Valve(valve_id, actuator_info.get("default_state"), actuator_info.get("pin"))
         return actuator_list
-
-    def get_state(self):
-        return self.state
-
-    def _execute_action(self, action: str, valve_id=None, valve_state=None):
-        if action in (State.FILL.value, State.FIRE.value):
-            for step in self.fill_sequence.get("steps"):
-                valve_id = step.get("valve_id")
-                current_valve = self.valve_list.get(valve_id)
-
-    def submit(self, gui_input):
-        self.q.put(gui_input)
-
-    def shutdown(self):
-        self.q.put(None)
