@@ -10,7 +10,7 @@ class State(Enum):
     FILL = "fill"
     FIRE = "fire"
     THROTTLE = "throttle"
-    SAFE = "safe"
+    ABORT = "abort"
 
 class TransitionAction(Enum):
     """
@@ -37,10 +37,11 @@ class Controller:
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
 
-    def __init__(self, hardware_config_path: str, sequence_config_path: str, q, system_state: State):
+    def __init__(self, hardware_config_path: str, sequence_config_path: str, f3c_to_gui_queue, gui_to_f3c_queue, system_state: State):
         self.sequence_config_path = sequence_config_path
         self.hardware_config_path = hardware_config_path
-        self.q = q
+        self.f3c_to_gui_queue = f3c_to_gui_queue
+        self.gui_to_f3c_queue = gui_to_f3c_queue
         self.transitions = self._build_transitions()
         self.sequences = self._build_sequences(sequence_config_path)
         self.actuator_list = self._build_actuator_list(hardware_config_path)
@@ -50,16 +51,26 @@ class Controller:
         self.step_status = StepStatus.READY
         self.current_step = None
         self.step_list = deque(maxlen=100)
+        self.single_valve_actuation = "single valve actuation"
 
     def _loop(self):
         while True:
-            gui_input = self.q.get()
+            gui_input = self.gui_to_f3c_queue.get() # waits for an item in the queue with an interrupt
             if gui_input is None:
                 break
-            self._execute_action(gui_input)
+            if gui_input in [s.value for s in State]:
+                self._execute_action(gui_input)
+            else:
+                pass
 
     def get_state(self):
         return self.state
+
+    def get_step_status(self):
+        return self.step_status
+
+    def get_current_step(self):
+        return self.current_step
 
     def _execute_action(self, action: str, valve_id=None, valve_state=None):
         """
@@ -69,12 +80,13 @@ class Controller:
             valve_id (int): valve id of the valve for single valve actuation, None by default
             valve_state (ValveState): valve state of the valve for single valve actuation, None by default
         """
-        # if trying to fill or fire
-        if action in (State.FILL.value, State.FIRE.value):
-            transition_key = (self.state, TransitionAction(action))
 
-            # if desired action is a valid, defined transition from current state
-            if transition_key in self.transitions:
+        # if desired action is a valid, defined transition from current state
+        transition_key = (self.state, TransitionAction(action))
+        if transition_key in self.transitions:
+
+            # if trying to fill or fire
+            if action in (State.FILL.value, State.FIRE.value):
 
                 # update system state to reflect command
                 sequence_state = self.transitions.get(transition_key)
@@ -85,6 +97,7 @@ class Controller:
                 for step in current_sequence.get("steps"):
 
                     # check state at each step to catch aborts
+                    # TO DO: change this to thread interrupt or maybe keep but do both
                     if self.state == sequence_state:
                         valve_id = step.get("valve_id")
                         current_valve = self.actuator_list.get(valve_id)
@@ -94,6 +107,8 @@ class Controller:
                         # if the valve for this step is a throttle valve
                         if isinstance(current_valve, ThrottleValve):
                             # TO DO: throttling implementation
+                            # TO DO: need to have something that limits what OF you can have based on angles provided by
+                            # throttle controller, absolute max of 1.2
                             pass
                         else:
                             valve_goal_state = ValveState(step.get("action"))
@@ -105,14 +120,31 @@ class Controller:
                             time.sleep(step.get("time_delay"))
                             if step.get("user_input"):
                                 self.step_status = StepStatus.WAITING_USER
-                                self.q.put(self.step_status)
-                                self.q.get()
+                                self.f3c_to_gui_queue.put(self.step_status)
+                                self.gui_to_f3c_queue.get()
 
                             self.step_list.append(self.current_step)
                             self.step_status = StepStatus.READY
+            elif action == State.ABORT.value:
+                # TO DO: implement end thread aborting functionality
+                pass
+            elif action == self.single_valve_actuation:
+                if valve_id is None:
+                    # TO DO: send error saying no valve_id was provided
+                    pass
+                elif valve_state is None:
+                    # TO DO: send error saying no valve state was provided
+                    pass
+                else:
+                    current_valve = self.actuator_list.get(valve_id)
+                    current_valve.set_state(valve_state)
+        else:
+            # TO DO: send message to gui saying request was invalid based on state
+            pass
+
 
     def shutdown(self):
-        self.q.put(None)
+        self.gui_to_f3c_queue.put(None)
 
     @staticmethod
     def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
