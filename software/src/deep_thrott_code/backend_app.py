@@ -17,6 +17,10 @@ Queues used by the backend:
 	(e.g. "fill", "fire").
 - `control_queue`: GUI control commands for this backend process
 	(start/stop log, toggle simulation, etc.).
+
+Note on Controller integration:
+- The F3C Controller consumes commands and manual-step acknowledgements on
+	separate queues (`command_queue` and `gui_to_f3_queue`).
 """
 
 import argparse
@@ -258,3 +262,152 @@ class DaqRuntime:
 		self._drain_queue(self._sample_queue)
 		self._drain_queue(self._gui_queue)
 		self._emit_system("Backend log stopped.")
+
+
+
+
+    # def _run_sequence(self, sequence_key: str, seq_state: State) -> None:
+    #     seq = self.sequences.get(sequence_key)
+    #     steps: list[Any] = []
+    #     if isinstance(seq, dict):
+    #         maybe_steps = seq.get("steps")
+    #         if isinstance(maybe_steps, list):
+    #             steps = maybe_steps
+
+    #     with self._lock:
+    #         self.state = seq_state
+    #         self.active_sequence = sequence_key
+    #         self.current_step_index = None
+    #         self.step_status = StepStatus.READY
+    #         self.waiting_manual = None
+
+    #     for idx, step in enumerate(steps):
+    #         if not isinstance(step, dict):
+    #             continue
+    #         valve = step.get("valve")
+    #         action = step.get("action")
+    #         valve_s = valve if isinstance(valve, str) else str(valve or "")
+    #         action_s = action if isinstance(action, str) else str(action or "")
+
+    #         with self._lock:
+    #             self.current_step_index = int(idx)
+    #             self.step_status = StepStatus.EXECUTING
+    #             sys_state = step.get("system_state")
+    #             if isinstance(sys_state, str) and sys_state:
+    #                 try:
+    #                     self.state = State(sys_state.lower())
+    #                 except Exception:
+    #                     self.state = seq_state
+    #             else:
+    #                 self.state = seq_state
+    #             self.current_step = {
+    #                 "index": int(idx),
+    #                 "valve": valve_s,
+    #                 "action": action_s,
+    #                 "time_delay": step.get("time_delay", 0.0),
+    #                 "user_input": bool(step.get("user_input", False)),
+    #                 "condition_valve": step.get("condition_valve"),
+    #                 "condition_state": step.get("condition_state"),
+    #                 "system_state": sys_state,
+    #             }
+
+    #         self._record_history(sequence=sequence_key, step_index=idx, status="READY", valve=valve_s, action=action_s)
+    #         try:
+    #             act = self.actuators.get(valve_s.lower())
+    #         except Exception:
+    #             act = None
+
+    #         if act is not None:
+    #             try:
+    #                 act.set_state(ValveState(action_s.lower()))
+    #             except Exception:
+    #                 pass
+
+    #         if bool(step.get("user_input", False)):
+    #             with self._lock:
+    #                 self.step_status = StepStatus.WAITING_USER
+    #                 self.waiting_manual = {"sequence": sequence_key, "step_index": int(idx)}
+    #             self._record_history(sequence=sequence_key, step_index=idx, status="WAITING_USER", valve=valve_s, action=action_s)
+    #             try:
+    #                 self._f3c_to_gui_queue.put(
+    #                     {
+    #                         "type": "manual_step_required",
+    #                         "sequence": sequence_key,
+    #                         "step_index": int(idx),
+    #                         "message": "Manual step required. Perform the required checks, then click Execute.",
+    #                     },
+    #                     timeout=0.1,
+    #                 )
+    #             except Exception:
+    #                 pass
+
+    #             # Block until matching ack arrives.
+    #             while True:
+    #                 ack = self._ack_queue.get()
+    #                 try:
+    #                     if ack is None:
+    #                         break
+    #                     if isinstance(ack, dict) and ack.get("type") == "reset_sequences":
+    #                         self.reset_sequences()
+    #                         return
+    #                     if isinstance(ack, dict) and ack.get("type") == "manual_step_execute":
+    #                         seq = ack.get("sequence")
+    #                         step_index = ack.get("step_index")
+    #                         try:
+    #                             ack_idx = int(step_index)
+    #                         except Exception:
+    #                             ack_idx = None
+    #                         if seq == sequence_key and ack_idx == int(idx):
+    #                             break
+    #                 finally:
+    #                     try:
+    #                         self._ack_queue.task_done()
+    #                     except Exception:
+    #                         pass
+    #             with self._lock:
+    #                 self.waiting_manual = None
+    #                 self.step_status = StepStatus.EXECUTING
+
+    #         self._record_history(sequence=sequence_key, step_index=idx, status="EXECUTING", valve=valve_s, action=action_s)
+
+    #         time_delay = step.get("time_delay", 0.0)
+    #         # try:
+    #         #     time_delay_s = float(time_delay or 0.0)
+    #         # except Exception:
+    #         #     time_delay_s = 0.0
+    #         # if time_delay_s > 0:
+    #         #     time.sleep(time_delay_s)
+
+    #         with self._lock:
+    #             try:
+    #                 self.step_list.append(dict(self.current_step) if isinstance(self.current_step, dict) else {"index": int(idx)})
+    #             except Exception:
+    #                 pass
+    #         self._record_history(sequence=sequence_key, step_index=idx, status="COMPLETED", valve=valve_s, action=action_s)
+
+    #     with self._lock:
+    #         self.current_step_index = None
+    #         self.current_step = None
+    #         self.active_sequence = "idle"
+    #         self.state = State.IDLE
+    #         self.step_status = StepStatus.READY
+    #         self.waiting_manual = None
+
+    # @staticmethod
+    # def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
+    #     """Minimal legacy transition table.
+
+    #     This is used to preserve the old `_execute_action` gating behavior.
+    #     """
+
+    #     return {
+    #         (State.IDLE, TransitionAction.FILL): State.FILL,
+    #         (State.IDLE, TransitionAction.FIRE): State.FIRE,
+    #         (State.FILL, TransitionAction.END): State.IDLE,
+    #         (State.FIRE, TransitionAction.END): State.IDLE,
+    #         (State.THROTTLE, TransitionAction.END): State.IDLE,
+    #         (State.FILL, TransitionAction.ABORT): State.ABORT,
+    #         (State.FIRE, TransitionAction.ABORT): State.ABORT,
+    #         (State.THROTTLE, TransitionAction.ABORT): State.ABORT,
+    #     }
+

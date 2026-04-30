@@ -17,6 +17,28 @@
 	let pendingSequenceCommand = null; // 'fill' | 'fire' | null
 	let pendingSinceMs = 0;
 	let pendingManualExecute = null; // { sequence: string, step_index: number } | null
+	let _sequenceRenderScheduled = false;
+	let _lastSequenceRenderSig = '';
+
+	function _getSequenceRenderSig(snapshot) {
+		const snap = snapshot && typeof snapshot === 'object' ? snapshot : {};
+		const active = typeof snap.active_sequence === 'string' ? snap.active_sequence : '';
+		const current = typeof snap.current_step_index === 'number' ? snap.current_step_index : '';
+		const waiting = snap.waiting_manual && typeof snap.waiting_manual === 'object' ? snap.waiting_manual : null;
+		const wseq = waiting && typeof waiting.sequence === 'string' ? waiting.sequence : '';
+		const widx = waiting && typeof waiting.step_index === 'number' ? waiting.step_index : '';
+		const hlen = Array.isArray(snap.history) ? snap.history.length : 0;
+		return `${active}|${current}|${wseq}|${widx}|${hlen}`;
+	}
+
+	function scheduleRenderSequenceTabs() {
+		if (_sequenceRenderScheduled) return;
+		_sequenceRenderScheduled = true;
+		window.requestAnimationFrame(() => {
+			_sequenceRenderScheduled = false;
+			renderSequenceTabs();
+		});
+	}
 
 	function getCompletedStepsSet(history, sequenceKey) {
 		const set = new Set();
@@ -101,7 +123,7 @@
 							return;
 						}
 						pendingManualExecute = { sequence: key, step_index: idx };
-						renderSequenceTabs();
+						scheduleRenderSequenceTabs();
 						setSystemMessage('System message: Manual execute sent.');
 						socketRef.emit('manual_step_execute', { sequence: key, step_index: idx });
 					});
@@ -240,24 +262,35 @@
 		setValveUiState(valveName, normalized);
 	}
 
+	function applyValveStatesFromSnapshot(snapshot) {
+		const snap = snapshot && typeof snapshot === 'object' ? snapshot : null;
+		const valves = snap && snap.valves && typeof snap.valves === 'object' ? snap.valves : null;
+		if (!valves) return;
+		for (const [k, v] of Object.entries(valves)) {
+			if (typeof k !== 'string' || !k) continue;
+			if (typeof v !== 'string' || !v) continue;
+			setValveState(k, v);
+		}
+	}
+
 	function initValveControls() {
 		document.querySelectorAll('[data-valve]').forEach((overlay) => {
 			const valveName = overlay.getAttribute('data-valve');
 			if (!valveName) return;
-			if (!valveStateByName.has(valveName)) valveStateByName.set(valveName, 'open');
+			if (!valveStateByName.has(valveName)) valveStateByName.set(valveName, 'closed');
 
 			const openBtn = overlay.querySelector('[data-valve-action="open"]');
 			const closeBtn = overlay.querySelector('[data-valve-action="close"]');
 			if (openBtn) {
 				openBtn.addEventListener('click', (e) => {
 					e.preventDefault();
-					setValveState(valveName, 'open');
+					emitGuiCommand({ name: 'set_valve', valve: valveName, state: 'open' });
 				});
 			}
 			if (closeBtn) {
 				closeBtn.addEventListener('click', (e) => {
 					e.preventDefault();
-					setValveState(valveName, 'closed');
+					emitGuiCommand({ name: 'set_valve', valve: valveName, state: 'closed' });
 				});
 			}
 
@@ -560,7 +593,7 @@
 
 		const socketOpts = {
 			path: '/socket.io',
-			transports: ['polling'],
+			transports: ['websocket', 'polling'],
 			timeout: 5000,
 		};
 		const socket = socketUrl ? window.io(socketUrl, socketOpts) : window.io(socketOpts);
@@ -581,6 +614,12 @@
 
 		socket.on('command_accept', (msg) => {
 			if (msg && msg.name) setSystemMessage(`System message: Command accepted (${msg.name}).`);
+			if (msg && msg.name === 'manual_step_execute') {
+				// Clear the local pending flag once the backend has accepted the request.
+				// The Execute button itself is still gated by `system_packet.waiting_manual`.
+				pendingManualExecute = null;
+				scheduleRenderSequenceTabs();
+			}
 		});
 		socket.on('command_reject', (msg) => {
 			const reason = msg && msg.reason ? msg.reason : 'unknown';
@@ -607,7 +646,8 @@
 			const seqs = msg && Array.isArray(msg.sequences) ? msg.sequences : null;
 			if (seqs !== null) {
 				sequenceDefs = seqs;
-				renderSequenceTabs();
+				_lastSequenceRenderSig = '';
+				scheduleRenderSequenceTabs();
 			}
 		});
 
@@ -615,7 +655,12 @@
 			systemSnapshot = pkt && typeof pkt === 'object' ? pkt : null;
 			const state = systemSnapshot && typeof systemSnapshot.system_state === 'string' ? systemSnapshot.system_state : 'IDLE';
 			setSystemStateValue(state);
-			renderSequenceTabs();
+			applyValveStatesFromSnapshot(systemSnapshot);
+			const sig = _getSequenceRenderSig(systemSnapshot);
+			if (sig !== _lastSequenceRenderSig) {
+				_lastSequenceRenderSig = sig;
+				scheduleRenderSequenceTabs();
+			}
 
 			// Handshake: if we have a pending Fill/Fire, wait until the backend
 			// reports the sequence as active.
@@ -690,6 +735,17 @@
 			clearBtn.addEventListener('click', () => {
 				resetAllSensorBoxes();
 				clearAllPlotHistories();
+				if (simulationEnabled) {
+					pendingSequenceCommand = null;
+					pendingSinceMs = 0;
+					pendingManualExecute = null;
+					const fillBtn = document.getElementById('fillBtn');
+					const fireBtn = document.getElementById('fireBtn');
+					if (fillBtn) fillBtn.disabled = false;
+					if (fireBtn) fireBtn.disabled = false;
+					emitGuiCommand({ name: 'reset_sequences' });
+					setSystemMessage('System message: Cleared test + reset sequences (SIM mode).');
+				}
 			});
 		}
 	}

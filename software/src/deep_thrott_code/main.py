@@ -9,7 +9,16 @@ from typing import Any
 from deep_thrott_code.backend_app import DaqRuntime, create_backend_app, drain_queue, emit_system as _emit_system, parse_args
 from deep_thrott_code.backend_service import BackendController
 from deep_thrott_code.gui.extensions import socketio
-from deep_thrott_code.sequence_runtime import SequenceRuntime, load_sequences_yaml
+
+try:
+	# Prefer the real controller as the source of truth for sequence state.
+	# NOTE: This import is expected to work in your environment.
+	from deep_thrott_code.f3c.controller import Controller as F3CController  # type: ignore
+	from deep_thrott_code.f3c.controller import State as F3CState  # type: ignore
+except Exception:  # pragma: no cover
+	F3CController = None  # type: ignore[assignment]
+	F3CState = None  # type: ignore[assignment]
+		
 
 
 # ---------------------------------------------------------------------
@@ -45,144 +54,43 @@ def main() -> None:
 		)
 
 	gui_queue: queue.Queue = queue.Queue(maxsize=1000)
-	command_queue: queue.Queue = queue.Queue(maxsize=100)
+	# Sequencer wiring:
+	# - `sequencer_command_queue` receives high-level commands (fill/fire/abort).
+	# - `sequencer_ack_queue` receives manual-step execute acknowledgements.
+	#   (F3C Controller consumes commands and acks on separate queues.)
+	sequencer_command_queue: queue.Queue = queue.Queue(maxsize=100)
+	sequencer_ack_queue: queue.Queue = queue.Queue(maxsize=100)
 	control_queue: queue.Queue = queue.Queue(maxsize=100)
 	f3_to_gui_queue: queue.Queue = queue.Queue(maxsize=100)
-	gui_to_f3_queue: queue.Queue = queue.Queue(maxsize=100)
 
 	# -----------------------------------------------------------------
 	# Sequence definitions + manual execute handshake (GUI-driven)
 	# -----------------------------------------------------------------
-	# NOTE: This is a lightweight runner that drives the GUI tabs and
-	# the manual-execute handshake *without* editing `f3c/controller.py`.
-	# TODO: Replace with real F3C controller integration.
+	# NOTE: Preferred architecture is: F3C Controller owns sequence transitions,
+	# step status, and history; GUI/backend reads it (thread-safely) and forwards
+	# manual-step notifications/acks.
+	# Controller is required (no fallback runtime).
 	
 	sequences_path = Path(__file__).resolve().parent / "config" / "sequences.yaml"
+	hardware_path = Path(__file__).resolve().parent / "config" / "hardware.yml"
 
-	def _load_controller_sequences_like_yaml(path: Path) -> dict[str, dict[str, Any]]:
-		"""Load sequences into the same shape as `Controller.sequences`.
+	sequence_defs_for_gui: list[dict[str, Any]] = []
+	get_system_snapshot: Any | None = None
+	controller_for_snapshot: Any | None = None
 
-		We intentionally do NOT import `deep_thrott_code.f3c.controller.Controller` here
-		because importing it on Windows currently fails due to `RPi.GPIO` imports.
+	controller_for_snapshot = F3CController(
+		hardware_config_path=str(hardware_path),
+		sequence_config_path=str(sequences_path),
+		f3c_to_gui_queue=f3_to_gui_queue,
+		command_queue=sequencer_command_queue,
+		ack_queue=sequencer_ack_queue,
+		system_state=F3CState.IDLE)
 
-		Returns: {sequence_name: raw_sequence_dict}
-		"""
-		try:
-			import yaml  # type: ignore
-		except Exception:
-			return {}
-		try:
-			with path.open("r", encoding="utf-8") as f:
-				doc = yaml.safe_load(f)
-		except Exception:
-			return {}
-		if not isinstance(doc, dict):
-			return {}
-		seqs = doc.get("sequences")
-		if not isinstance(seqs, list):
-			return {}
-		out: dict[str, dict[str, Any]] = {}
-		for s in seqs:
-			if not isinstance(s, dict):
-				continue
-			name = s.get("name")
-			if not isinstance(name, str) or not name:
-				continue
-			out[name] = s
-		return out
+	# TODO: don't start controller until start log is pressed,bring daqruntime back out to main
+	threading.Thread(target=controller_for_snapshot.loop_forever, daemon=True, name="f3c_loop").start()  # type: ignore[attr-defined]
 
-	def _sequence_defs_for_gui_from_controller_sequences(
-		controller_sequences: dict[str, dict[str, Any]],
-	) -> list[dict[str, Any]]:
-		"""Convert controller-style sequences dict into GUI `sequence_definitions` payload."""
-		ordered_keys = ["idle", "fill", "fire"]
-		defs: list[dict[str, Any]] = []
-		# Normalize lookup: controller uses original YAML names; we want lowercase keys.
-		lower_map: dict[str, dict[str, Any]] = {}
-		for k, v in controller_sequences.items():
-			if isinstance(k, str) and isinstance(v, dict):
-				lower_map[k.lower()] = v
-
-		for key in ordered_keys:
-			seq_raw = lower_map.get(key)
-			seq_name = key.upper()
-			steps_raw: list[Any] = []
-			if isinstance(seq_raw, dict):
-				name_field = seq_raw.get("name")
-				if isinstance(name_field, str) and name_field:
-					seq_name = name_field.upper()
-				steps_field = seq_raw.get("steps")
-				if isinstance(steps_field, list):
-					steps_raw = steps_field
-
-			steps: list[dict[str, Any]] = []
-			for i, step in enumerate(steps_raw):
-				if not isinstance(step, dict):
-					continue
-				# Controller steps typically use `valve_id`; our GUI YAML uses `valve`.
-				valve = step.get("valve_id")
-				if valve is None:
-					valve = step.get("valve")
-				valve_str = str(valve).upper() if valve is not None else ""
-				action = step.get("action")
-				action_str = str(action).lower() if action is not None else ""
-				time_delay = step.get("time_delay", 0.0)
-				try:
-					time_delay_s = float(time_delay or 0.0)
-				except Exception:
-					time_delay_s = 0.0
-				user_input = bool(step.get("user_input", False))
-				condition_valve = step.get("condition_valve")
-				condition_state = step.get("condition_state")
-				system_state = step.get("system_state")
-				system_state_str = str(system_state).upper() if system_state is not None else seq_name
-				steps.append(
-					{
-						"index": int(i),
-						"valve": valve_str,
-						"action": action_str,
-						"time_delay_s": time_delay_s,
-						"user_input": user_input,
-						"condition_valve": str(condition_valve).upper() if condition_valve else None,
-						"condition_state": str(condition_state) if condition_state is not None else None,
-						"system_state": system_state_str,
-					}
-				)
-
-			defs.append({"name": seq_name, "key": key, "steps": steps})
-
-		return defs
-
-	controller_sequences_like = _load_controller_sequences_like_yaml(sequences_path)
-	sequence_defs_for_gui_from_controller = _sequence_defs_for_gui_from_controller_sequences(controller_sequences_like)
-	try:
-		sequences = load_sequences_yaml(sequences_path)
-	except Exception as e:
-		_emit_system(f"Failed to load sequences.yaml: {e}")
-		sequences = {"idle": {}}  # type: ignore[assignment]
-		sequence_runtime = None
-		sequence_defs_for_gui: list[dict] = []
-		get_system_snapshot = None
-	else:
-		sequence_runtime = SequenceRuntime(
-			sequences=sequences,
-			command_queue=command_queue,
-			f3_to_gui_queue=f3_to_gui_queue,
-			gui_to_f3_queue=gui_to_f3_queue,
-		)
-		# GUI sequence tabs/steps should reflect the controller's view of sequences.
-		# For now we load controller-like YAML directly to avoid importing `f3c` on Windows.
-		sequence_defs_for_gui = (
-			sequence_defs_for_gui_from_controller
-			if sequence_defs_for_gui_from_controller
-			else sequence_runtime.get_sequence_defs_for_gui()
-		)
-		get_system_snapshot = sequence_runtime.snapshot
-		threading.Thread(
-			target=sequence_runtime.loop_forever,
-			daemon=True,
-			name="sequence_runtime",
-		).start()
+	sequence_defs_for_gui = controller_for_snapshot.get_sequence_definitions_for_gui() 
+	get_system_snapshot = controller_for_snapshot.snapshot  
 
 	sample_queue: queue.Queue = queue.Queue(maxsize=1000)
 	daq = DaqRuntime(
@@ -199,16 +107,12 @@ def main() -> None:
 	# TODO: Throttle control loop add
 	# -----------------------------------------------------------------
 
-	# -----------------------------------------------------------------
-	# TODO: F3C loop add
-	# -----------------------------------------------------------------
-
 	app = create_backend_app(
 		gui_queue=gui_queue,
-		command_queue=command_queue,
+		command_queue=sequencer_command_queue,
 		control_queue=control_queue,
 		f3_to_gui_queue=f3_to_gui_queue,
-		gui_to_f3_queue=gui_to_f3_queue,
+		gui_to_f3_queue=sequencer_ack_queue,
 		get_system_snapshot=get_system_snapshot,
 		sequence_defs=sequence_defs_for_gui,
 	)

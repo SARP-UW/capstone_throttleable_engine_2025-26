@@ -197,7 +197,7 @@
 
     .main-row {
       display: grid;
-      grid-template-columns: 1fr 220px;
+      grid-template-columns: 1fr 340px;
       gap: 10px;
       padding: 8px;
       min-height: 0;
@@ -416,6 +416,9 @@
       display: flex;
       flex-direction: column;
       gap: 18px;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .sequence-tabs {
@@ -454,7 +457,7 @@
 
     .sequence-step {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 6px;
       align-items: center;
       padding: 4px 2px;
@@ -468,8 +471,8 @@
 
     .sequence-step .step-text {
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .sequence-step.is-current .step-text {
@@ -642,7 +645,7 @@
     .zoom-controls { display: none; }
 
     @media (max-width: 1200px) {
-      .main-row { grid-template-columns: 1fr 190px; }
+      .main-row { grid-template-columns: 1fr 260px; }
       .bottom-row { grid-template-columns: 1fr 190px; }
       .top-row { grid-template-columns: 1.2fr 0.5fr 1.3fr; }
     }

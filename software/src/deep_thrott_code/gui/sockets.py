@@ -201,13 +201,60 @@ def register_socket_handlers(
 			socketio.emit("command_reject", {"ok": False, "reason": "missing_name"})
 			return
 
-		# Commands intended for the F3 loop: enqueue a raw string.
+		# Commands intended for the F3 loop.
 		if name in {"fill", "fire"}:
 			if command_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
 				return
 			try:
 				command_queue.put(name, timeout=0.1)
+			except Exception:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
+				return
+		elif name in {"reset_sequences", "clear_test"}:
+			# Used by the GUI to clear sequence state/history so fill/fire can be rerun.
+			# Always put it on the command_queue so the controller can clear its
+			# history/state when it is not blocked.
+			# If (and only if) the controller is currently blocked waiting for a
+			# manual-step ack, also put a reset marker on the ack queue to unblock.
+			if command_queue is None:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
+				return
+			try:
+				command_queue.put({"type": "reset_sequences"}, timeout=0.1)
+			except Exception:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
+				return
+			try:
+				getter = app.config.get("GET_SYSTEM_SNAPSHOT")
+				waiting = None
+				if callable(getter):
+					snap = getter()
+					if isinstance(snap, dict):
+						waiting = snap.get("waiting_manual")
+			except Exception:
+				waiting = None
+			if isinstance(waiting, dict):
+				q_ack = app.config.get("GUI_TO_F3_QUEUE")
+				if q_ack is not None:
+					try:
+						q_ack.put({"type": "reset_sequences"}, timeout=0.1)
+					except Exception:
+						pass
+		elif name == "set_valve":
+			if command_queue is None:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
+				return
+			valve = payload.get("valve")
+			state = payload.get("state")
+			if not isinstance(valve, str) or not valve:
+				socketio.emit("command_reject", {"ok": False, "reason": "missing_valve"})
+				return
+			if not isinstance(state, str) or not state:
+				socketio.emit("command_reject", {"ok": False, "reason": "missing_state"})
+				return
+			try:
+				command_queue.put({"type": "set_valve", "valve": valve, "state": state}, timeout=0.1)
 			except Exception:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return

@@ -7,7 +7,7 @@ GUI (via Socket.IO) and calls into callbacks provided by `main.py`.
 
 It is separate from the sequencing runtime:
 - `control_queue` -> start/stop logging, toggle simulation mode, etc.
-- `command_queue` -> sequence commands ("fill"/"fire") handled by SequenceRuntime
+- `command_queue` -> sequence commands ("fill"/"fire") handled by the F3C Controller
 """
 
 import queue
