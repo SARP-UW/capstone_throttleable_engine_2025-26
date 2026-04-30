@@ -109,7 +109,7 @@ actuators:
 			enabled: true
 			mode: on_off
 			pin: null
-			active_high: false
+			active_high: true
 			notes: "Fuel igniter flow valve"
 
 		lffv:
@@ -158,7 +158,7 @@ actuators:
 			enabled: true
 			mode: on_off
 			pin: null
-			active_high: false
+			active_high: true
 			notes: "Oxidizer igniter flow valve"
 
 		sparker:
