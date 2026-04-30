@@ -256,7 +256,7 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 1700px;
+      width: 1550px;
       height: 664px;
       background: white;
       border: 1px solid #bbb;
@@ -688,100 +688,82 @@
             <div class="pid-canvas" id="pidCanvasEthanol">
               <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
 
-              <div class="overlay" style="left: 391px; top: 206px;" data-valve="LFFV">
+              <div class="overlay" style="left: 385px;top: 145px;" data-valve="LFFV">
                 <div class="overlay-label">LFFV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 814px; top: 53px;" data-valve="FTVV">
+              <div class="overlay" style="left: 728px;top: 4px;" data-valve="FTVV">
                 <div class="overlay-label">FTVV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 1255px; top: 339px;" data-valve="FMCTV">
+              <div class="overlay" style="left: 1164px;top: 396px;" data-valve="FMCTV">
                 <div class="overlay-label">FMCTV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 1031px; top: 460px;" data-valve="FMV">
+              <div class="overlay" style="left: 818px;top: 401px;" data-valve="FMV">
                 <div class="overlay-label">FMV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 1255px; top: 522px;" data-valve="FIFV">
+              <div class="overlay" style="left: 979px;top: 529px;" data-valve="FIFV">
                 <div class="overlay-label">FIFV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 640px; top: 600px;" data-valve="WMV">
+              <div class="overlay" style="left: 490px;top: 610px;" data-valve="WMV">
                 <div class="overlay-label">WMV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 638px; top: 57px;">
+              <div class="overlay" style="left: 590px;top: -9px;">
                 <div class="overlay-label">LF-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 992px; top: 185px;">
+              <div class="overlay" style="left: 792px;top: 144px;">
                 <div class="overlay-label">FT-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1488px; top: 408px;">
+              <div class="overlay" style="left: 971px;top: 261px;">
                 <div class="overlay-label">FM-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1565px; top: 350px;">
+              <div class="overlay" style="left: 1248px;top: 287px;">
                 <div class="overlay-label">FI-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 985px; top: 545px;">
+              <div class="overlay" style="left: 632px;top: 443px;">
                 <div class="overlay-label">WM-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1570px; top: 205px;">
-                <div class="overlay-label">CC-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+              <div class="overlay" style="left: 1425px;top: 361px;">
+                <div class="overlay-label"></div>
+                <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
             </div>
           </div>

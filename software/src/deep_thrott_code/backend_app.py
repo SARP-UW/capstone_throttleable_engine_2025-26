@@ -1,5 +1,24 @@
 from __future__ import annotations
 
+"""Backend Flask app factory + DAQ runtime helpers.
+
+This module builds the backend process that the GUI connects to.
+
+High-level architecture:
+- DAQ side produces samples and pushes them onto `gui_queue`.
+- A Socket.IO loop (registered in `deep_thrott_code/gui/sockets.py`) drains
+	`gui_queue` and emits `daq_packet` to the browser.
+- The sequencing runtime exposes a separate snapshot function; the Socket.IO
+	loop emits that as `system_packet` so DAQ telemetry never overwrites GUI state.
+
+Queues used by the backend:
+- `gui_queue`: DAQ samples destined for the GUI.
+- `command_queue`: high-level GUI commands intended for the sequencing runtime
+	(e.g. "fill", "fire").
+- `control_queue`: GUI control commands for this backend process
+	(start/stop log, toggle simulation, etc.).
+"""
+
 import argparse
 import queue
 import threading
@@ -19,6 +38,8 @@ class BackendConfig:
 
 
 def parse_args() -> BackendConfig:
+	"""Parse CLI flags for running the backend as a standalone process."""
+
 	parser = argparse.ArgumentParser(description="Deep Thrott Code backend (DAQ + Socket.IO)")
 	parser.add_argument("--host", default="0.0.0.0", help="Bind host (0.0.0.0 to listen on LAN)")
 	parser.add_argument(
@@ -54,6 +75,14 @@ def create_backend_app(
 	get_system_snapshot: Callable[[], dict] | None = None,
 	sequence_defs: list[dict] | None = None,
 ) -> Flask:
+	"""Create the Flask backend and register Socket.IO handlers.
+
+	`register_socket_handlers()` starts the 10Hz emit loop thread that:
+	- drains `gui_queue` and emits `daq_packet`
+	- calls `get_system_snapshot` and emits `system_packet`
+	- forwards manual-step messages (if sequencing runtime queues are configured)
+	"""
+
 	# Local imports to keep this module importable in more environments.
 	from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
 	from deep_thrott_code.gui.sockets import register_socket_handlers  # noqa: PLC0415
@@ -77,6 +106,8 @@ def create_backend_app(
 
 
 def drain_queue(q: queue.Queue) -> None:
+	"""Best-effort queue drain used to drop stale samples on restarts."""
+
 	while True:
 		try:
 			q.get_nowait()
@@ -90,6 +121,8 @@ def drain_queue(q: queue.Queue) -> None:
 
 
 def emit_system(text: str) -> None:
+	"""Emit a one-line system message to the GUI (best-effort)."""
+
 	# Local import so this module stays importable without Flask-SocketIO.
 	from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
 
@@ -136,6 +169,12 @@ class DaqRuntime:
 			return bool(self._running)
 
 	def start(self, simulation: bool) -> None:
+		"""Start DAQ threads and begin emitting samples to `gui_queue`.
+
+		The producer reads sensors (or sim sources) into `sample_queue`.
+		The consumer converts samples into GUI-friendly updates and logs to CSV.
+		"""
+
 		from deep_thrott_code.daq.services.loop import consumer_loop, producer_loop  # noqa: PLC0415
 		from deep_thrott_code.daq.services.logger import CsvLogger  # noqa: PLC0415
 		from deep_thrott_code.daq.services.state_store import StateStore  # noqa: PLC0415
@@ -161,10 +200,12 @@ class DaqRuntime:
 		self._drain_queue(self._gui_queue)
 
 		def producer_entrypoint() -> None:
+			# CPU pinning is optional; on Windows this may no-op depending on impl.
 			self._pin_thread_to_cpu(self._producer_cpu)
 			producer_loop(sensors, self._sample_queue, stop_event, 50.0)
 
 		def consumer_entrypoint() -> None:
+			# The consumer is the only place that touches StateStore + logger.
 			self._pin_thread_to_cpu(self._consumer_cpu)
 			consumer_loop(self._sample_queue, self._gui_queue, state_store, logger, stop_event, sensor_map)
 
@@ -184,6 +225,8 @@ class DaqRuntime:
 		self._emit_system(f"Backend log started ({'SIM' if simulation else 'ADC'} mode).")
 
 	def stop(self) -> None:
+		"""Stop DAQ threads and close the logger (best-effort)."""
+
 		with self._lock:
 			if not self._running:
 				self._emit_system("No log running.")
