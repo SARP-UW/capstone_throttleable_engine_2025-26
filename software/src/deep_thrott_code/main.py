@@ -54,22 +54,12 @@ def main() -> None:
 		)
 
 	gui_queue: queue.Queue = queue.Queue(maxsize=1000)
-	# Sequencer wiring:
-	# - `sequencer_command_queue` receives high-level commands (fill/fire/abort).
-	# - `sequencer_ack_queue` receives manual-step execute acknowledgements.
-	#   (F3C Controller consumes commands and acks on separate queues.)
+
+	# I forgot why i made these separate 
 	sequencer_command_queue: queue.Queue = queue.Queue(maxsize=100)
 	sequencer_ack_queue: queue.Queue = queue.Queue(maxsize=100)
 	control_queue: queue.Queue = queue.Queue(maxsize=100)
 	f3_to_gui_queue: queue.Queue = queue.Queue(maxsize=100)
-
-	# -----------------------------------------------------------------
-	# Sequence definitions + manual execute handshake (GUI-driven)
-	# -----------------------------------------------------------------
-	# NOTE: Preferred architecture is: F3C Controller owns sequence transitions,
-	# step status, and history; GUI/backend reads it (thread-safely) and forwards
-	# manual-step notifications/acks.
-	# Controller is required (no fallback runtime).
 	
 	sequences_path = Path(__file__).resolve().parent / "config" / "sequences.yaml"
 	hardware_path = Path(__file__).resolve().parent / "config" / "hardware.yml"

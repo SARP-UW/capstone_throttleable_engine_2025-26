@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import math
 import random
+import sys
 import time
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any
 
 from .. import config
@@ -696,10 +698,155 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
     - simulation=False: hardware mode is not wired in the GUI runner yet.
     """
     if not simulation:
-        raise NotImplementedError(
-            "ADC/hardware sensor initialization is not implemented in the GUI runner yet. "
-            "Turn Simulation Mode ON to run with fake data."
-        )
+        if not sys.platform.startswith("linux"):
+            raise NotImplementedError(
+                "ADC mode requires Linux (Raspberry Pi) because it depends on SPI + libgpiod. "
+                "Run with Simulation Mode ON when developing on Windows."
+            )
+
+        try:
+            import yaml  # type: ignore
+        except Exception as e:  # pragma: no cover
+            raise RuntimeError(
+                "PyYAML is required for ADC mode (hardware.yml / conversions.yml parsing). "
+                "Install `pyyaml` in this environment."
+            ) from e
+
+        from deep_thrott_code.daq.drivers.adc import ADS124S08  # noqa: PLC0415
+
+        def _load_yaml(path: Path) -> dict[str, Any]:
+            if not path.exists():
+                return {}
+            with path.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            return data if isinstance(data, dict) else {}
+
+        pkg_root = Path(__file__).resolve().parents[2]
+        hardware_path = pkg_root / "config" / "hardware.yml"
+        conversions_path = pkg_root / "config" / "conversions.yml"
+
+        hardware_cfg = _load_yaml(hardware_path)
+        conversions_cfg = _load_yaml(conversions_path)
+
+        adcs_cfg = hardware_cfg.get("adcs")
+        if not isinstance(adcs_cfg, dict) or not adcs_cfg:
+            raise RuntimeError(f"No 'adcs' configured in {hardware_path}")
+
+        adc_by_id: dict[str, Any] = {}
+        for adc_id, cfg in adcs_cfg.items():
+            if not isinstance(adc_id, str) or not isinstance(cfg, dict):
+                continue
+
+            if str(cfg.get("transport", "")).lower() != "spi":
+                continue
+            if str(cfg.get("model", "")).upper() not in {"ADS124S08IRHBT", "ADS124S08"}:
+                continue
+
+            spi_bus = cfg.get("spi_bus")
+            spi_dev = cfg.get("spi_device")
+            if spi_bus is None or spi_dev is None:
+                continue
+
+            reset_gpio = cfg.get("reset_gpio")
+            drdy_gpio = cfg.get("drdy_gpio")
+
+            adc = ADS124S08(
+                id=adc_id,
+                spi_bus=int(spi_bus),
+                spi_dev=int(spi_dev),
+                reset_pin=int(reset_gpio) if reset_gpio is not None else None,
+                drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
+            )
+            try:
+                adc.hardware_reset()
+                adc.configure_basic(use_internal_ref=False, gain=1)
+            except Exception:
+                pass
+
+            adc_by_id[adc_id] = adc
+
+        sensors_cfg = hardware_cfg.get("sensors")
+        pt_cfg = sensors_cfg.get("pressure_transducers") if isinstance(sensors_cfg, dict) else None
+        if not isinstance(pt_cfg, dict) or not pt_cfg:
+            raise RuntimeError(f"No pressure transducers configured in {hardware_path}")
+
+        def _pt_calibration(sensor_id: str) -> tuple[float, float, float, float]:
+            default = (0.5, 4.5, 0.0, 500.0)
+            cal = conversions_cfg.get("calibration")
+            if not isinstance(cal, dict):
+                return default
+            cal_pts = cal.get("pressure_transducers")
+            if not isinstance(cal_pts, dict):
+                return default
+            entry = cal_pts.get(sensor_id)
+            if not isinstance(entry, dict):
+                return default
+            profile_id = entry.get("profile")
+            if not isinstance(profile_id, str) or not profile_id:
+                return default
+
+            profiles = conversions_cfg.get("calibration_profiles")
+            if not isinstance(profiles, dict):
+                return default
+            pt_profiles = profiles.get("pressure_transducers")
+            if not isinstance(pt_profiles, dict):
+                return default
+            profile = pt_profiles.get(profile_id)
+            if not isinstance(profile, dict):
+                return default
+            if str(profile.get("type", "")).lower() != "volts_to_psi":
+                return default
+
+            try:
+                v_min = float(profile.get("v_min", default[0]))
+                v_max = float(profile.get("v_max", default[1]))
+                psi_min = float(profile.get("psi_min", default[2]))
+                psi_max = float(profile.get("psi_max", default[3]))
+                return (v_min, v_max, psi_min, psi_max)
+            except Exception:
+                return default
+
+        alias_by_sensor_id = {
+            # Keep these names matching the GUI defaults/bindings.
+            "CC-PT": "chamber_pressure",
+            "FI-PT": "injector_pressure",
+        }
+
+        sensors: list[Sensor] = []
+        for sensor_id, cfg in pt_cfg.items():
+            if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+                continue
+            if not bool(cfg.get("enabled", False)):
+                continue
+
+            adc_id = cfg.get("adc_id")
+            if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                raise RuntimeError(f"Pressure transducer {sensor_id} references unknown adc_id={adc_id}")
+            ain = cfg.get("ain")
+            if ain is None:
+                raise RuntimeError(f"Pressure transducer {sensor_id} is enabled but has no 'ain' set")
+
+            v_min, v_max, p_min, p_max = _pt_calibration(sensor_id)
+            name = alias_by_sensor_id.get(sensor_id, sensor_id)
+
+            sensors.append(
+                PressureTransducerSensor(
+                    name=name,
+                    adc=adc_by_id[adc_id],
+                    sig_ain=int(ain),
+                    v_min=v_min,
+                    v_max=v_max,
+                    p_min=p_min,
+                    p_max=p_max,
+                )
+            )
+
+        if not sensors:
+            raise RuntimeError(
+                "No enabled hardware sensors were built. Check 'enabled: true' and set AINs in hardware.yml."
+            )
+
+        return sensors
 
     return [
         SimulatedPressureSensor(

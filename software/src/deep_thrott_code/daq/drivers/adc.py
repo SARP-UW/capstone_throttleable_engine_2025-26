@@ -234,7 +234,6 @@ class ADS124S08:
         val = ((ainp & 0x0F) << 4) | (ainn & 0x0F)
         self.wreg(self.REG_INPMUX, [val])
 
-    @staticmethod
     def read_raw_single(self, ainp: int, settle_discard: bool = True) -> int:
         """
         Set MUX to AINp vs AINCOM and return one raw conversion code.
