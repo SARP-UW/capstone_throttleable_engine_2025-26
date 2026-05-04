@@ -30,6 +30,10 @@ DeltaP_inj = DeltaP_inj_percent / 100 * P_c_nom; % [Pa] Delta P across injector 
 mdot_nom = 0.3; % [kg/s] nominal/max/fully open mdot total. source: Engine + Feed Speccing Sheet
 mdot_f_nom = mdot_nom / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
 mdot_ox_nom = mdot_nom * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
+%%%% Calculate minimum propellant flow rates
+mdot_min = 0.85*0.3; % [kg/s] minimum thorttle mdot total.
+mdot_f_min = mdot_min / (1 + OF); % [kg/s] minimum throttle mdot_f
+mdot_ox_min = mdot_min * OF / (1 + OF); % [kg/s] minimum throttle mdot_ox
 %%%% Calculate CdA_inj for propellants
 CdA_inj_f = mdot_f_nom / sqrt(2 * rho_f * DeltaP_inj);
 CdA_inj_ox = mdot_ox_nom / sqrt(2 * rho_ox * DeltaP_inj);
