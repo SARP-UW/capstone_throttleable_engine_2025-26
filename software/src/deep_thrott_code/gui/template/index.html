@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SARP Capstone GUI Mockup</title>
+  <script>
+    // Optional explicit backend Socket.IO URL (e.g. "http://pi-host:6000").
+    // When empty, the frontend defaults to same-origin.
+    window.__BACKEND_SOCKET_URL__ = "{{ backend_socket_url|default('') }}";
+  </script>
   <style>
     :root {
       --bg: #d9d9d9;
@@ -52,6 +57,10 @@
     }
 
     * { box-sizing: border-box; }
+
+    html {
+      font-size: 13px;
+    }
 
     body {
       margin: 0;
@@ -188,7 +197,7 @@
 
     .main-row {
       display: grid;
-      grid-template-columns: 1fr 220px;
+      grid-template-columns: 1fr 340px;
       gap: 10px;
       padding: 8px;
       min-height: 0;
@@ -205,9 +214,10 @@
       display: flex;
       align-items: center;
       gap: 0;
+      padding: 6px 6px 0 6px;
+      border: 1px solid var(--border);
       border-bottom: none;
-      background: transparent;
-      border: none;
+      background: var(--surface);
     }
 
     .tab {
@@ -224,6 +234,7 @@
     .pid-panel {
       position: relative;
       border: 1px solid var(--border);
+      border-top: none;
       background: white;
       overflow: hidden;
       min-height: 0;
@@ -245,7 +256,7 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 1700px;
+      width: 1550px;
       height: 664px;
       background: white;
       border: 1px solid #bbb;
@@ -380,6 +391,10 @@
       color: var(--text);
     }
 
+    .side-panel .mini-btn {
+      font-size: 0.85rem;
+    }
+
     .mini-btn.is-active-open {
       background: var(--btn-green);
       cursor: default;
@@ -401,13 +416,79 @@
       display: flex;
       flex-direction: column;
       gap: 18px;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .sequence-tabs {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 6px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .sequence-tabs details {
+      border: 1px solid var(--border);
+      background: var(--muted);
+      padding: 6px;
+    }
+
+    .sequence-tabs summary {
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.85rem;
+      list-style: none;
+    }
+
+    .sequence-tabs summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .sequence-tabs summary::marker {
+      content: '';
+    }
+
+    .sequence-tabs summary.seq-active {
+      font-weight: 700;
+    }
+
+    .sequence-step {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: center;
+      padding: 4px 2px;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+
+    .sequence-step:first-child {
+      border-top: none;
+    }
+
+    .sequence-step .step-text {
+      overflow: hidden;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .sequence-step.is-current .step-text {
+      font-weight: 700;
+    }
+
+    .sequence-placeholder {
+      font-size: 0.82rem;
+      opacity: 0.8;
     }
 
     .legend-box {
       border: 1px solid var(--border);
       background: var(--surface);
       padding: 10px 12px;
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       display: grid;
       grid-template-columns: 1fr;
       gap: 6px;
@@ -433,7 +514,7 @@
     .legend-dot.bad { background: var(--bad); }
 
     .side-title {
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: 400;
       text-align: center;
       margin-bottom: 6px;
@@ -464,7 +545,7 @@
       background: #f4f4f4;
       padding: 8px 10px;
       text-align: center;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
     }
 
     .message-bar {
@@ -564,7 +645,7 @@
     .zoom-controls { display: none; }
 
     @media (max-width: 1200px) {
-      .main-row { grid-template-columns: 1fr 190px; }
+      .main-row { grid-template-columns: 1fr 260px; }
       .bottom-row { grid-template-columns: 1fr 190px; }
       .top-row { grid-template-columns: 1.2fr 0.5fr 1.3fr; }
     }
@@ -584,7 +665,7 @@
 
       <div class="state-box">
         <div class="state-label">SYSTEM STATE:</div>
-        <div class="state-value">IDLE</div>
+        <div class="state-value" id="systemStateValue">IDLE</div>
       </div>
 
       <div class="action-box">
@@ -610,100 +691,82 @@
             <div class="pid-canvas" id="pidCanvasEthanol">
               <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
 
-              <div class="overlay" style="left: 391px; top: 206px;" data-valve="LFFV">
+              <div class="overlay" style="left: 385px;top: 145px;" data-valve="LFFV">
                 <div class="overlay-label">LFFV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 814px; top: 53px;" data-valve="FTVV">
+              <div class="overlay" style="left: 728px;top: 4px;" data-valve="FTVV">
                 <div class="overlay-label">FTVV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 1255px; top: 339px;" data-valve="FMCTV">
+              <div class="overlay" style="left: 1164px;top: 396px;" data-valve="FMCTV">
                 <div class="overlay-label">FMCTV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 1031px; top: 460px;" data-valve="FMV">
+              <div class="overlay" style="left: 818px;top: 401px;" data-valve="FMV">
                 <div class="overlay-label">FMV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 1255px; top: 522px;" data-valve="FIFV">
+              <div class="overlay" style="left: 979px;top: 529px;" data-valve="FIFV">
                 <div class="overlay-label">FIFV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 640px; top: 600px;" data-valve="WMV">
+              <div class="overlay" style="left: 490px;top: 610px;" data-valve="WMV">
                 <div class="overlay-label">WMV</div>
                 <div class="valve-controls">
-                  <button class="mini-btn" type="button" data-valve-action="open">OPEN</button>
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
                   <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
                 </div>
               </div>
 
-              <div class="overlay" style="left: 638px; top: 57px;">
+              <div class="overlay" style="left: 590px;top: -9px;">
                 <div class="overlay-label">LF-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 992px; top: 185px;">
+              <div class="overlay" style="left: 792px;top: 144px;">
                 <div class="overlay-label">FT-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1488px; top: 408px;">
+              <div class="overlay" style="left: 971px;top: 261px;">
                 <div class="overlay-label">FM-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1565px; top: 350px;">
+              <div class="overlay" style="left: 1248px;top: 287px;">
                 <div class="overlay-label">FI-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 985px; top: 545px;">
+              <div class="overlay" style="left: 632px;top: 443px;">
                 <div class="overlay-label">WM-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+                <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1570px; top: 205px;">
-                <div class="overlay-label">CC-PT</div>
-                <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450">
-                  <div class="sensor-reading">-- PSI</div>
-                  <div class="sensor-deriv">-- psi/min</div>
-                </div>
+              <div class="overlay" style="left: 1425px;top: 361px;">
+                <div class="overlay-label"></div>
+                <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
             </div>
           </div>
@@ -751,19 +814,10 @@
       </div>
 
       <div class="side-panel">
-        <div class="legend-box" aria-label="System status legend">
-          <div class="legend-row"><span class="legend-dot good" aria-hidden="true"></span><span>Nominal</span></div>
-          <div class="legend-row"><span class="legend-dot warn" aria-hidden="true"></span><span>Off-Nominal</span></div>
-          <div class="legend-row"><span class="legend-dot bad" aria-hidden="true"></span><span>Abort Immediately</span></div>
-        </div>
-
         <div>
-          <div class="side-title">THROTTLE STEPS</div>
-          <div class="steps">
-            <button class="step-btn"><span>100</span><span class="step-arrow">▽</span></button>
-            <button class="step-btn"><span>90</span><span class="step-arrow">▽</span></button>
-            <button class="step-btn"><span>85</span><span class="step-arrow">▽</span></button>
-            <button class="step-btn"><span>80</span><span class="step-arrow">▽</span></button>
+          <div class="side-title">SEQUENCES</div>
+          <div class="sequence-tabs" id="sequenceTabs">
+            <div class="sequence-placeholder">Loading sequences...</div>
           </div>
         </div>
 
@@ -820,17 +874,65 @@
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Prefer the server-hosted Socket.IO client to guarantee version compatibility.
-    // Fallback to CDN only if the server doesn't provide it (e.g., flask_socketio not installed).
-    if (typeof window.io !== 'function') {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
-      document.head.appendChild(s);
-    }
+    (function () {
+      function _trimTrailingSlashes(s) {
+        return String(s || '').replace(/\/+$/, '');
+      }
+
+      function deriveBackendBaseUrl() {
+        try {
+          const explicit = typeof window.__BACKEND_SOCKET_URL__ === 'string' ? window.__BACKEND_SOCKET_URL__.trim() : '';
+          if (explicit) return _trimTrailingSlashes(explicit);
+        } catch (_) {
+          // ignore
+        }
+        try {
+          if (window.location.protocol === 'file:' || !window.location.hostname) return 'http://127.0.0.1:6001';
+          return `${window.location.protocol}//${window.location.hostname}:6001`;
+        } catch (_) {
+          return 'http://127.0.0.1:6001';
+        }
+      }
+
+      function loadScript(src, cb) {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => cb(null);
+        s.onerror = () => cb(new Error(`Failed to load ${src}`));
+        document.head.appendChild(s);
+      }
+
+      function loadMainJs() {
+        const main = document.createElement('script');
+        main.src = "{{ url_for('static', filename='main.js') }}";
+        main.async = true;
+        document.head.appendChild(main);
+      }
+
+      const backendBase = deriveBackendBaseUrl();
+      const candidates = [
+        `${backendBase}/socket.io/socket.io.js`,
+        'https://cdn.socket.io/4.7.5/socket.io.min.js',
+      ];
+
+      (function tryLoad(i) {
+        if (i >= candidates.length) {
+          console.error('Socket.IO client failed to load from all sources.');
+          loadMainJs();
+          return;
+        }
+        loadScript(candidates[i], (err) => {
+          if (!err && typeof window.io === 'function') {
+            loadMainJs();
+            return;
+          }
+          tryLoad(i + 1);
+        });
+      })(0);
+    })();
   </script>
-  <script src="{{ url_for('static', filename='main.js') }}"></script>
   <script>
     const pidCanvas = document.getElementById('pidCanvasEthanol');
     const pidStage = document.getElementById('pidStageEthanol');

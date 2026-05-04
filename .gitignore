@@ -1,2 +1,9 @@
 *.DS_Store
 .vscode/settings.json
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Local DAQ logs (generated files)
+software/src/*_log.csv

@@ -1,182 +1,217 @@
 schema_version: 1
 
 adcs:
-	ADC1:
-		model: ADS124S08IRHBT
-		transport: spi
-		spi_bus: null          
-		spi_device: null      
-		cs_gpio: null        
-		drdy_gpio: null       
-		reset_gpio: null      
-		notes: "DC #1"
+  ADC1:
+    model: ADS124S08IRHBT
+    transport: spi
+    spi_bus: null
+    spi_device: null
+    cs_gpio: null
+    drdy_gpio: null
+    reset_gpio: null
+    notes: "DC #1"
 
-	ADC2:
-		model: ADS124S08IRHBT
-		transport: spi
-		spi_bus: null
-		spi_device: null
-		cs_gpio: null
-		drdy_gpio: null
-		reset_gpio: null
-		notes: "ADC #2"
+  ADC2:
+    model: ADS124S08IRHBT
+    transport: spi
+    spi_bus: null
+    spi_device: null
+    cs_gpio: null
+    drdy_gpio: null
+    reset_gpio: null
+    notes: "ADC #2"
 
-	ADC3:
-		model: ADS124S08IRHBT
-		transport: spi
-		spi_bus: null
-		spi_device: null
-		cs_gpio: null
-		drdy_gpio: null
-		reset_gpio: null
-		notes: "ADC #3"
+  ADC3:
+    model: ADS124S08IRHBT
+    transport: spi
+    spi_bus: null
+    spi_device: null
+    cs_gpio: null
+    drdy_gpio: null
+    reset_gpio: null
+    notes: "ADC #3"
 
 sensors:
-	pressure_transducers:
-		LF-PT:
-			enabled: true
-			adc_id: ADC1
-			signal_mode: single_ended
-			ain: null
-			notes: "L Fuel pressure transducer"
+  pressure_transducers:
+    LF-PT:
+      enabled: true
+      adc_id: ADC1
+      signal_mode: single_ended
+      ain: null
+      notes: "L Fuel pressure transducer"
 
-		FT-PT:
-			enabled: true
-			adc_id: ADC1
-			signal_mode: single_ended
-			ain: null
-			notes: "Fuel tank pressure transducer"
+    FT-PT:
+      enabled: true
+      adc_id: ADC1
+      signal_mode: single_ended
+      ain: null
+      notes: "Fuel tank pressure transducer"
 
-		FM-PT:
-			enabled: true
-			adc_id: ADC2
-			signal_mode: single_ended
-			ain: null
-			notes: "Fuel main pressure transducer"
+    FM-PT:
+      enabled: true
+      adc_id: ADC2
+      signal_mode: single_ended
+      ain: null
+      notes: "Fuel main pressure transducer"
 
-		FI-PT:
-			enabled: true
-			adc_id: ADC2
-			signal_mode: single_ended
-			ain: null
-			notes: "Fuel injector pressure transducer"
+    FI-PT:
+      enabled: true
+      adc_id: ADC2
+      signal_mode: single_ended
+      ain: null
+      notes: "Fuel injector pressure transducer"
 
-		WM-PT:
-			enabled: true
-			adc_id: ADC3
-			signal_mode: single_ended
-			ain: null
-			notes: "Water main pressure transducer"
+    WM-PT:
+      enabled: true
+      adc_id: ADC3
+      signal_mode: single_ended
+      ain: null
+      notes: "Water main pressure transducer"
 
-		CC-PT:
-			enabled: true
-			adc_id: ADC3
-			signal_mode: single_ended
-			ain: null
-			notes: "Combustion chamber pressure transducer"
+    CC-PT:
+      enabled: true
+      adc_id: ADC3
+      signal_mode: single_ended
+      ain: null
+      notes: "Combustion chamber pressure transducer"
+
+  resistive temperature detectors:
+    WI-RTD:
+      enabled: true
+      adc_id: ADC1
+      signal_mode: rtd_3_wire
+      ain: null
+      notes: "Water inlet RTD"
+    
+    WO-RTD:
+      enabled: true
+      adc_id: ADC2
+      signal_mode: rtd_3_wire
+      ain: null
+      notes: "Water outlet RTD"
+    
+  load cells:
+    E-LC:
+      enabled: true
+      adc_id: ADC1
+      signal_mode: differential
+      ain_positive: null
+      ain_negative: null
+      notes: "Engine thrust load cell"
+
+    N-LC:
+      enabled: true
+      adc_id: ADC2
+      signal_mode: differential
+      ain_positive: null
+      ain_negative: null
+      notes: "Nitrous load cell"
+    
+  flow meters:
+    FM-FM:
+      enabled: true
+      adc_id: ADC3
+      signal_mode: single_ended
+      ain: null
+      notes: "Fuel main flow meter"
+
+    OM-FM:
+      enabled: true
+      adc_id: ADC3
+      signal_mode: single_ended
+      ain: null
+      notes: "Oxidizer main flow meter"
+    
 
 actuators:
-	valves:
-		wmv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Water main valve"
+  valves:
+    wmv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Water main valve"
 
-		ftvv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: false
-			notes: "Fuel tank vent valve"
+    ftvv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: false
+      notes: "Fuel tank vent valve"
 
-		fmv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Fuel main valve"
+    fmv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Fuel main valve"
 
-		fmctv:
-			enabled: true
-			mode: throttle
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Fuel main control/throttle valve"
+    fmctv:
+      enabled: true
+      mode: throttle
+      pin: null
+      active_high: true
+      notes: "Fuel main control/throttle valve"
 
-		fifv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: false
-			notes: "Fuel igniter flow valve"
+    fifv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Fuel igniter flow valve"
 
-		lffv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Pressurant fuel filling flow valve"
+    lffv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Pressurant fuel filling flow valve"
 
-		xffv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Pressurant oxidizer filling flow valve"
+    xffv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Pressurant oxidizer filling flow valve"
 
-		offv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Oxidizer filling flow valve"
+    offv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Oxidizer filling flow valve"
 
-		omv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Oxidizer main valve"
+    omv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Oxidizer main valve"
 
-		omctv:
-			enabled: true
-			mode: throttle
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Oxidizer main control/throttle valve"
+    omctv:
+      enabled: true
+      mode: throttle
+      pin: null
+      active_high: true
+      notes: "Oxidizer main control/throttle valve"
 
-		otvv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: false
-			notes: "Oxidizer tank vent valve"
+    otvv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: false
+      notes: "Oxidizer tank vent valve"
 
-		oifv:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: false
-			notes: "Oxidizer igniter flow valve"
+    oifv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Oxidizer igniter flow valve"
 
-		sparker:
-			enabled: true
-			mode: on_off
-			driver: gpio
-			pin: null
-			active_high: true
-			notes: "Igniter sparker"
+    sparker:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Igniter sparker"

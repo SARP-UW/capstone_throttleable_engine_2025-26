@@ -40,6 +40,7 @@ try:
 	socketio: Any = SocketIO(
 		async_mode="threading",
 		cors_allowed_origins="*",
+		serve_client=True,
 		logger=True,
 		engineio_logger=True,
 	)
