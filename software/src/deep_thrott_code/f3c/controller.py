@@ -306,7 +306,6 @@ class Controller:
                                                 break
                                     finally:
                                         self._ack_queue.task_done()
-
                             self.step_list.append(self.current_step)
                             self.step_status = StepStatus.READY
             elif action in (self.single_valve_actuation, self.pulse):
@@ -374,5 +373,5 @@ class Controller:
             actuator_info_list = hardware_config.get("actuators").get("valves")
             actuator_list = {}
             for valve_id, actuator_info in actuator_info_list.items():
-                actuator_list[valve_id] = Valve(valve_id, actuator_info.get("default_state"), actuator_info.get("pin"))
+                actuator_list[valve_id] = Valve(valve_id, int(actuator_info.get("pin")), actuator_info.get("active_high"))
         return actuator_list
