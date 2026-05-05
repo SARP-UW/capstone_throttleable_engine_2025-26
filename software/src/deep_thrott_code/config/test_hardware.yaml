@@ -1,0 +1,8 @@
+actuators:
+  valves:
+    test_valve:
+      enabled: true
+      mode: on_off
+      pin: 21
+      active_high: true
+      notes: "test valve"

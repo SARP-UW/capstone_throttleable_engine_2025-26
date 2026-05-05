@@ -21,7 +21,7 @@ class Valve:
         self.active_high = active_high
         self.default_state = ValveState.CLOSED if active_high else ValveState.OPEN
         self.state = self.default_state
-        GPIO.setup(pin, GPIO.OUT)
+        GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
     def set_state(self, new_state: ValveState):
         if self.state != new_state:
