@@ -38,8 +38,8 @@ class Controller:
     """
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
-    def __init__(self, hardware_config_path: str, sequence_config_path: str, f3c_to_gui_queue: queue.Queue, command_queue: queue.Queue,
-                 ack_queue: queue.Queue, system_state: State = State.IDLE):
+    def __init__(self, hardware_config_path: str, sequence_config_path: str, command_queue: queue.Queue,
+                 ack_queue: queue.Queue):
         # commented out attributes are moved to thread safe access block
         self.sequence_config_path = sequence_config_path
         self.hardware_config_path = hardware_config_path
@@ -53,6 +53,7 @@ class Controller:
         # self.current_step = None
         # self.step_list = deque(maxlen=100)
         self.single_valve_actuation = "single valve actuation"
+        self.pulse = "pulse"
         self._active_thread: threading.Thread | None = None
 
         # elyse added this
@@ -178,13 +179,17 @@ class Controller:
             out.append({"name": name, "key": key, "steps": steps})
         return out
 
-    def _loop(self):
+    def start(self):
         while not self._stop_event.is_set():
             # change implementation to 
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
             if gui_input is None:
                 break
-            if gui_input in [s.value for s in State]:
+            elif isinstance(gui_input, tuple):
+                command, *args = gui_input
+                if command in [s.value for s in State]:
+                    self._execute_action(command, *args)
+            elif gui_input in [s.value for s in State]:
                 self._execute_action(gui_input)
             else:
                 # send to gui that input is invalid
@@ -301,9 +306,13 @@ class Controller:
 
                             self.step_list.append(self.current_step)
                             self.step_status = StepStatus.READY
-            elif action == self.single_valve_actuation:
-                # TO DO: actuate single valve and record
-                pass
+            elif action in (self.single_valve_actuation, self.pulse):
+                current_valve = self.actuator_list.get(valve_id)
+                if action == self.single_valve_actuation:
+                    current_valve.set_state(valve_state)
+                else:
+                    current_valve.pulse_valve()
+                # TO DO: log valve actuation
         else:
             # TO DO: send to gui "invalid state transition"
             pass
