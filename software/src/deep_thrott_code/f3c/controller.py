@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 import yaml
-from valve import Valve, ValveState, ThrottleValve
+from .valve import Valve, ValveState, ThrottleValve
 import os
 
 class State(Enum):
@@ -39,13 +39,38 @@ class Controller:
     """
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
-    def __init__(self, hardware_config_file: str, sequence_config_file: str, command_queue: queue.Queue,
-                 ack_queue: queue.Queue):
+    def __init__(
+        self,
+        hardware_config_file: str | None = None,
+        sequence_config_file: str | None = None,
+        command_queue: queue.Queue | None = None,
+        ack_queue: queue.Queue | None = None,
+        *,
+        # New-style kwargs used by deep_thrott_code.main
+        hardware_config_path: str | None = None,
+        sequence_config_path: str | None = None,
+        f3c_to_gui_queue: queue.Queue | None = None,
+        system_state: State = State.IDLE,
+    ):
         # commented out attributes are moved to thread safe access block
+        if command_queue is None or ack_queue is None:
+            raise TypeError("command_queue and ack_queue are required")
+
+        self._f3c_to_gui_queue = f3c_to_gui_queue
+
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         config_dir = os.path.join(base_dir, "config")
-        self.sequence_config_file = os.path.join(config_dir, sequence_config_file)
-        self.hardware_config_file = os.path.join(config_dir, hardware_config_file)
+
+        if sequence_config_path is not None:
+            self.sequence_config_file = str(sequence_config_path)
+        else:
+            self.sequence_config_file = os.path.join(config_dir, str(sequence_config_file))
+
+        if hardware_config_path is not None:
+            self.hardware_config_file = str(hardware_config_path)
+        else:
+            self.hardware_config_file = os.path.join(config_dir, str(hardware_config_file))
+
         self.transitions = self._build_transitions()
         self.sequences = self._build_sequences(self.sequence_config_file)
         self.actuator_list = self._build_actuator_list(self.hardware_config_file)
@@ -67,7 +92,7 @@ class Controller:
 
         # elyse moved attributes to thread safe access w locks
         with self._lock:
-            self.state: State = State.IDLE
+            self.state: State = system_state
             self.step_status: StepStatus = StepStatus.READY
             self.active_sequence: str = "idle"
             self.current_step_index: int | None = None
@@ -112,7 +137,7 @@ class Controller:
         with self._lock:
             state = self.state
             valves: dict[str, str] = {}
-            for v in self.actuators.values():
+            for v in self.actuator_list.values():
                 try:
                     key = str(getattr(v, "valve_id", "")).upper()
                     val = getattr(getattr(v, "state", None), "value", None)
@@ -198,6 +223,10 @@ class Controller:
                 # send to gui that input is invalid
                 pass 
 
+    # Compatibility shim: backend expects loop_forever()
+    def loop_forever(self) -> None:
+        self.start()
+
     def _record_history(self, *, sequence: str, step_index: int, status: str,
         valve: str | None = None, action: str | None = None):
         with self._lock:
@@ -260,7 +289,7 @@ class Controller:
                             "condition_state": step.get("condition_state"),
                             "system_state": self.state.value,
                         }
-                        self._record_history(sequence=sequence_state.value(), step_index=idx, status="READY", valve=valve_id, action=action_seq)
+                        self._record_history(sequence=sequence_state.value, step_index=idx, status="READY", valve=valve_id, action=action_seq)
 
                         # if the valve for this step is a throttle valve
                         if isinstance(current_valve, ThrottleValve):
@@ -279,13 +308,14 @@ class Controller:
                             if bool(step.get("user_input")):
                                 with self._lock:
                                     self.step_status = StepStatus.WAITING_USER
-                                self.waiting_manual = {"sequence": sequence_state, "step_index": int(idx)}
-                                self._record_history(sequence=sequence_state.value(), step_index=idx, status="WAITING_USER", valve=valve_id, action=action_seq)
+                                self.waiting_manual = {"sequence": str(sequence_state.value), "step_index": int(idx)}
+                                self._record_history(sequence=sequence_state.value, step_index=idx, status="WAITING_USER", valve=valve_id, action=action_seq)
                                 # send message to gui that manual step is required with step details
-                                self._ack_queue.put(
+                                if self._f3c_to_gui_queue is not None:
+                                    self._f3c_to_gui_queue.put(
                                         {
                                             "type": "manual_step_required",
-                                            "sequence": sequence_state,
+                                            "sequence": str(sequence_state.value),
                                             "step_index": int(idx),
                                             "message": "Manual step required. Perform the required checks, then click Execute.",
                                         },
@@ -302,7 +332,7 @@ class Controller:
                                             seq = ack.get("sequence")
                                             step_index = ack.get("step_index")
                                             ack_idx = int(step_index)
-                                            if seq == sequence_state and ack_idx == int(idx):
+                                            if seq == str(sequence_state.value) and ack_idx == int(idx):
                                                 break
                                     finally:
                                         self._ack_queue.task_done()
@@ -371,8 +401,18 @@ class Controller:
 
         with open(hardware_config_path, "r") as f:
             hardware_config = yaml.safe_load(f)
-            actuator_info_list = hardware_config.get("actuators").get("valves")
-            actuator_list = {}
+            actuator_info_list = (hardware_config.get("actuators") or {}).get("valves") or {}
+            actuator_list: dict[str, Any] = {}
             for valve_id, actuator_info in actuator_info_list.items():
-                actuator_list[valve_id] = Valve(valve_id, actuator_info.get("default_state"), actuator_info.get("pin"))
+                if not isinstance(actuator_info, dict):
+                    continue
+                if actuator_info.get("enabled") is False:
+                    continue
+                pin = actuator_info.get("pin")
+                active_high = bool(actuator_info.get("active_high", True))
+                mode = str(actuator_info.get("mode", "on_off")).lower()
+                if mode == "throttle":
+                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), pin, active_high)
+                else:
+                    actuator_list[str(valve_id)] = Valve(str(valve_id), pin, active_high)
         return actuator_list
