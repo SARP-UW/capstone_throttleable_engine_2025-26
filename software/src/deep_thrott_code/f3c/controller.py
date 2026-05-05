@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 import yaml
-from .valve import Valve, ValveState, ThrottleValve
+from valve import Valve, ValveState, ThrottleValve
 
 class State(Enum):
     IDLE = "idle"
