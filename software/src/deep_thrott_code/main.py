@@ -6,8 +6,9 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from deep_thrott_code.backend_app import DaqRuntime, create_backend_app, drain_queue, emit_system as _emit_system, parse_args
-from deep_thrott_code.backend_service import BackendController
+from deep_thrott_code.backend.app_factory import create_backend_app, parse_args
+from deep_thrott_code.backend.daq_runtime import DaqRuntime, drain_queue, emit_system as _emit_system
+from deep_thrott_code.backend.gui_command_handler import GuiCommandHandler
 from deep_thrott_code.gui.extensions import socketio
 
 try:
@@ -106,7 +107,8 @@ def main() -> None:
 		get_system_snapshot=get_system_snapshot,
 		sequence_defs=sequence_defs_for_gui,
 	)
-	controller = BackendController(
+
+	controller = GuiCommandHandler(
 		control_queue=control_queue,
 		emit_system=_emit_system,
 		start_log=daq.start,
