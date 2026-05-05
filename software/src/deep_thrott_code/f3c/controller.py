@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 import yaml
 from valve import Valve, ValveState, ThrottleValve
+import os
 
 class State(Enum):
     IDLE = "idle"
@@ -38,14 +39,16 @@ class Controller:
     """
     Controller class to manage sequencing, receives sequences to execute from GUI and talks to valve classes.
     """
-    def __init__(self, hardware_config_path: str, sequence_config_path: str, command_queue: queue.Queue,
+    def __init__(self, hardware_config_file: str, sequence_config_file: str, command_queue: queue.Queue,
                  ack_queue: queue.Queue):
         # commented out attributes are moved to thread safe access block
-        self.sequence_config_path = sequence_config_path
-        self.hardware_config_path = hardware_config_path
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_dir = os.path.join(base_dir, "config")
+        self.sequence_config_file = os.path.join(config_dir, sequence_config_file)
+        self.hardware_config_file = os.path.join(config_dir, hardware_config_file)
         self.transitions = self._build_transitions()
-        self.sequences = self._build_sequences(sequence_config_path)
-        self.actuator_list = self._build_actuator_list(hardware_config_path)
+        self.sequences = self._build_sequences(self.sequence_config_file)
+        self.actuator_list = self._build_actuator_list(self.hardware_config_file)
         # self.state = State.IDLE
         self.fill_executed = False
         self.fire_executed = False
