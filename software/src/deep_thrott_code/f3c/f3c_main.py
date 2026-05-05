@@ -15,7 +15,7 @@ test_command_queue = Queue()
 test_ack_queue = Queue()
 
 controller = Controller("test_hardware.yaml", "sequences.yaml", test_command_queue, test_ack_queue)
-controller_thread = threading.Thread(target=controller.start())
+controller_thread = threading.Thread(target=controller.start)
 controller_thread.daemon = True
 controller_thread.start()
 
