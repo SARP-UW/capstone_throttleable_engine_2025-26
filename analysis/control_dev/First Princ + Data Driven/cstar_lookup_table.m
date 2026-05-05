@@ -1,6 +1,6 @@
-Pc_vec = linspace(270,350,24);
+Pc_vec = readmatrix('cstar_lookup_table.xlsx','Range','B3:B23');
 
-OF = linspace(1.1,1.3,7);
+OF_vec = readmatrix('cstar_lookup_table.xlsx','Range','C2:I2');
 
-cstar_matr = [
-    ]
+
+cstar_matr = readmatrix('cstar_lookup_table.xlsx','Range','C3:I23');

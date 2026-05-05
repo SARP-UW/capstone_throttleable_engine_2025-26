@@ -1,30 +1,22 @@
-from __future__ import annotations
+"""Backend-side handler for GUI control commands.
 
-"""Backend-side controller for GUI control commands.
+Consumes control messages coming from the GUI (via Socket.IO) and calls into
+callbacks provided by the composition root (`deep_thrott_code/main.py`).
 
-This file is intentionally small: it consumes control messages coming from the
-GUI (via Socket.IO) and calls into callbacks provided by `main.py`.
-
-It is separate from the sequencing runtime:
+This is separate from the sequencing runtime:
 - `control_queue` -> start/stop logging, toggle simulation mode, etc.
 - `command_queue` -> sequence commands ("fill"/"fire") handled by the F3C Controller
 """
+
+from __future__ import annotations
 
 import queue
 import threading
 from collections.abc import Callable
 
 
-class BackendController:
-	"""Handles GUI control messages from control_queue.
-
-	The GUI (via Socket.IO) enqueues objects like:
-	- {"name": "set_simulation", "enabled": true}
-	- {"name": "start_log"}
-	- {"name": "stop_log"}
-
-	This controller translates them into callbacks provided by main().
-	"""
+class GuiCommandHandler:
+	"""Handles GUI control messages from `control_queue`."""
 
 	def __init__(
 		self,
@@ -35,9 +27,6 @@ class BackendController:
 		stop_log: Callable[[], None],
 		is_running: Callable[[], bool],
 	) -> None:
-		# `control_queue` items are dicts with a `name` field.
-		# See `deep_thrott_code/gui/sockets.py` for the Socket.IO handler that
-		# enqueues these payloads.
 		self._control_queue = control_queue
 		self._emit_system = emit_system
 		self._start_log = start_log
@@ -46,7 +35,6 @@ class BackendController:
 
 		self._lock = threading.Lock()
 		# "Simulation Mode" is a latched setting that applies to the next Start Log.
-		# If the log is already running, we don't restart it automatically.
 		self._simulation_enabled = True
 
 	def _emit(self, text: str) -> None:
@@ -80,7 +68,6 @@ class BackendController:
 		while True:
 			payload = self._control_queue.get()
 			try:
-				# Defensive parsing: the GUI is a network client.
 				if not isinstance(payload, dict):
 					self._emit("Ignored non-object command payload.")
 					continue
@@ -89,7 +76,6 @@ class BackendController:
 				if name == "set_simulation":
 					self.set_simulation_enabled(bool(payload.get("enabled")))
 				elif name == "start_log":
-					# Snapshot the latched sim flag under lock.
 					with self._lock:
 						simulation = bool(self._simulation_enabled)
 					self._start_log(simulation)
@@ -102,3 +88,10 @@ class BackendController:
 					self._control_queue.task_done()
 				except Exception:
 					pass
+
+
+# Backward-compatible alias: older code imported BackendController.
+BackendController = GuiCommandHandler
+
+
+__all__ = ["GuiCommandHandler", "BackendController"]

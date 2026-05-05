@@ -1,13 +1,49 @@
+"""Socket.IO handlers and GUI update loop.
+
+This module is the main bridge between:
+- The backend's internal Python queues (DAQ + controller)
+- The browser GUI, connected via Flask-SocketIO
+
+There are two directions of flow:
+
+1) Backend -> GUI (push telemetry/state)
+	 - DAQ / runtime code pushes samples onto `gui_queue`.
+	 - A background thread in this module runs at ~10 Hz and:
+			 - drains `gui_queue` (non-blocking)
+			 - keeps the latest value per sensor
+			 - emits a consolidated `daq_packet` to the browser
+	 - Separately, it emits a `system_packet` produced by `get_system_snapshot`
+		 (sequencer/controller state, which we keep separate from DAQ telemetry).
+
+2) GUI -> Backend (send commands)
+	 - The browser emits events like `gui_command` and `manual_step_execute`.
+	 - The handlers validate payloads, then enqueue work onto:
+			 - `command_queue` (sequencer/controller commands)
+			 - `control_queue` (backend runtime controls: start/stop/toggle simulation)
+			 - `gui_to_f3_queue` (manual-step acknowledgements back to sequencer)
+
+Important note about `socketio.emit(...)`:
+- In Flask-SocketIO, `socketio.emit` typically broadcasts to all clients
+	unless you target a specific session/room.
+- This project assumes a single GUI client most of the time.
+"""
 
 from __future__ import annotations
 
 import queue
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
+
 
 
 def _sample_to_json(sample: Any) -> dict[str, Any]:  # noqa: ANN401
+	"""Convert a sample object into a JSON-serializable dict.
+
+	We use `getattr` so this works with both real sample classes and
+	simpler mock objects in simulation/tests.
+	"""
+
 	return {
 		"sensor_name": getattr(sample, "sensor_name", ""),
 		"sensor_kind": getattr(sample, "sensor_kind", ""),
@@ -31,6 +67,8 @@ def register_socket_handlers(
 	gui_to_f3_queue: queue.Queue | None = None,
 	get_system_snapshot: Any | None = None,  # callable -> dict
 	sequence_defs: list[dict[str, Any]] | None = None,
+	pin_thread_to_cpu: Callable[[int], None] | None = None,
+	cpu: int | None = None,
 ) -> None:
 	"""Register Socket.IO event handlers + start the 10Hz GUI loop.
 
@@ -45,6 +83,8 @@ def register_socket_handlers(
 	- Emit reject or enqueue to command_queue and emit accept
 	"""
 
+	# latest_states is a "latest value" cache used to build `daq_packet`.
+	# We keep this lock small/fast so the 10 Hz loop stays stable.
 	latest_lock = threading.Lock()
 	latest_states: dict[str, dict[str, Any]] = {}
 
@@ -60,6 +100,13 @@ def register_socket_handlers(
 	app.config["SEQUENCE_DEFS"] = sequence_defs
 
 	def drain_gui_queue() -> int:
+		"""Drain `gui_queue` and update `latest_states`.
+
+		We intentionally do *non-blocking* reads (`get_nowait`) so the GUI loop
+		never stalls. If samples arrive faster than 10 Hz, older ones are dropped
+		in favor of the most recent per sensor.
+		"""
+
 		if gui_queue is None:
 			return 0
 
@@ -81,11 +128,19 @@ def register_socket_handlers(
 		return drained
 
 	def build_packet() -> dict[str, Any]:
+		"""Build the `daq_packet` sent to the GUI."""
+
 		with latest_lock:
 			states_copy = dict(latest_states)
 		return {"t_wall": time.time(), "states": states_copy}
 
 	def build_system_packet() -> dict[str, Any]:
+		"""Build the `system_packet` sent to the GUI.
+
+		This is kept separate from DAQ telemetry so controller/sequencer state
+		updates don't overwrite sensor state (and vice versa) on the frontend.
+		"""
+
 		snap: dict[str, Any] = {}
 		getter = app.config.get("GET_SYSTEM_SNAPSHOT")
 		if callable(getter):
@@ -99,6 +154,8 @@ def register_socket_handlers(
 		return snap
 
 	def drain_f3_to_gui_queue() -> None:
+		"""Drain controller->GUI messages and emit relevant Socket.IO events."""
+
 		q = app.config.get("F3_TO_GUI_QUEUE")
 		if q is None:
 			return
@@ -119,11 +176,14 @@ def register_socket_handlers(
 						pass
 
 	def gui_loop_thread() -> None:
+		"""Main 10 Hz loop that pushes current backend state to the browser."""
+
 		period_s = 0.1
 		next_tick = time.perf_counter()
 		while True:
 			drain_gui_queue()
 			drain_f3_to_gui_queue()
+			# DAQ packet: latest sensor values.
 			packet = build_packet()
 			try:
 				socketio.emit("daq_packet", packet)
@@ -131,6 +191,7 @@ def register_socket_handlers(
 				# Keep the thread alive even if Socket.IO isn't ready.
 				pass
 
+			# System packet: controller/sequencer snapshot.
 			sys_packet = build_system_packet()
 			try:
 				socketio.emit("system_packet", sys_packet)
@@ -144,13 +205,23 @@ def register_socket_handlers(
 			else:
 				next_tick = time.perf_counter()
 
-	# Start the GUI loop once.
+	def gui_loop_entrypoint() -> None:
+		"""Optional CPU pinning wrapper for the GUI loop thread."""
+
+		if pin_thread_to_cpu is not None and cpu is not None:
+			pin_thread_to_cpu(cpu)
+		gui_loop_thread()
+
+	# Start the GUI loop once per Flask app instance.
+	# (register_socket_handlers can be called multiple times in some setups.)
 	if not app.config.get("GUI_LOOP_STARTED"):
-		threading.Thread(target=gui_loop_thread, daemon=True, name="gui_loop").start()
+		threading.Thread(target=gui_loop_entrypoint, daemon=True, name="gui_loop").start()
 		app.config["GUI_LOOP_STARTED"] = True
 
 	@socketio.on("connect")
 	def _on_connect() -> None:
+		"""Client connected: send initial state so the GUI renders immediately."""
+
 		socketio.emit("server_hello", {"ok": True})
 		# Send an immediate packet so the UI doesn't wait up to 100ms.
 		socketio.emit("daq_packet", build_packet())
@@ -165,6 +236,12 @@ def register_socket_handlers(
 
 	@socketio.on("manual_step_execute")
 	def _on_manual_step_execute(payload: Any) -> None:  # noqa: ANN401
+		"""Ack a manual step back to the sequencer/controller.
+
+		Expected payload:
+		- {"sequence": <str>, "step_index": <int-like>}
+		"""
+
 		q = app.config.get("GUI_TO_F3_QUEUE")
 		if q is None:
 			socketio.emit("command_reject", {"ok": False, "reason": "gui_to_f3_queue_not_configured"})
@@ -192,6 +269,13 @@ def register_socket_handlers(
 
 	@socketio.on("gui_command")
 	def _on_gui_command(payload: Any) -> None:  # noqa: ANN401
+		"""Handle general GUI commands.
+
+		The frontend sends a dict payload with a `name` key. We validate and route:
+		- Sequencer commands -> `command_queue`
+		- Backend runtime controls -> `control_queue`
+		"""
+
 		if not isinstance(payload, dict):
 			socketio.emit("command_reject", {"ok": False, "reason": "payload_not_object"})
 			return
@@ -201,7 +285,7 @@ def register_socket_handlers(
 			socketio.emit("command_reject", {"ok": False, "reason": "missing_name"})
 			return
 
-		# Commands intended for the F3 loop.
+		# Commands intended for the sequencer/controller loop.
 		if name in {"fill", "fire"}:
 			if command_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
@@ -259,7 +343,8 @@ def register_socket_handlers(
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return
 		else:
-			# GUI control commands: enqueue the full payload object.
+			# Backend runtime control commands: enqueue the full payload object.
+			# These are consumed by `GuiCommandHandler` (see backend/gui_command_handler.py).
 			if control_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "control_queue_not_configured"})
 				return
