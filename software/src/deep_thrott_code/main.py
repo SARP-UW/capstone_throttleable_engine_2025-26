@@ -6,7 +6,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from deep_thrott_code.backend.app_factory import create_backend_app, parse_args
+from deep_thrott_code.backend.app_factory import parse_args
 from deep_thrott_code.backend.daq_runtime import DaqRuntime, drain_queue, emit_system as _emit_system
 from deep_thrott_code.backend.gui_command_handler import GuiCommandHandler
 from deep_thrott_code.gui.extensions import socketio
@@ -69,24 +69,37 @@ def main() -> None:
 	get_system_snapshot: Any | None = None
 	controller_for_snapshot: Any | None = None
 
-	f3_controller = F3CController(
-		hardware_config_path=str(hardware_path),
-		sequence_config_path=str(sequences_path),
-		f3c_to_gui_queue=f3_to_gui_queue,
-		command_queue=sequencer_command_queue,
-		ack_queue=sequencer_ack_queue,
-		system_state=F3CState.IDLE)
+	f3_controller: Any | None = None
+	if F3CController is not None and F3CState is not None:
+		try:
+			f3_controller = F3CController(
+				hardware_config_path=str(hardware_path),
+				sequence_config_path=str(sequences_path),
+				f3c_to_gui_queue=f3_to_gui_queue,
+				command_queue=sequencer_command_queue,
+				ack_queue=sequencer_ack_queue,
+				system_state=F3CState.IDLE,
+			)
+		except Exception as exc:
+			print(f"Warning: F3C controller unavailable ({exc}); continuing without sequencer.")
+			f3_controller = None
 
-	# TODO: don't start controller until start log is pressed,
-	# bring daqruntime back out to main
-	def f3_controller_entrypoint() -> None:
-		pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
-		f3_controller.loop_forever()
+	if f3_controller is not None:
+		# TODO: don't start controller until start log is pressed,
+		# bring daqruntime back out to main
+		loop_forever = getattr(f3_controller, "loop_forever", None)
+		if callable(loop_forever):
+			def f3_controller_entrypoint() -> None:
+				pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
+				loop_forever()
 
-	threading.Thread(target=f3_controller_entrypoint, daemon=True, name="f3c_loop").start()  # type: ignore[attr-defined]
+			threading.Thread(target=f3_controller_entrypoint, daemon=True, name="f3c_loop").start()
 
-	sequence_defs_for_gui = f3_controller.get_sequence_definitions_for_gui() 
-	get_system_snapshot = f3_controller.snapshot  
+		try:
+			sequence_defs_for_gui = f3_controller.get_sequence_definitions_for_gui()
+		except Exception:
+			sequence_defs_for_gui = []
+		get_system_snapshot = getattr(f3_controller, "snapshot", None)
 
 	sample_queue: queue.Queue = queue.Queue(maxsize=1000)
 	daq = DaqRuntime(
@@ -105,7 +118,6 @@ def main() -> None:
 
 	# Gui stuffs
 
-	from deep_thrott_code.gui.extensions import socketio  
 	from deep_thrott_code.gui.sockets import register_socket_handlers
 	from flask import Flask
 
