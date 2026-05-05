@@ -4,7 +4,7 @@ from __future__ import annotations
 import queue
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
 
 
 def _sample_to_json(sample: Any) -> dict[str, Any]:  # noqa: ANN401
@@ -33,6 +33,8 @@ def register_socket_handlers(
 	gui_to_f3_queue: queue.Queue | None = None,
 	get_system_snapshot: Any | None = None,  # callable -> dict
 	sequence_defs: list[dict[str, Any]] | None = None,
+	pin_thread_to_cpu: Callable[[int], None] | None = None,
+	cpu: int | None = None,
 ) -> None:
 	"""Register Socket.IO event handlers + start the 10Hz GUI loop.
 
@@ -146,9 +148,14 @@ def register_socket_handlers(
 			else:
 				next_tick = time.perf_counter()
 
+	def gui_loop_entrypoint() -> None:
+		if pin_thread_to_cpu is not None and cpu is not None:
+			pin_thread_to_cpu(cpu)
+		gui_loop_thread()
+
 	# Start the GUI loop once.
 	if not app.config.get("GUI_LOOP_STARTED"):
-		threading.Thread(target=gui_loop_thread, daemon=True, name="gui_loop").start()
+		threading.Thread(target=gui_loop_entrypoint, daemon=True, name="gui_loop").start()
 		app.config["GUI_LOOP_STARTED"] = True
 
 	@socketio.on("connect")

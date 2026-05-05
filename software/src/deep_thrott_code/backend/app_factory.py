@@ -75,52 +75,6 @@ def parse_args() -> BackendConfig:
 		debug=bool(args.debug),
 		autostart=bool(args.autostart),
 		simulation=bool(args.simulation),
-	)
+    )
 
-
-def create_backend_app(
-	*,
-	gui_queue: queue.Queue,
-	command_queue: queue.Queue,
-	control_queue: queue.Queue,
-	f3_to_gui_queue: queue.Queue | None = None,
-	gui_to_f3_queue: queue.Queue | None = None,
-	get_system_snapshot: Callable[[], dict] | None = None,
-	sequence_defs: list[dict] | None = None,
-) -> Flask:
-	"""Create the Flask backend and register Socket.IO handlers.
-
-	`register_socket_handlers()` starts the 10Hz emit loop thread that:
-	- drains `gui_queue` and emits `daq_packet`
-	- calls `get_system_snapshot` and emits `system_packet`
-	- forwards manual-step messages (if sequencing runtime queues are configured)
-	"""
-
-	# IMPORTANT: these imports are intentionally inside the function.
-	# That lets parts of the codebase import this module even in environments
-	# that don't have Flask-SocketIO installed (e.g., some CI or tooling).
-	from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
-	from deep_thrott_code.gui.sockets import register_socket_handlers  # noqa: PLC0415
-
-	app = Flask(__name__)
-	# Secret key is required by Flask extensions; "dev" is fine for local work.
-	app.config["SECRET_KEY"] = "dev"
-
-	# Attach Socket.IO to the Flask app.
-	socketio.init_app(app)
-	# Register event handlers + start the periodic emit loop (10 Hz).
-	register_socket_handlers(
-		socketio,
-		app,
-		gui_queue=gui_queue,
-		command_queue=command_queue,
-		control_queue=control_queue,
-		f3_to_gui_queue=f3_to_gui_queue,
-		gui_to_f3_queue=gui_to_f3_queue,
-		get_system_snapshot=get_system_snapshot,
-		sequence_defs=sequence_defs,
-	)
-	return app
-
-
-__all__ = ["BackendConfig", "parse_args", "create_backend_app"]
+__all__ = ["BackendConfig", "parse_args"]
