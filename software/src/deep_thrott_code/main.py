@@ -70,7 +70,9 @@ def main() -> None:
 	controller_for_snapshot: Any | None = None
 
 	f3_controller: Any | None = None
-	if F3CController is not None and F3CState is not None:
+	if cfg.no_sequencer:
+		print("Sequencer disabled (--no-sequencer): running DAQ backend only.")
+	elif F3CController is not None and F3CState is not None:
 		try:
 			f3_controller = F3CController(
 				hardware_config_path=str(hardware_path),

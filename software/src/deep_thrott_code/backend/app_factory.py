@@ -40,6 +40,7 @@ class BackendConfig:
 	debug: bool
 	autostart: bool
 	simulation: bool
+	no_sequencer: bool
 
 
 def parse_args() -> BackendConfig:
@@ -67,6 +68,11 @@ def parse_args() -> BackendConfig:
 		# Default is False, but the GUI can still toggle simulation at runtime.
 		help="Default to Simulation Mode ON at startup (still changeable via GUI)",
 	)
+	parser.add_argument(
+		"--no-sequencer",
+		action="store_true",
+		help="Do not start the F3C sequencer/controller (DAQ + GUI streaming only).",
+	)
 	# Parse the args and normalize types.
 	args = parser.parse_args()
 	return BackendConfig(
@@ -75,6 +81,7 @@ def parse_args() -> BackendConfig:
 		debug=bool(args.debug),
 		autostart=bool(args.autostart),
 		simulation=bool(args.simulation),
+		no_sequencer=bool(args.no_sequencer),
     )
 
 __all__ = ["BackendConfig", "parse_args"]
