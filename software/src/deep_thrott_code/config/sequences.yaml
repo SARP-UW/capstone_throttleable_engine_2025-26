@@ -1,58 +1,7 @@
 sequences:
-  - name: fill
-    steps:
-      - valve: lffv
-        action: open
-        time_delay: 0.0
-        user_input: true
-        condition_valve: null
-        condition_state: null
-        system_state: fill
-
-      - valve: otvv
-        action: open
-        time_delay: 0.0
-        user_input: true
-        condition_valve: lffv
-        condition_state: open
-        system_state: fill
-
-      - valve: offv
-        action: open
-        time_delay: 0.0
-        user_input: false
-        condition_valve: lffv
-        condition_state: open
-        system_state: fill
-
-      - valve: offv
-        action: close
-        time_delay: 0.0
-        user_input: false
-        condition_valve: otvv
-        condition_state: open
-        system_state: fill
-
-      - valve: otvv
-        action: open
-        time_delay: 0.0
-        user_input: false
-        condition_valve: offv
-        condition_state: close
-        system_state: fill
-
-      - valve: xffv
-        action: open
-        time_delay: 0.0
-        user_input: false
-        condition_valve: otvv
-        condition_state: close
-        system_state: fill
-
-
   - name: fire
     steps:
-      - valve: omv
+      - valve_id: omv
         action: open
         time_delay: 0.0
         user_input: false
@@ -60,7 +9,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: fmv
+      - valve_id: fmv
         action: open
         time_delay: 0.0
         user_input: true
@@ -68,7 +17,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: wmv
+      - valve_id: wmv
         action: open
         time_delay: 0.0
         user_input: false
@@ -76,7 +25,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: igniter
+      - valve_id: igniter
         action: open
         time_delay: 0.0
         user_input: false
@@ -84,7 +33,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: fifv
+      - valve_id: fifv
         action: open
         time_delay: 0.0
         user_input: false
@@ -92,7 +41,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: oifv
+      - valve_id: oifv
         action: open
         time_delay: 2.0
         user_input: false
@@ -100,7 +49,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: omctv
+      - valve_id: omctv
         action: open
         time_delay: 0.0
         user_input: false
@@ -108,7 +57,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: fmctv
+      - valve_id: fmctv
         action: open
         time_delay: 2.0
         user_input: false
@@ -116,7 +65,7 @@ sequences:
         condition_state: open
         system_state: throttle
 
-      - valve: fifv
+      - valve_id: fifv
         action: close
         time_delay: 0.0
         user_input: false
@@ -124,7 +73,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: oifv
+      - valve_id: oifv
         action: close
         time_delay: 2.0
         user_input: false
@@ -132,7 +81,7 @@ sequences:
         condition_state: open
         system_state: fire
 
-      - valve: sparker
+      - valve_id: sparker
         action: close
         time_delay: 0.0
         user_input: false
@@ -140,7 +89,7 @@ sequences:
         condition_state: close
         system_state: fire
 
-      - valve: lffv
+      - valve_id: lffv
         action: close
         time_delay: 0.0
         user_input: false
@@ -148,7 +97,7 @@ sequences:
         condition_state: close
         system_state: fire
 
-      - valve: xffv
+      - valve_id: xffv
         action: close
         time_delay: 0.0
         user_input: true

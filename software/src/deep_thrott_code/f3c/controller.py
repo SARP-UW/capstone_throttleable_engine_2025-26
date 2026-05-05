@@ -336,7 +336,6 @@ class Controller:
                                                 break
                                     finally:
                                         self._ack_queue.task_done()
-
                             self.step_list.append(self.current_step)
                             self.step_status = StepStatus.READY
             elif action in (self.single_valve_actuation, self.pulse):
@@ -404,15 +403,5 @@ class Controller:
             actuator_info_list = (hardware_config.get("actuators") or {}).get("valves") or {}
             actuator_list: dict[str, Any] = {}
             for valve_id, actuator_info in actuator_info_list.items():
-                if not isinstance(actuator_info, dict):
-                    continue
-                if actuator_info.get("enabled") is False:
-                    continue
-                pin = actuator_info.get("pin")
-                active_high = bool(actuator_info.get("active_high", True))
-                mode = str(actuator_info.get("mode", "on_off")).lower()
-                if mode == "throttle":
-                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), pin, active_high)
-                else:
-                    actuator_list[str(valve_id)] = Valve(str(valve_id), pin, active_high)
+                actuator_list[valve_id] = Valve(valve_id, int(actuator_info.get("pin")), actuator_info.get("active_high"))
         return actuator_list
