@@ -23,17 +23,21 @@ Note on Controller integration:
 	separate queues (`command_queue` and `gui_to_f3_queue`).
 """
 
+# Standard library imports
 import argparse
 import queue
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 
+# Web framework import (the GUI talks to this backend over Socket.IO)
 from flask import Flask
 
 
 @dataclass(frozen=True)
 class BackendConfig:
+	# CLI/config values for starting the backend process.
+	# (These are read once at process startup.)
 	host: str
 	port: int
 	debug: bool
@@ -44,21 +48,29 @@ class BackendConfig:
 def parse_args() -> BackendConfig:
 	"""Parse CLI flags for running the backend as a standalone process."""
 
+	# We keep argument parsing here so `deep_thrott_code.main` can use it,
+	# and so `python -m deep_thrott_code.backend_app` could also use it.
 	parser = argparse.ArgumentParser(description="Deep Thrott Code backend (DAQ + Socket.IO)")
+	# Bind host for the web server.
 	parser.add_argument("--host", default="0.0.0.0", help="Bind host (0.0.0.0 to listen on LAN)")
 	parser.add_argument(
 		"--port",
 		type=int,
+		# 6000 is blocked by some browsers as an unsafe port; use 6001.
 		default=6001,
 		help="Bind port for backend Socket.IO (6000 is browser-unsafe; default 6001)",
 	)
+	# Flask debug mode (auto-reload is disabled elsewhere).
 	parser.add_argument("--debug", action="store_true", help="Enable Flask debug")
+	# Convenience: start DAQ logging immediately after launching the backend.
 	parser.add_argument("--autostart", action="store_true", help="Start logging immediately")
 	parser.add_argument(
 		"--simulation",
 		action="store_true",
+		# Default is False, but the GUI can still toggle simulation at runtime.
 		help="Default to Simulation Mode ON at startup (still changeable via GUI)",
 	)
+	# Parse the args and normalize types.
 	args = parser.parse_args()
 	return BackendConfig(
 		host=str(args.host),
@@ -87,23 +99,38 @@ def create_backend_app(
 	- forwards manual-step messages (if sequencing runtime queues are configured)
 	"""
 
+	# IMPORTANT: these imports are intentionally inside the function.
+	# That lets parts of the codebase import `backend_app.py` even in environments
+	# that don't have Flask-SocketIO installed (e.g., some CI or tooling).
 	# Local imports to keep this module importable in more environments.
 	from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
 	from deep_thrott_code.gui.sockets import register_socket_handlers  # noqa: PLC0415
 
+	# Create the Flask WSGI app object.
 	app = Flask(__name__)
+	# Secret key is required by Flask extensions; "dev" is fine for local work.
 	app.config["SECRET_KEY"] = "dev"
 
+	# Attach Socket.IO to the Flask app.
 	socketio.init_app(app)
+	# Register event handlers + start the periodic emit loop (10 Hz).
+	# This is where the GUI actually gets its live telemetry.
 	register_socket_handlers(
 		socketio,
 		app,
+		# DAQ samples destined for the browser.
 		gui_queue=gui_queue,
+		# Sequencer commands (fill/fire/etc.).
 		command_queue=command_queue,
+		# Backend control commands (start/stop/toggle sim).
 		control_queue=control_queue,
+		# Optional: messages from the sequencer runtime -> GUI.
 		f3_to_gui_queue=f3_to_gui_queue,
+		# Optional: manual-step acknowledgements GUI -> sequencer.
 		gui_to_f3_queue=gui_to_f3_queue,
+		# Optional: sequencer snapshot function; emitted separately from DAQ.
 		get_system_snapshot=get_system_snapshot,
+		# Optional: sequence definitions for the GUI.
 		sequence_defs=sequence_defs,
 	)
 	return app
@@ -112,12 +139,16 @@ def create_backend_app(
 def drain_queue(q: queue.Queue) -> None:
 	"""Best-effort queue drain used to drop stale samples on restarts."""
 
+	# We drain by repeatedly calling get_nowait() until it raises.
+	# This is used when restarting logging to ensure the GUI doesn't show old data.
 	while True:
 		try:
 			q.get_nowait()
 		except Exception:
+			# Queue is empty (or otherwise not drainable).
 			break
 		else:
+			# Some Queue implementations track unfinished tasks; ignore failures.
 			try:
 				q.task_done()
 			except Exception:
@@ -127,10 +158,13 @@ def drain_queue(q: queue.Queue) -> None:
 def emit_system(text: str) -> None:
 	"""Emit a one-line system message to the GUI (best-effort)."""
 
+	# This is intentionally "best-effort": if Socket.IO isn't ready
+	# or the GUI isn't connected yet, we just drop the message.
 	# Local import so this module stays importable without Flask-SocketIO.
 	from deep_thrott_code.gui.extensions import socketio  # noqa: PLC0415
 
 	try:
+		# The frontend listens for this event and prints it to the System Messages panel.
 		socketio.emit("system_message", {"text": text})
 	except Exception:
 		pass
@@ -151,24 +185,39 @@ class DaqRuntime:
 		consumer_cpu: int,
 		log_path: str = "daq_backend_log.csv",
 	) -> None:
+		# Queues shared with the rest of the backend.
+		# - _sample_queue is producer -> consumer (internal)
+		# - _gui_queue is consumer -> GUI emit loop
 		self._gui_queue = gui_queue
 		self._sample_queue = sample_queue
+
+		# Dependency-injected helpers so this class is testable and platform-flexible.
 		self._emit_system = emit_system_fn
 		self._drain_queue = drain_queue_fn
 		self._pin_thread_to_cpu = pin_thread_to_cpu
+
+		# CPU affinity targets for Raspberry Pi (see deep_thrott_code/main.py notes).
 		self._producer_cpu = int(producer_cpu)
 		self._consumer_cpu = int(consumer_cpu)
+
+		# Output CSV path for the DAQ logger.
 		self._log_path = str(log_path)
 
+		# Lock protects start/stop + the runtime fields below.
 		self._lock = threading.Lock()
+		# True if the DAQ threads are currently running.
 		self._running = False
+		# Stop signal shared by producer + consumer.
 		self._stop_event: threading.Event | None = None
+		# Background threads.
 		self._producer_thread: threading.Thread | None = None
 		self._consumer_thread: threading.Thread | None = None
+		# Runtime-owned resources.
 		self._logger = None
 		self._state_store = None
 
 	def is_running(self) -> bool:
+		# Query-only method; returns a snapshot under the lock.
 		with self._lock:
 			return bool(self._running)
 
@@ -179,45 +228,70 @@ class DaqRuntime:
 		The consumer converts samples into GUI-friendly updates and logs to CSV.
 		"""
 
+		# Imports are inside the method so the module can be imported in environments
+		# that don't have all dependencies installed (or don't need the DAQ).
 		from deep_thrott_code.daq.services.loop import consumer_loop, producer_loop  # noqa: PLC0415
 		from deep_thrott_code.daq.services.logger import CsvLogger  # noqa: PLC0415
 		from deep_thrott_code.daq.services.state_store import StateStore  # noqa: PLC0415
 		from deep_thrott_code.daq.sensors.sensors import build_sensor_map, build_sensors  # noqa: PLC0415
 
+		# Guard against double-start.
 		with self._lock:
 			if self._running:
 				self._emit_system("Log already running.")
 				return
 
+		# Build the sensors list.
+		# - simulation=True: fake data
+		# - simulation=False: real hardware (ADC)
 		try:
 			sensors = build_sensors(simulation=bool(simulation))
 		except Exception as e:
+			# Send the error to the GUI and bail.
 			self._emit_system(str(e))
 			return
 
+		# Build name -> sensor object lookup used by the consumer loop.
 		sensor_map = build_sensor_map(sensors)
+		# Stop event is set when we want threads to exit.
 		stop_event = threading.Event()
+		# StateStore holds "latest value" per sensor (used for GUI snapshot-style telemetry).
 		state_store = StateStore()
+		# CsvLogger writes one row per converted sample.
 		logger = CsvLogger(self._log_path, flush_every=25, fsync_every_flush=False)
 
+		# Drop any stale queued items from a prior run.
 		self._drain_queue(self._sample_queue)
 		self._drain_queue(self._gui_queue)
 
 		def producer_entrypoint() -> None:
+			# Producer thread:
+			# - reads each sensor (raw)
+			# - enqueues RawSample(s) into _sample_queue
 			# CPU pinning is optional; on Windows this may no-op depending on impl.
 			self._pin_thread_to_cpu(self._producer_cpu)
+			# 50 Hz is the current fixed rate for the GUI-backed DAQ runtime.
 			producer_loop(sensors, self._sample_queue, stop_event, 50.0)
 
 		def consumer_entrypoint() -> None:
+			# Consumer thread:
+			# - drains _sample_queue
+			# - converts raw samples -> engineering units
+			# - updates StateStore
+			# - enqueues converted Sample(s) to gui_queue
+			# - writes to CSV
 			# The consumer is the only place that touches StateStore + logger.
 			self._pin_thread_to_cpu(self._consumer_cpu)
 			consumer_loop(self._sample_queue, self._gui_queue, state_store, logger, stop_event, sensor_map)
 
+		# Create daemon threads so the process can exit even if something forgets to stop.
 		producer_thread = threading.Thread(target=producer_entrypoint, daemon=True, name="producer")
 		consumer_thread = threading.Thread(target=consumer_entrypoint, daemon=True, name="consumer")
+		# Start both loops.
 		producer_thread.start()
 		consumer_thread.start()
 
+		# Publish runtime state under the lock.
 		with self._lock:
 			self._running = True
 			self._stop_event = stop_event
@@ -226,19 +300,24 @@ class DaqRuntime:
 			self._logger = logger
 			self._state_store = state_store
 
+		# Tell the GUI what just happened.
 		self._emit_system(f"Backend log started ({'SIM' if simulation else 'ADC'} mode).")
 
 	def stop(self) -> None:
 		"""Stop DAQ threads and close the logger (best-effort)."""
 
+		# Copy out references under the lock so we can do blocking joins
+		# without holding the lock (prevents deadlocks / UI stalls).
 		with self._lock:
 			if not self._running:
 				self._emit_system("No log running.")
 				return
+			# Snapshot the runtime objects.
 			stop_event = self._stop_event
 			producer_thread = self._producer_thread
 			consumer_thread = self._consumer_thread
 			logger = self._logger
+			# Clear state first so re-entrancy (or double-stop) is safe.
 			self._running = False
 			self._stop_event = None
 			self._producer_thread = None
@@ -246,21 +325,26 @@ class DaqRuntime:
 			self._logger = None
 			self._state_store = None
 
+		# Signal both threads to stop.
 		if stop_event is not None:
 			stop_event.set()
+		# Join threads briefly to allow clean shutdown.
 		if producer_thread is not None:
 			producer_thread.join(timeout=1.0)
 		if consumer_thread is not None:
 			consumer_thread.join(timeout=1.0)
 
+		# Close the CSV logger.
 		try:
 			if logger is not None:
 				logger.close()
 		except Exception:
 			pass
 
+		# Drop any queued items so the next start begins from a clean slate.
 		self._drain_queue(self._sample_queue)
 		self._drain_queue(self._gui_queue)
+		# Notify the GUI.
 		self._emit_system("Backend log stopped.")
 
 
