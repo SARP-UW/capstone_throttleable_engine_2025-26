@@ -12,7 +12,6 @@ import os
 
 class State(Enum):
     IDLE = "idle"
-    FILL = "fill"
     FIRE = "fire"
     THROTTLE = "throttle"
     ABORT = "abort"
@@ -23,8 +22,7 @@ class TransitionAction(Enum):
     """
     END = "end"                  # when hitting the end of a sequence
     ABORT = "abort"              # when the user aborts a sequence
-    FILL = "fill"    # when a fill sequence starts
-    FIRE = "fire"    # when a fire sequences starts
+    FIRE = "fire"                # when a fire sequences starts
     AUTO = "auto"                # when automatically going to the next step (no user input)
     EXIT_SAFE = "exit_safe"      # when the system is allowed to exit safe mode (must receive user input)
 
@@ -75,7 +73,6 @@ class Controller:
         self.sequences = self._build_sequences(self.sequence_config_file)
         self.actuator_list = self._build_actuator_list(self.hardware_config_file)
         # self.state = State.IDLE
-        self.fill_executed = False
         self.fire_executed = False
         # self.step_status = StepStatus.READY
         # self.current_step = None
@@ -163,7 +160,7 @@ class Controller:
 
     # 
     def get_sequence_definitions_for_gui(self) -> list[dict[str, Any]]:
-        ordered = ["idle", "fill", "fire"]
+        ordered = ["idle", "fire"]
         out: list[dict[str, Any]] = []
         for key in ordered:
             seq = self.sequences.get(key)
@@ -257,8 +254,8 @@ class Controller:
         transition_key = (current_state, TransitionAction(action))
         if transition_key in self.transitions:
 
-            # if trying to fill or fire
-            if action in (State.FILL.value, State.FIRE.value):
+            # if trying to fire
+            if action  == State.FIRE.value:
 
                 # update system state to reflect command
                 sequence_state = self.transitions.get(transition_key)
@@ -360,11 +357,8 @@ class Controller:
         Value: next state
         """""
         return {
-            (State.IDLE, TransitionAction.FILL): State.FILL,
             (State.IDLE, TransitionAction.FIRE): State.FIRE,
             (State.IDLE, TransitionAction.ABORT): State.ABORT,
-            (State.FILL, TransitionAction.END): State.IDLE,
-            (State.FILL, TransitionAction.ABORT): State.ABORT,
             (State.FIRE, TransitionAction.END): State.IDLE,
             (State.FIRE, TransitionAction.ABORT): State.ABORT,
             (State.FIRE, TransitionAction.AUTO): State.THROTTLE,
@@ -376,7 +370,7 @@ class Controller:
     @staticmethod
     def _build_sequences(sequence_config_path: str):
         """
-        Builds the fill and fire sequences based on the sequences config file.
+        Builds the fire sequence based on the sequences config file.
 
         Args:
             sequence_config_path (str): path to the sequences config file
