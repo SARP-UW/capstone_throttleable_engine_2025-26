@@ -13,7 +13,7 @@ GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 test_command_queue = Queue()
 test_ack_queue = Queue()
 
-controller = Controller("config/test_hardware.yaml", "config/sequences.yaml", test_command_queue, test_ack_queue)
+controller = Controller("config/test_hardware.yaml", "software/src/deep_thrott_code/config/sequences.yaml", test_command_queue, test_ack_queue)
 controller.start()
 
 print("Single valve actuation command to controller: open")
