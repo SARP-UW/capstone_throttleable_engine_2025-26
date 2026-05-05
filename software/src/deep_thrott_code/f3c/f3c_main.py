@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 import time
-from .valve import Valve, ValveState
+from valve import Valve, ValveState
+from controller import Controller
+from queue import Queue
 
 # single valve actuation test
 
@@ -8,20 +10,25 @@ pin = 21
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
-test_valve = Valve("fmfv", pin, True)
+test_command_queue = Queue()
+test_ack_queue = Queue()
 
-print("Opening valve")
-test_valve.set_state(ValveState.OPEN)
+controller = Controller("config/test_hardware.yaml", "config/sequences.yaml", test_command_queue, test_ack_queue)
+controller.start()
+
+print("Single valve actuation command to controller: open")
+test_command_queue.put(("single valve actuation", "test valve", ValveState.OPEN))
 
 time.sleep(10)
 
-print("Closing valve")
-test_valve.set_state(ValveState.CLOSED)
+print("Single valve actuation command to controller: close")
+test_command_queue.put(("single valve actuation", "test valve", ValveState.CLOSED))
 
-time.sleep(10)
+# time.sleep(10)
 
-print("Pulsing valve for 10 seconds")
-test_valve.pulse_valve(10)
+# print("Single valve actuation command to controller: pulse for 10 seconds")
+# test_command_queue.put("single valve pulse", "test valve", )
+# time.sleep(10)
 
 
 
