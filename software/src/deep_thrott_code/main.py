@@ -6,8 +6,9 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from deep_thrott_code.backend_app import DaqRuntime, create_backend_app, drain_queue, emit_system as _emit_system, parse_args
-from deep_thrott_code.backend_service import BackendController
+from deep_thrott_code.backend.app_factory import create_backend_app, parse_args
+from deep_thrott_code.backend.daq_runtime import DaqRuntime, drain_queue, emit_system as _emit_system
+from deep_thrott_code.backend.gui_command_handler import GuiCommandHandler
 from deep_thrott_code.gui.extensions import socketio
 
 try:
@@ -68,7 +69,7 @@ def main() -> None:
 	get_system_snapshot: Any | None = None
 	controller_for_snapshot: Any | None = None
 
-	controller_for_snapshot = F3CController(
+	f3_controller = F3CController(
 		hardware_config_path=str(hardware_path),
 		sequence_config_path=str(sequences_path),
 		f3c_to_gui_queue=f3_to_gui_queue,
@@ -76,11 +77,16 @@ def main() -> None:
 		ack_queue=sequencer_ack_queue,
 		system_state=F3CState.IDLE)
 
-	# TODO: don't start controller until start log is pressed,bring daqruntime back out to main
-	threading.Thread(target=controller_for_snapshot.loop_forever, daemon=True, name="f3c_loop").start()  # type: ignore[attr-defined]
+	# TODO: don't start controller until start log is pressed,
+	# bring daqruntime back out to main
+	def f3_controller_entrypoint() -> None:
+		pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
+		f3_controller.loop_forever()
 
-	sequence_defs_for_gui = controller_for_snapshot.get_sequence_definitions_for_gui() 
-	get_system_snapshot = controller_for_snapshot.snapshot  
+	threading.Thread(target=f3_controller_entrypoint, daemon=True, name="f3c_loop").start()  # type: ignore[attr-defined]
+
+	sequence_defs_for_gui = f3_controller.get_sequence_definitions_for_gui() 
+	get_system_snapshot = f3_controller.snapshot  
 
 	sample_queue: queue.Queue = queue.Queue(maxsize=1000)
 	daq = DaqRuntime(
@@ -97,7 +103,19 @@ def main() -> None:
 	# TODO: Throttle control loop add
 	# -----------------------------------------------------------------
 
-	app = create_backend_app(
+	# Gui stuffs
+
+	from deep_thrott_code.gui.extensions import socketio  
+	from deep_thrott_code.gui.sockets import register_socket_handlers
+	from flask import Flask
+
+	app = Flask(__name__)
+	app.config["SECRET_KEY"] = "dev"
+	socketio.init_app(app)
+
+	register_socket_handlers(
+		socketio,
+		app,
 		gui_queue=gui_queue,
 		command_queue=sequencer_command_queue,
 		control_queue=control_queue,
@@ -105,8 +123,11 @@ def main() -> None:
 		gui_to_f3_queue=sequencer_ack_queue,
 		get_system_snapshot=get_system_snapshot,
 		sequence_defs=sequence_defs_for_gui,
+		pin_thread_to_cpu = pin_current_thread_to_cpu,
+		cpu=CPU_CORE_1_OS_AND_GUI,
 	)
-	controller = BackendController(
+
+	controller = GuiCommandHandler(
 		control_queue=control_queue,
 		emit_system=_emit_system,
 		start_log=daq.start,
@@ -115,7 +136,8 @@ def main() -> None:
 	)
 
 	controller.set_simulation_enabled(cfg.simulation)
-	threading.Thread(target=controller.command_loop_forever, daemon=True, name="backend_command_loop").start()
+	threading.Thread(target=controller.command_loop_forever, daemon=True, 
+				  name="backend_command_loop").start()
 
 	if cfg.autostart:
 		daq.start(cfg.simulation)
