@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 import yaml
-from .valve import Valve, ValveState
+from .valve import Valve, ValveState, ThrottleValve
 
 class State(Enum):
     IDLE = "idle"
@@ -43,7 +43,6 @@ class Controller:
         # commented out attributes are moved to thread safe access block
         self.sequence_config_path = sequence_config_path
         self.hardware_config_path = hardware_config_path
-        self.f3c_to_gui_queue = f3c_to_gui_queue
         self.transitions = self._build_transitions()
         self.sequences = self._build_sequences(sequence_config_path)
         self.actuator_list = self._build_actuator_list(hardware_config_path)
@@ -54,6 +53,7 @@ class Controller:
         # self.current_step = None
         # self.step_list = deque(maxlen=100)
         self.single_valve_actuation = "single valve actuation"
+        self._active_thread: threading.Thread | None = None
 
         # elyse added this
         self._lock = threading.RLock()
@@ -63,11 +63,11 @@ class Controller:
 
         # elyse moved attributes to thread safe access w locks
         with self._lock:
-            self.state: State.IDLE
+            self.state: State = State.IDLE
             self.step_status: StepStatus = StepStatus.READY
             self.active_sequence: str = "idle"
             self.current_step_index: int | None = None
-            self.current_step: None
+            self.current_step = None
             self.step_list = deque(maxlen=100)
             self.history: list[dict] = []
             self.waiting_manual: dict | None = None
@@ -181,12 +181,13 @@ class Controller:
     def _loop(self):
         while not self._stop_event.is_set():
             # change implementation to 
-            gui_input = self.gui_to_f3c_queue.get() # waits for an item in the queue with an interrupt
+            gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
             if gui_input is None:
                 break
             if gui_input in [s.value for s in State]:
                 self._execute_action(gui_input)
             else:
+                # send to gui that input is invalid
                 pass 
 
     def _record_history(self, *, sequence: str, step_index: int, status: str,
@@ -224,7 +225,8 @@ class Controller:
 
                 # update system state to reflect command
                 sequence_state = self.transitions.get(transition_key)
-                self.state = sequence_state
+                with self._lock:
+                    self.state = sequence_state
 
                 # loop through each step in sequence
                 current_sequence = self.sequences.get(action)
@@ -250,7 +252,7 @@ class Controller:
                             "condition_state": step.get("condition_state"),
                             "system_state": self.state.value,
                         }
-                        self._record_history(sequence=sequence_state, step_index=idx, status="READY", valve=valve_id, action=action_seq)
+                        self._record_history(sequence=sequence_state.value(), step_index=idx, status="READY", valve=valve_id, action=action_seq)
 
                         # if the valve for this step is a throttle valve
                         if isinstance(current_valve, ThrottleValve):
@@ -270,9 +272,9 @@ class Controller:
                                 with self._lock:
                                     self.step_status = StepStatus.WAITING_USER
                                 self.waiting_manual = {"sequence": sequence_state, "step_index": int(idx)}
-                                self._record_history(sequence=sequence_state, step_index=idx, status="WAITING_USER", valve=valve_id, action=action_seq)
+                                self._record_history(sequence=sequence_state.value(), step_index=idx, status="WAITING_USER", valve=valve_id, action=action_seq)
                                 # send message to gui that manual step is required with step details
-                                self._f3c_to_gui_queue.put(
+                                self._ack_queue.put(
                                         {
                                             "type": "manual_step_required",
                                             "sequence": sequence_state,
@@ -299,6 +301,12 @@ class Controller:
 
                             self.step_list.append(self.current_step)
                             self.step_status = StepStatus.READY
+            elif action == self.single_valve_actuation:
+                # TO DO: actuate single valve and record
+                pass
+        else:
+            # TO DO: send to gui "invalid state transition"
+            pass
                             
 
     @staticmethod
@@ -313,13 +321,14 @@ class Controller:
         return {
             (State.IDLE, TransitionAction.FILL): State.FILL,
             (State.IDLE, TransitionAction.FIRE): State.FIRE,
+            (State.IDLE, TransitionAction.ABORT): State.ABORT,
             (State.FILL, TransitionAction.END): State.IDLE,
-            (State.FILL, TransitionAction.ABORT): State.SAFE,
+            (State.FILL, TransitionAction.ABORT): State.ABORT,
             (State.FIRE, TransitionAction.END): State.IDLE,
-            (State.FIRE, TransitionAction.ABORT): State.SAFE,
+            (State.FIRE, TransitionAction.ABORT): State.ABORT,
             (State.FIRE, TransitionAction.AUTO): State.THROTTLE,
             (State.THROTTLE, TransitionAction.AUTO): State.FIRE,
-            (State.SAFE, TransitionAction.EXIT_SAFE): State.IDLE,
+            (State.ABORT, TransitionAction.EXIT_SAFE): State.IDLE,
         }
 
 

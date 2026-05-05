@@ -1,5 +1,6 @@
 from enum import Enum
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
+import time
 
 class ValveState(Enum):
     """
@@ -14,25 +15,34 @@ class Valve:
     Class which represents an on/off valve, parent for throttle valves.
     """
 
-    def __init__(self, valve_id: int, pin: int, active_high: bool):
+    def __init__(self, valve_id: str, pin: int, active_high: bool):
         self.valve_id = valve_id
         self.pin = pin
         self.active_high = active_high
         self.default_state = ValveState.CLOSED if active_high else ValveState.OPEN
         self.state = self.default_state
-        # GPIO.setup(pin, GPIO.OUT)
+        GPIO.setup(pin, GPIO.OUT)
 
     def set_state(self, new_state: ValveState):
         if self.state != new_state:
             self.state = new_state
             if new_state == ValveState.OPEN:
-                # GPIO.output(self.pin, GPIO.HIGH if self.active_high else GPIO.LOW)
+                GPIO.output(self.pin, GPIO.HIGH if self.active_high else GPIO.LOW)
                 # log actuation
                 pass
             else:
-                # GPIO.output(self.pin, GPIO.LOW if self.active_high else GPIO.HIGH)
+                GPIO.output(self.pin, GPIO.LOW if self.active_high else GPIO.HIGH)
                 # log actuation
                 pass
+
+    def pulse_valve(self, dt: float):
+        if self.state == ValveState.CLOSED:
+            self.set_state(ValveState.OPEN)
+            time.sleep(dt)
+            self.set_state(ValveState.CLOSED)
+        else:
+            # TO DO: send error that valve must be closed to pulse it
+            pass
 
 class ThrottleValve(Valve):
     """
