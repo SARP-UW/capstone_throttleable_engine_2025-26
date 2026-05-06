@@ -1,4 +1,20 @@
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except ModuleNotFoundError:
+    class StubGPIO:
+        BCM = 11
+        OUT = 1
+        LOW = 0
+        HIGH = 1
+        @staticmethod
+        def setmode(mode): pass
+        @staticmethod
+        def setup(pin, mode, initial=None): pass
+        @staticmethod
+        def output(pin, val): pass
+        @staticmethod
+        def cleanup(): pass
+    GPIO = StubGPIO()
 import time
 from valve import Valve, ValveState
 from controller import Controller
@@ -14,10 +30,14 @@ GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 test_command_queue = Queue()
 test_ack_queue = Queue()
 
+print("Initializing Controller...")
 controller = Controller("test_hardware.yaml", "sequences.yaml", test_command_queue, test_ack_queue)
+print("Controller initialized.")
 controller_thread = threading.Thread(target=controller.start)
 controller_thread.daemon = True
+print("Starting controller thread...")
 controller_thread.start()
+print("Controller thread started.")
 
 print("Single valve actuation command to controller: open")
 test_command_queue.put({
