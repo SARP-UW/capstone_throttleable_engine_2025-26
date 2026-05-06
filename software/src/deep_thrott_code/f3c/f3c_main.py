@@ -20,12 +20,20 @@ controller_thread.daemon = True
 controller_thread.start()
 
 print("Single valve actuation command to controller: open")
-test_command_queue.put(("single valve actuation", "test valve", ValveState.OPEN))
+test_command_queue.put({
+    "type": "set_valve",
+    "valve_id": "test_valve",
+    "valve_state": "open"
+})
 
 time.sleep(5)
 
 print("Single valve actuation command to controller: close")
-test_command_queue.put(("single valve actuation", "test valve", ValveState.CLOSED))
+test_command_queue.put({
+    "type": "set_valve",
+    "valve_id": "test_valve",
+    "valve_state": "closed"
+})
 
 print("GPIO command high")
 GPIO.output(pin, GPIO.HIGH)
