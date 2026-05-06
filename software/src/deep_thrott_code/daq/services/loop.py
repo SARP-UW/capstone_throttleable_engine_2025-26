@@ -1,6 +1,10 @@
+import logging
 import threading
 import time
 from queue import Empty
+
+
+_log = logging.getLogger(__name__)
 
 
 class ProducerStats:
@@ -58,6 +62,10 @@ def producer_loop(
 ):
     dt = (1.0 / loop_hz) if pace and loop_hz > 0 else 0.0
 
+    # Rate-limit timeout logs per sensor name so we don't spam.
+    last_timeout_log_t: dict[str, float] = {}
+    timeout_log_period_s = 5.0
+
     while not stop_event.is_set():
         t_start = time.perf_counter()
 
@@ -69,6 +77,13 @@ def producer_loop(
             except TimeoutError:
                 # Treat ADC DRDY timeouts as a dropped sample for this cycle.
                 # Keep the producer loop alive so other channels can continue.
+                now = time.monotonic()
+                name = getattr(sensor, "name", None)
+                sensor_name = str(name) if name else sensor.__class__.__name__
+                last = last_timeout_log_t.get(sensor_name, 0.0)
+                if (now - last) >= timeout_log_period_s:
+                    _log.warning("DAQ read timeout (dropping sample): %s", sensor_name)
+                    last_timeout_log_t[sensor_name] = now
                 continue
 
             sample_queue.put(sample)
