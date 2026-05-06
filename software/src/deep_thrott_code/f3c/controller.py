@@ -4,7 +4,6 @@ import queue
 import threading
 import time
 from enum import Enum
-from pathlib import Path
 from typing import Any
 import yaml
 from valve import Valve, ValveState, ThrottleValve
@@ -211,6 +210,7 @@ class Controller:
     def start(self):
         while not self._stop_event.is_set():
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
+            print("Queue item received")
 
             # shutdown functionality
             if gui_input is None:
@@ -222,8 +222,9 @@ class Controller:
                 
                 # single valve actuation
                 if cmd_type == "set_valve":
+                    print("Single valve actuation branch in start() reached")
                     valve_id = gui_input.get("valve_id")
-                    state = gui_input.get("state")
+                    state = gui_input.get("state") or gui_input.get("valve_state")
                     if isinstance(valve_id, str) and isinstance(state, str):
                         valve_key = valve_id.strip().lower()
                         st = state.strip().lower()
@@ -328,18 +329,19 @@ class Controller:
                     current_valve = self.actuator_list.get(valve_key)
                     
                     # update current step information
-                    self.step_status = StepStatus.EXECUTING
-                    self.current_step_index = int(idx)
-                    self.current_step = {
-                        "index": int(idx),
-                        "valve_id": valve_id,
-                        "action": action_seq,
-                        "time_delay": step.get("time_delay", 0.0),
-                        "user_input": bool(step.get("user_input", False)),
-                        "condition_valve": step.get("condition_valve"),
-                        "condition_state": step.get("condition_state"),
-                        "system_state": self.state.value,
-                    }
+                    with self._lock:
+                        self.step_status = StepStatus.EXECUTING
+                        self.current_step_index = int(idx)
+                        self.current_step = {
+                            "index": int(idx),
+                            "valve_id": valve_id,
+                            "action": action_seq,
+                            "time_delay": step.get("time_delay", 0.0),
+                            "user_input": bool(step.get("user_input", False)),
+                            "condition_valve": step.get("condition_valve"),
+                            "condition_state": step.get("condition_state"),
+                            "system_state": self.state.value,
+                        }
                     
                     # record this step
                     self._record_history(sequence=str(sequence_state.value), step_index=idx, status="READY",
@@ -354,12 +356,19 @@ class Controller:
                     
                     # if the valve for this step is an on/off valve
                     else:
+                        if current_valve is None:
+                            # TO DO: record error history
+                            continue
+
                         # gets valve action
                         act = str(step.get("action") or "").lower()
                         if act == "open":
                             valve_goal_state = ValveState.OPEN
-                        else:
+                        elif act == "closed":
                             valve_goal_state = ValveState.CLOSED
+                        else:
+                            # Unknown action, skip or default to CLOSED
+                            continue
                             
                         # actuates valve if current valve state is different from goal state
                         if current_valve.get_state() != valve_goal_state:
@@ -371,7 +380,7 @@ class Controller:
                             continue
 
                         # wait for delay specified in step (can be 0.0)
-                        time.sleep(step.get("time_delay"))
+                        time.sleep(step.get("time_delay", 0.0))
                         if bool(step.get("user_input")):
                             with self._lock:
                                 self.step_status = StepStatus.WAITING_USER
@@ -408,8 +417,9 @@ class Controller:
                                             break
                                 finally:
                                     self._ack_queue.task_done()
-                        self.step_list.append(self.current_step)
-                        self.step_status = StepStatus.READY
+                        with self._lock:
+                            self.step_list.append(self.current_step)
+                            self.step_status = StepStatus.READY
         else:
             # TO DO: send to gui "invalid state transition"
             pass
