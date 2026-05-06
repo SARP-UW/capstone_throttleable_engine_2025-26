@@ -76,7 +76,9 @@ class ADS124S08:
                 pass
 
         self.reset_pin = reset_pin
-        self.start_pin = start_pin
+        # START/SYNC GPIO is intentionally ignored.
+        # We rely on SPI CMD_START/CMD_STOP to control conversions.
+        self.start_pin = None
         self.drdy_pin = drdy_pin
 
         self.chip = gpiod.Chip(gpiochip)
@@ -94,11 +96,6 @@ class ADS124S08:
             out_cfg[reset_pin] = gpiod.LineSettings(
                 direction=Direction.OUTPUT,
                 output_value=Value.ACTIVE,
-            )
-        if start_pin is not None:
-            out_cfg[start_pin] = gpiod.LineSettings(
-                direction=Direction.OUTPUT,
-                output_value=Value.INACTIVE,
             )
         if out_cfg:
             self._req_out = self.chip.request_lines(config=out_cfg, consumer="ads124_out")
@@ -284,6 +281,10 @@ class ADS124S08:
         """
         self.set_inpmux_single(ainp)
 
+        # After changing the mux, explicitly start a conversion. Depending on
+        # the ADC mode / wiring, conversions may not automatically continue.
+        self.start()
+
         if not self.wait_drdy(0.5):
             raise TimeoutError("DRDY timeout after MUX change")
 
@@ -312,6 +313,10 @@ class ADS124S08:
         Set MUX to AINp vs AINn and return one raw differential conversion code.
         """
         self.set_inpmux_diff(ainp, ainn)
+
+        # After changing the mux, explicitly start a conversion. Depending on
+        # the ADC mode / wiring, conversions may not automatically continue.
+        self.start()
 
         if not self.wait_drdy(0.5):
             raise TimeoutError("DRDY timeout after MUX change")

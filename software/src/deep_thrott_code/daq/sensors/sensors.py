@@ -767,6 +767,7 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
             try:
                 adc.hardware_reset()
                 adc.configure_basic(use_internal_ref=False, gain=1)
+                adc.start()
             except Exception:
                 pass
 
@@ -774,11 +775,18 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
 
         sensors_cfg = hardware_cfg.get("sensors")
         pt_cfg = sensors_cfg.get("pressure_transducers") if isinstance(sensors_cfg, dict) else None
+        rtd_cfg = (
+            (sensors_cfg.get("rtds") or sensors_cfg.get("resistive temperature detectors"))
+            if isinstance(sensors_cfg, dict)
+            else None
+        )
+        lc_cfg = sensors_cfg.get("load_cells") if isinstance(sensors_cfg, dict) else None
+
         if not isinstance(pt_cfg, dict) or not pt_cfg:
             raise RuntimeError(f"No pressure transducers configured in {hardware_path}")
 
         def _pt_calibration(sensor_id: str) -> tuple[float, float, float, float]:
-            default = (0.5, 4.5, 0.0, 500.0)
+            default = (0.5, 4.5, 0.0, 1000.0)
             cal = conversions_cfg.get("calibration")
             if not isinstance(cal, dict):
                 return default
@@ -848,6 +856,62 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
                 )
             )
 
+        # rtd_cfg = rtd_cfg if isinstance(rtd_cfg, dict) else {}
+        # for sensor_id, cfg in rtd_cfg.items():
+        #     if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+        #         continue
+        #     if not bool(cfg.get("enabled", False)):
+        #         continue
+
+        #     adc_id = cfg.get("adc_id")
+        #     if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+        #         raise RuntimeError(f"RTD {sensor_id} references unknown adc_id={adc_id}")
+        #     lead1_ain = cfg.get("lead1_ain")
+        #     lead2_ain = cfg.get("lead2_ain")
+        #     idac1_ain = cfg.get("idac1_ain")
+        #     idac2_ain = cfg.get("idac2_ain")
+        #     if None in (lead1_ain, lead2_ain, idac1_ain, idac2_ain):
+        #         raise RuntimeError(f"RTD {sensor_id} is enabled but missing one of lead1_ain/lead2_ain/idac1_ain/idac2_ain")
+
+        #     sensors.append(
+        #         RTDSensor(
+        #             name=sensor_id,
+        #             adc=adc_by_id[adc_id],
+        #             lead1_ain=int(lead1_ain),
+        #             lead2_ain=int(lead2_ain),
+        #             idac1_ain=int(idac1_ain),
+        #             idac2_ain=int(idac2_ain),
+        #         )
+        #     )
+
+        # lc_cfg = lc_cfg if isinstance(lc_cfg, dict) else {}
+        # for sensor_id, cfg in lc_cfg.items():
+        #     if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+        #         continue
+        #     if not bool(cfg.get("enabled", False)):
+        #         continue
+
+        #     adc_id = cfg.get("adc_id")
+        #     if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+        #         raise RuntimeError(f"Load cell {sensor_id} references unknown adc_id={adc_id}")
+        #     sig_plus_ain = cfg.get("ain_pos")
+        #     sig_minus_ain = cfg.get("ain_neg")
+        #     if sig_plus_ain is None or sig_minus_ain is None:
+        #         raise RuntimeError(f"Load cell {sensor_id} is enabled but missing ain_pos/ain_neg configuration")
+
+        #     sensors.append(
+        #         LoadCellSensor(
+        #             name=sensor_id,
+        #             adc=adc_by_id[adc_id],
+        #             sig_plus_ain=int(sig_plus_ain),
+        #             sig_minus_ain=int(sig_minus_ain),
+        #             max_load_n=float(cfg.get("max_load", 1000.0)),
+        #             excitation_voltage=float(cfg.get("excitation_voltage", 5.0)),
+        #             sensitivity_v_per_v=float(cfg.get("sensitivity", 0.0020)),
+        #             offset_n=float(cfg.get("offset", 0.0)),
+        #         )
+        #     )
+
         if not sensors:
             raise RuntimeError(
                 "No enabled hardware sensors were built. Check 'enabled: true' and set AINs in hardware.yml."
@@ -899,63 +963,3 @@ def _adc_for_cfg(cfg: dict[str, Any], adc1: Any, adc2: Any) -> Any:
     if cfg.get("ADC") == 2:
         return adc2
     raise ValueError(f"Invalid ADC configuration: {cfg.get('ADC')}")
-
-
-def initialize_sensors(adc1: Any, adc2: Any) -> list[Sensor]:
-    """Create hardware-backed sensors from config.
-
-    Not currently used by the Windows simulated harness.
-    """
-    sensors: list[Sensor] = []
-
-    for name, cfg in getattr(config, "LOAD_CELLS", {}).items():
-        if cfg.get("enabled"):
-            selected_adc = _adc_for_cfg(cfg, adc1, adc2)
-            sensors.append(
-                LoadCellSensor(
-                    name=name,
-                    adc=selected_adc,
-                    sig_plus_ain=cfg["SIG+"],
-                    sig_minus_ain=cfg["SIG-"],
-                    max_load_n=cfg["max_load"],
-                    excitation_voltage=cfg.get("excitation_voltage", 5.0),
-                    sensitivity_v_per_v=cfg.get("sensitivity", 0.0020),
-                    offset_n=float(cfg.get("offset", 0.0)),
-                )
-            )
-
-    for name, cfg in getattr(config, "PRESSURE_TRANSDUCERS", {}).items():
-        if cfg.get("enabled"):
-            selected_adc = _adc_for_cfg(cfg, adc1, adc2)
-            sensors.append(
-                PressureTransducerSensor(
-                    name=name,
-                    adc=selected_adc,
-                    sig_ain=cfg["SIG"],
-                    v_min=cfg.get("V_min", 0.5),
-                    v_max=cfg.get("V_max", 4.5),
-                    p_min=cfg.get("P_min", 0.0),
-                    p_max=cfg.get("P_max", 1000.0),
-                    offset_psi=float(cfg.get("offset", 0.0)),
-                )
-            )
-
-    for name, cfg in getattr(config, "RTDS", {}).items():
-        if cfg.get("enabled"):
-            selected_adc = _adc_for_cfg(cfg, adc1, adc2)
-            sensors.append(
-                RTDSensor(
-                    name=name,
-                    adc=selected_adc,
-                    lead1_ain=cfg["L1"],
-                    lead2_ain=cfg["L2"],
-                    r0_ohms=cfg.get("r0", 1000.0),
-                    idac_current_ua=cfg.get("idac_current_ua", 50),
-                    idac1_ain=cfg.get("idac1_ain", 5),
-                    idac2_ain=cfg.get("idac2_ain", 3),
-                    unit=cfg.get("unit", "°C"),
-                    offset=float(cfg.get("offset", 0.0)),
-                )
-            )
-
-    return sensors
