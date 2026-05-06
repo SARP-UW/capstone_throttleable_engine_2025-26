@@ -210,29 +210,28 @@ class Controller:
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
             if gui_input is None:
                 break
-            # elif isinstance(gui_input, dict):
-            #     cmd_type = gui_input.get("type")
-            #     if cmd_type == "set_valve":
-            #         valve_id = gui_input.get("valve_id")
-            #         state = gui_input.get("state")
-            #         if isinstance(valve_id, str) and isinstance(state, str):
-            #             valve_key = valve_id.strip().lower()
-            #             current_valve = self.actuator_list.get(valve_key)
-            #             if current_valve is not None:
-            #                 st = state.strip().lower()
-            #                 if st == "open":
-            #                     current_valve.set_state(ValveState.OPEN)
-            #                 elif st in {"close", "closed"}:
-            #                     current_valve.set_state(ValveState.CLOSED)
-            #         self._command_queue.task_done()
-            #         continue
-            #     elif cmd_type == "reset_sequences":
-            #         self.reset_sequences()
-            #         self._command_queue.task_done()
-            #         continue
+            elif isinstance(gui_input, dict):
+                cmd_type = gui_input.get("type")
+                if cmd_type == "set_valve":
+                    valve_id = gui_input.get("valve_id")
+                    state = gui_input.get("state")
+                    if isinstance(valve_id, str) and isinstance(state, str):
+                        valve_key = valve_id.strip().lower()
+                        st = state.strip().lower()
+                        if st == "open":
+                            valve_goal_state = ValveState.OPEN
+                        elif st == "closed":
+                            valve_goal_state = ValveState.CLOSED
+                        self._execute_action(self.single_valve_actuation, valve_key, valve_goal_state)
+                    self._command_queue.task_done()
+                    continue
+                elif cmd_type == "reset_sequences":
+                    self.reset_sequences()
+                    self._command_queue.task_done()
+                    continue
             elif isinstance(gui_input, tuple):
                 command, *args = gui_input
-                if command in [s.value for s in State]:
+                if command in [s.value for s in State] or command in {self.single_valve_actuation, self.pulse}:
                     self._execute_action(command, *args)
             elif gui_input in [s.value for s in State]:
                 self._execute_action(gui_input)
