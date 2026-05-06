@@ -750,6 +750,7 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
             cs_gpio = cfg.get("cs_gpio")
             reset_gpio = cfg.get("reset_gpio")
             drdy_gpio = cfg.get("drdy_gpio")
+            start_sync_gpio = cfg.get("start_sync_gpio")
 
             cs_pin = int(cs_gpio) if cs_gpio is not None else None
             # Convention:
@@ -763,10 +764,12 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
                 cs_pin=cs_pin,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
                 drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
+                start_pin=int(start_sync_gpio) if start_sync_gpio is not None else None,
             )
             try:
                 adc.hardware_reset()
                 adc.configure_basic(use_internal_ref=False, gain=1)
+                adc.start()
             except Exception:
                 pass
 
