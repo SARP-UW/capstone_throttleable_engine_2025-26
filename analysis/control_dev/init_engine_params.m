@@ -44,8 +44,8 @@ ID_inj_elem_f = 0.052; % [in] ID of a fuel injector element
 A_inj_elem_ox = pi*(ID_inj_elem_ox/2)^2; % [in^2] area of an ox injector element
 A_inj_elem_f = pi*(ID_inj_elem_f/2)^2; % [in^2] area of a fuel injector element
 N_inj_elem = 8; % number of injector elements, both fuel and ox
-A_inj_ox = A_inj_elem_ox * N_inj_elem; % [in^2] total area of ox injector
-A_inj_f = A_inj_elem_f * N_inj_elem; % [in^2] total area of ox injector
+A_inj_ox = A_inj_elem_ox * N_inj_elem * in_to_m^2; % [m^2] total area of ox injector
+A_inj_f = A_inj_elem_f * N_inj_elem * in_to_m^2; % [m^2] total area of ox injector
 %%%% Cd_inj for propellants
 Cd_inj_f = 0.6; % need test data
 Cd_inj_ox = 0.6; % need test data
