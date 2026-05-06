@@ -15,7 +15,7 @@ adcs:
     model: ADS124S08IRHBT
     transport: spi
     spi_bus: 0
-    spi_device: 0
+    spi_device: 1
     cs_gpio: 7
     drdy_gpio: 5
     start_sync_gpio: 26

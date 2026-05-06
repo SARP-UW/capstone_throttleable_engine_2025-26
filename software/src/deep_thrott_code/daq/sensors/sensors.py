@@ -747,13 +747,30 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
             if spi_bus is None or spi_dev is None:
                 continue
 
+            cs_gpio = cfg.get("cs_gpio")
             reset_gpio = cfg.get("reset_gpio")
             drdy_gpio = cfg.get("drdy_gpio")
+
+            cs_pin = int(cs_gpio) if cs_gpio is not None else None
+            # If the config points at the SPI0 hardware CS pins, don't try to
+            # drive them via libgpiod. Let the SPI controller manage CE0/CE1.
+            try:
+                spi_bus_i = int(spi_bus)
+                spi_dev_i = int(spi_dev)
+            except Exception:
+                spi_bus_i = -1
+                spi_dev_i = -1
+            if spi_bus_i == 0:
+                if spi_dev_i == 0 and cs_pin == 8:
+                    cs_pin = None
+                if spi_dev_i == 1 and cs_pin == 7:
+                    cs_pin = None
 
             adc = ADS124S08(
                 id=adc_id,
                 spi_bus=int(spi_bus),
                 spi_dev=int(spi_dev),
+                cs_pin=cs_pin,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
                 drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
             )
