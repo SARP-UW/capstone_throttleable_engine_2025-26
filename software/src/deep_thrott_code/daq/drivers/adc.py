@@ -5,10 +5,10 @@ import spidev
 import gpiod
 from gpiod.line import Direction, Value
 
-class ADS124S08:
-    """Low-level ADS124S08 driver for Raspberry Pi (SPI mode 1) + libgpiod v2."""
 
-    # --- Register addresses (subset) ---
+class ADS124S08:
+    """Low-level ADS124S08 driver for Raspberry Pi + libgpiod v2."""
+
     REG_INPMUX = 0x02
     REG_PGA = 0x03
     REG_DATARATE = 0x04
@@ -16,7 +16,6 @@ class ADS124S08:
     REG_IDACMAG = 0x06
     REG_IDACMUX = 0x07
 
-    # --- Commands (subset) ---
     CMD_RESET = 0x06
     CMD_START = 0x08
     CMD_STOP = 0x0A
@@ -26,7 +25,6 @@ class ADS124S08:
     CMD_SFOCAL = 0x19
 
     AINCOM_CODE = 0x0C
-
     RREF_OHMS = 5600.0
 
     _IDAC_CURRENT_MAP_UA = {
@@ -51,69 +49,74 @@ class ADS124S08:
         reset_pin=None,
         drdy_pin=None,
         start_pin=None,
-        max_speed_hz=100_000,
+        max_speed_hz=10_000,
+        spi_mode=0b01,
     ):
         devpath = f"/dev/spidev{spi_bus}.{spi_dev}"
         if not os.path.exists(devpath):
             raise RuntimeError(f"{devpath} not found. Enable SPI and/or correct bus/dev.")
 
         self.id = id
+        self.spi_bus = spi_bus
+        self.spi_dev = spi_dev
+        self.cs_pin = cs_pin
+        self.reset_pin = reset_pin
+        self.start_pin = None
+        self.drdy_pin = drdy_pin
+
         self.spi = spidev.SpiDev()
         self.spi.open(spi_bus, spi_dev)
-        self.spi.mode = 0b01
+        self.spi.mode = spi_mode
         self.spi.max_speed_hz = max_speed_hz
         self.spi.bits_per_word = 8
 
-        # If a GPIO chip-select is provided, disable hardware CS toggling.
-        # This lets us address >2 devices on the same SPI bus (CE0/CE1 limit).
-        self.cs_pin = cs_pin
         if cs_pin is not None:
             try:
                 self.spi.no_cs = True
             except Exception:
-                # Best-effort: if the platform's spidev binding doesn't support
-                # no_cs, we still proceed; hardware CS may interfere.
                 pass
-
-        self.reset_pin = reset_pin
-        # START/SYNC GPIO is intentionally ignored.
-        # We rely on SPI CMD_START/CMD_STOP to control conversions.
-        self.start_pin = None
-        self.drdy_pin = drdy_pin
 
         self.chip = gpiod.Chip(gpiochip)
 
         self._req_out = None
         out_cfg = {}
+
         if cs_pin is not None:
             out_cfg[cs_pin] = gpiod.LineSettings(
                 direction=Direction.OUTPUT,
-                # CS is typically active-low; configure so Value.ACTIVE asserts low.
                 active_low=True,
                 output_value=Value.INACTIVE,
             )
+
         if reset_pin is not None:
             out_cfg[reset_pin] = gpiod.LineSettings(
                 direction=Direction.OUTPUT,
                 output_value=Value.ACTIVE,
             )
+
         if out_cfg:
-            self._req_out = self.chip.request_lines(config=out_cfg, consumer="ads124_out")
+            self._req_out = self.chip.request_lines(
+                config=out_cfg,
+                consumer="ads124_out",
+            )
 
         self._req_in = None
         if drdy_pin is not None:
             self._req_in = self.chip.request_lines(
-                config={drdy_pin: gpiod.LineSettings(direction=Direction.INPUT)},
+                config={
+                    drdy_pin: gpiod.LineSettings(
+                        direction=Direction.INPUT,
+                    )
+                },
                 consumer="ads124_in",
             )
 
-        time.sleep(0.005)
         self._ref_reg_backup = None
         self._idac_enabled = False
 
-    def _chip_select_asserted(self):
-        """Context manager that asserts the ADC's CS line (if GPIO-controlled)."""
+        time.sleep(0.01)
 
+    def _chip_select_asserted(self):
         class _CS:
             def __init__(self, outer: "ADS124S08"):
                 self._outer = outer
@@ -132,32 +135,40 @@ class ADS124S08:
 
         return _CS(self)
 
-    # ----------------- Low-level helpers -----------------
+    def get_drdy_level(self):
+        if self._req_in is None or self.drdy_pin is None:
+            return None
+
+        val = self._req_in.get_value(self.drdy_pin)
+
+        if val == Value.ACTIVE:
+            return "HIGH"
+
+        return "LOW"
+
     def _send_cmd(self, cmd: int) -> None:
         with self._chip_select_asserted():
             self.spi.xfer2([cmd])
 
     def wreg(self, addr: int, data_bytes: list[int]) -> None:
-        """Write n bytes starting at register addr."""
         n = len(data_bytes)
         with self._chip_select_asserted():
             self.spi.xfer2([0x40 | (addr & 0x1F), (n - 1)] + list(data_bytes))
 
     def rreg(self, addr: int, n: int) -> list[int]:
-        """Read n bytes starting at register addr."""
         with self._chip_select_asserted():
             rx = self.spi.xfer2([0x20 | (addr & 0x1F), (n - 1)] + [0x00] * n)
         return rx[2:]
 
     def hardware_reset(self) -> None:
-        """Toggle RESET pin if provided; otherwise send RESET command."""
         if self._req_out is not None and self.reset_pin is not None:
             self._req_out.set_value(self.reset_pin, Value.INACTIVE)
-            time.sleep(0.001)
+            time.sleep(0.005)
             self._req_out.set_value(self.reset_pin, Value.ACTIVE)
         else:
             self._send_cmd(self.CMD_RESET)
-        time.sleep(0.005)
+
+        time.sleep(0.05)
 
     def start(self) -> None:
         self._send_cmd(self.CMD_START)
@@ -165,37 +176,56 @@ class ADS124S08:
     def stop(self) -> None:
         self._send_cmd(self.CMD_STOP)
 
-    def wait_drdy(self, timeout_s: float = 0.2) -> bool:
-        """Wait for DRDY low (active-low)."""
+    def wait_drdy(self, timeout_s: float = 0.5) -> bool:
         if self._req_in is None or self.drdy_pin is None:
             time.sleep(timeout_s)
             return True
 
         t0 = time.perf_counter()
+
         while (time.perf_counter() - t0) < timeout_s:
             if self._req_in.get_value(self.drdy_pin) == Value.INACTIVE:
                 return True
+
+            time.sleep(0.0005)
+
         return False
 
     def read_raw_sample(self) -> int:
-        """Send RDATA and read one 24-bit signed conversion result."""
         with self._chip_select_asserted():
             rx = self.spi.xfer2([self.CMD_RDATA, 0x00, 0x00, 0x00])
+
         b2, b1, b0 = rx[1], rx[2], rx[3]
         code = (b2 << 16) | (b1 << 8) | b0
+
         if code & 0x800000:
             code -= 1 << 24
+
         return code
 
-    # ----------------- Config helpers -----------------
-    def configure_basic(self, use_internal_ref: bool = False, gain: int = 1, data_rate=None) -> None:
-        """Basic ADC setup."""
+    def configure_basic(
+        self,
+        use_internal_ref: bool = False,
+        gain: int = 1,
+        data_rate=None,
+    ) -> None:
         if gain == 1:
             self.wreg(self.REG_PGA, [0x00])
         else:
-            gain_map = {1: 0, 2: 1, 4: 2, 8: 3, 16: 4, 32: 5, 64: 6, 128: 7}
+            gain_map = {
+                1: 0,
+                2: 1,
+                4: 2,
+                8: 3,
+                16: 4,
+                32: 5,
+                64: 6,
+                128: 7,
+            }
+
             if gain not in gain_map:
                 raise ValueError("gain must be one of 1,2,4,8,16,32,64,128")
+
             self.wreg(self.REG_PGA, [(1 << 3) | gain_map[gain]])
 
         if use_internal_ref:
@@ -204,25 +234,35 @@ class ADS124S08:
         if data_rate is not None:
             self.wreg(self.REG_DATARATE, [data_rate])
 
-    # ----------------- RTD / IDAC helpers -----------------
     def _idac_current_code(self, current_ua: int) -> int:
         current_ua = int(round(current_ua))
+
         try:
             return self._IDAC_CURRENT_MAP_UA[current_ua]
         except KeyError:
             allowed = ", ".join(str(u) for u in sorted(self._IDAC_CURRENT_MAP_UA.keys()))
-            raise ValueError(f"IDAC current must be one of {allowed} µA (got {current_ua} µA)") from None
+            raise ValueError(
+                f"IDAC current must be one of {allowed} µA "
+                f"(got {current_ua} µA)"
+            ) from None
 
     def _set_ref_for_rtd(self) -> None:
         cur = self.rreg(self.REG_REF, 1)[0]
+
         if self._ref_reg_backup is None:
             self._ref_reg_backup = cur
 
         cur = (cur & ~0x0C) | 0x08
         cur = (cur & ~0x03) | 0x01
+
         self.wreg(self.REG_REF, [cur])
 
-    def configure_idac_outputs(self, current_ua: int, idac1_ain: int, idac2_ain: int) -> None:
+    def configure_idac_outputs(
+        self,
+        current_ua: int,
+        idac1_ain: int,
+        idac2_ain: int,
+    ) -> None:
         def _ain_to_code(ain: int) -> int:
             if not (0 <= ain <= 11):
                 raise ValueError("AIN index must be in 0..11")
@@ -231,10 +271,12 @@ class ADS124S08:
         mag_code = self._idac_current_code(current_ua)
         idac1_code = _ain_to_code(idac1_ain)
         idac2_code = _ain_to_code(idac2_ain)
+
         mux_val = (idac2_code << 4) | idac1_code
 
         self.wreg(self.REG_IDACMAG, [mag_code])
         self.wreg(self.REG_IDACMUX, [mux_val])
+
         self._idac_enabled = True
 
     def enable_rtd_mode(
@@ -244,6 +286,7 @@ class ADS124S08:
         idac2_ain: int = 3,
     ) -> None:
         self._set_ref_for_rtd()
+
         self.configure_idac_outputs(
             current_ua=current_ua,
             idac1_ain=idac1_ain,
@@ -253,6 +296,7 @@ class ADS124S08:
     def disable_rtd_mode(self) -> None:
         self.wreg(self.REG_IDACMAG, [0x00])
         self.wreg(self.REG_IDACMUX, [0xFF])
+
         self._idac_enabled = False
 
         if self._ref_reg_backup is not None:
@@ -260,29 +304,31 @@ class ADS124S08:
             self._ref_reg_backup = None
 
     def set_inpmux_single(self, ainp: int) -> None:
-        """AINp = ainp, AINn = AINCOM."""
         if not (0 <= ainp <= 11):
             raise ValueError("ainp must be 0..11")
+
         val = ((ainp & 0x0F) << 4) | (self.AINCOM_CODE & 0x0F)
+
         self.wreg(self.REG_INPMUX, [val])
 
     def set_inpmux_diff(self, ainp: int, ainn: int) -> None:
-        """AINp = ainp, AINn = ainn."""
         if not (0 <= ainp <= 11):
             raise ValueError("ainp must be 0..11")
+
         if not (0 <= ainn <= 11):
             raise ValueError("ainn must be 0..11")
+
         val = ((ainp & 0x0F) << 4) | (ainn & 0x0F)
+
         self.wreg(self.REG_INPMUX, [val])
 
-    def read_raw_single(self, ainp: int, settle_discard: bool = True) -> int:
-        """
-        Set MUX to AINp vs AINCOM and return one raw conversion code.
-        """
+    def read_raw_single(
+        self,
+        ainp: int,
+        settle_discard: bool = True,
+    ) -> int:
         self.set_inpmux_single(ainp)
 
-        # After changing the mux, explicitly start a conversion. Depending on
-        # the ADC mode / wiring, conversions may not automatically continue.
         self.start()
 
         if not self.wait_drdy(0.5):
@@ -295,27 +341,15 @@ class ADS124S08:
                 raise TimeoutError("DRDY timeout after settle discard")
 
         return self.read_raw_sample()
-    
-    # def read_voltage_single(self, ainp, vref=5, gain=1, settle_discard=True):
-    #     self.set_inpmux_single(ainp)
-    #     if not self.wait_drdy(0.5):
-    #         raise TimeoutError("DRDY timeout after MUX change")
-    #     first = self.read_raw_sample()
-    #     if settle_discard:
-    #         if not self.wait_drdy(0.5):
-    #             raise TimeoutError("DRDY timeout (settle discard)")
-    #     code = self.read_raw_sample()
-    #     volts = self.code_to_volts(code, vref=vref, gain=gain)
-    #     return volts
 
-    def read_raw_diff(self, ainp: int, ainn: int, settle_discard: bool = True) -> int:
-        """
-        Set MUX to AINp vs AINn and return one raw differential conversion code.
-        """
+    def read_raw_diff(
+        self,
+        ainp: int,
+        ainn: int,
+        settle_discard: bool = True,
+    ) -> int:
         self.set_inpmux_diff(ainp, ainn)
 
-        # After changing the mux, explicitly start a conversion. Depending on
-        # the ADC mode / wiring, conversions may not automatically continue.
         self.start()
 
         if not self.wait_drdy(0.5):

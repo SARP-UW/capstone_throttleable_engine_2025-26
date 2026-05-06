@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""ADS124S08 smoke test (Pi only).
-
-Runs a minimal bring-up against the configured ADCs in config/hardware.yml:
-- Open SPI device
-- Poll DRDY
-- Read/write diagnostic registers
-- Read a couple raw samples
-
-Usage:
-  python3 software/scripts/adc_smoke_test.py --adc ADC3 --ain 9
-  python3 software/scripts/adc_smoke_test.py --all
-"""
+"""ADS124S08 smoke test with extra diagnostics."""
 
 from __future__ import annotations
 
@@ -71,83 +60,102 @@ def _build_adc(adc_id: str, cfg: dict):
         drdy_pin=drdy_pin,
         start_pin=start_pin,
         reset_pin=None,
+        max_speed_hz=10_000,
+        spi_mode=0b01,
     )
 
     return adc
 
 
-def _spi_diagnostics(adc):
-    print("\n--- SPI DIAGNOSTICS ---")
+def _print_register_dump(adc, label: str) -> None:
+    print(f"\n{label}")
 
     try:
-        print("Reading first 8 registers...")
         regs = adc.rreg(0x00, 8)
-        print(f"Raw register dump: {[hex(x) for x in regs]}")
-    except Exception as e:
-        print(f"Register read FAILED: {e}")
-        return
+        print(f"Register dump: {[f'0x{x:02X}' for x in regs]}")
 
-    try:
-        print("\nTesting PGA register write/readback...")
-        adc.wreg(adc.REG_PGA, [0x00])
-        time.sleep(0.01)
+        if all(x == 0x00 for x in regs):
+            print("Interpretation: all 0x00; likely MISO stuck low, reset issue, or SPI not communicating.")
 
-        pga = adc.rreg(adc.REG_PGA, 1)[0]
-        print(f"PGA register readback: 0x{pga:02X}")
+        elif all(x == 0xFF for x in regs):
+            print("Interpretation: all 0xFF; likely MISO floating/high, wrong CS, or SPI not communicating.")
+
+        else:
+            print("Interpretation: non-uniform register values; SPI is probably communicating.")
 
     except Exception as e:
-        print(f"PGA write/read FAILED: {e}")
-
-    try:
-        print("\nTesting REF register write/readback...")
-        adc.wreg(adc.REG_REF, [0x00])
-        time.sleep(0.01)
-
-        ref = adc.rreg(adc.REG_REF, 1)[0]
-        print(f"REF register readback: 0x{ref:02X}")
-
-    except Exception as e:
-        print(f"REF write/read FAILED: {e}")
-
-    print("--- END SPI DIAGNOSTICS ---\n")
+        print(f"Register dump FAILED: {e}")
 
 
-def _check_drdy_pin(adc_id: str, adc):
+def _spi_write_read_tests(adc) -> None:
+    print("\n--- SPI WRITE/READBACK TESTS ---")
+
+    tests = [
+        ("PGA", adc.REG_PGA, 0x00),
+        ("PGA", adc.REG_PGA, 0x05),
+        ("PGA", adc.REG_PGA, 0x00),
+        ("REF", adc.REG_REF, 0x00),
+    ]
+
+    for name, addr, value in tests:
+        try:
+            print(f"\nWriting {name} register 0x{addr:02X} = 0x{value:02X}")
+            adc.wreg(addr, [value])
+            time.sleep(0.01)
+
+            readback = adc.rreg(addr, 1)[0]
+            print(f"Readback {name}: 0x{readback:02X}")
+
+            if readback == value:
+                print("Result: write/readback matched.")
+            else:
+                print("Result: write/readback did NOT match.")
+
+        except Exception as e:
+            print(f"{name} write/read test FAILED: {e}")
+
+    print("--- END SPI WRITE/READBACK TESTS ---")
+
+
+def _check_drdy_pin(adc_id: str, adc) -> None:
     print(f"\n[{adc_id}] Checking DRDY state manually...")
 
-    if adc._req_in is None or adc.drdy_pin is None:
-        print("No DRDY pin configured")
+    level = adc.get_drdy_level()
+
+    if level is None:
+        print("No DRDY pin configured.")
         return
 
-    try:
-        val = adc._req_in.get_value(adc.drdy_pin)
-        print(f"Initial DRDY GPIO value: {val}")
+    print(f"Initial DRDY level: {level}")
 
-        if str(val).lower().endswith("active"):
-            print("DRDY currently LOW")
-        else:
-            print("DRDY currently HIGH")
-
-    except Exception as e:
-        print(f"Failed to read DRDY pin: {e}")
+    if level == "HIGH":
+        print("Interpretation: DRDY is not ready right now.")
+    else:
+        print("Interpretation: DRDY is LOW, meaning data-ready or line is held low.")
 
 
 def _check_one(adc_id: str, cfg: dict, ain: int) -> int:
     adc = _build_adc(adc_id, cfg)
 
     try:
-        print(f"\n[{adc_id}] Performing hardware reset...")
+        print(f"\n[{adc_id}] Performing reset...")
         adc.hardware_reset()
 
         time.sleep(0.05)
 
-        _spi_diagnostics(adc)
+        _print_register_dump(adc, "--- REGISTER DUMP AFTER RESET ---")
+
+        _spi_write_read_tests(adc)
+
+        _print_register_dump(adc, "--- REGISTER DUMP AFTER WRITE/READBACK TESTS ---")
 
         print(f"\n[{adc_id}] Configuring ADC...")
         adc.configure_basic(use_internal_ref=False, gain=1)
 
         print(f"\n[{adc_id}] Sending START command...")
         adc.start()
+
+        time.sleep(0.01)
 
         _check_drdy_pin(adc_id, adc)
 
@@ -158,13 +166,12 @@ def _check_one(adc_id: str, cfg: dict, ain: int) -> int:
 
         if not ok:
             print(f"\n[{adc_id}] DRDY TIMEOUT")
-            print("Possible causes:")
-            print("  - RESET pin held low")
-            print("  - SPI not communicating")
-            print("  - Wrong CS GPIO")
-            print("  - Wrong DRDY GPIO")
-            print("  - ADC not powered")
-            print("  - No common ground")
+            print("Most likely causes now:")
+            print("  - SPI data path issue: MOSI/MISO/SCLK")
+            print("  - Wrong SPI mode")
+            print("  - DOUT/DRDY confusion")
+            print("  - ADC DOUT not connected to Pi MISO")
+            print("  - ADC not actually receiving START command")
             return 1
 
         print(f"\n[{adc_id}] Attempting sample reads...")
@@ -199,29 +206,13 @@ def main() -> int:
 
     ap = argparse.ArgumentParser()
 
-    ap.add_argument(
-        "--adc",
-        default=None,
-        help="ADC id (ADC1/ADC2/ADC3)",
-    )
-
-    ap.add_argument(
-        "--ain",
-        type=int,
-        default=0,
-        help="AIN index to read",
-    )
-
-    ap.add_argument(
-        "--all",
-        action="store_true",
-        help="Check all configured ADCs",
-    )
+    ap.add_argument("--adc", default=None, help="ADC id, e.g. ADC1/ADC2/ADC3")
+    ap.add_argument("--ain", type=int, default=0, help="AIN index to read")
+    ap.add_argument("--all", action="store_true", help="Check all configured ADCs")
 
     args = ap.parse_args()
 
     hw = _load_hardware_cfg()
-
     adcs = hw.get("adcs")
 
     if not isinstance(adcs, dict) or not adcs:
@@ -243,7 +234,7 @@ def main() -> int:
         return rc
 
     if not args.adc:
-        print("Provide --adc ADC1 (or use --all)")
+        print("Provide --adc ADC1, or use --all")
         return 2
 
     cfg = adcs.get(args.adc)
