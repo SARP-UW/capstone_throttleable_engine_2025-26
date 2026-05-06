@@ -35,6 +35,8 @@ test_command_queue.put({
     "valve_state": "closed"
 })
 
+time.sleep(5)
+
 print("GPIO command high")
 GPIO.output(pin, GPIO.HIGH)
 
@@ -42,6 +44,8 @@ time.sleep(5)
 
 print("GPIO command low")
 GPIO.output(pin, GPIO.LOW)
+
+time.sleep(5)
 
 # time.sleep(10)
 
