@@ -46,6 +46,7 @@ class ADS124S08:
         id,
         spi_bus,
         spi_dev,
+        cs_pin=None,
         gpiochip="/dev/gpiochip0",
         reset_pin=None,
         drdy_pin=None,
@@ -63,6 +64,17 @@ class ADS124S08:
         self.spi.max_speed_hz = max_speed_hz
         self.spi.bits_per_word = 8
 
+        # If a GPIO chip-select is provided, disable hardware CS toggling.
+        # This lets us address >2 devices on the same SPI bus (CE0/CE1 limit).
+        self.cs_pin = cs_pin
+        if cs_pin is not None:
+            try:
+                self.spi.no_cs = True
+            except Exception:
+                # Best-effort: if the platform's spidev binding doesn't support
+                # no_cs, we still proceed; hardware CS may interfere.
+                pass
+
         self.reset_pin = reset_pin
         self.start_pin = start_pin
         self.drdy_pin = drdy_pin
@@ -71,6 +83,13 @@ class ADS124S08:
 
         self._req_out = None
         out_cfg = {}
+        if cs_pin is not None:
+            out_cfg[cs_pin] = gpiod.LineSettings(
+                direction=Direction.OUTPUT,
+                # CS is typically active-low; configure so Value.ACTIVE asserts low.
+                active_low=True,
+                output_value=Value.INACTIVE,
+            )
         if reset_pin is not None:
             out_cfg[reset_pin] = gpiod.LineSettings(
                 direction=Direction.OUTPUT,
@@ -95,18 +114,42 @@ class ADS124S08:
         self._ref_reg_backup = None
         self._idac_enabled = False
 
+    def _chip_select_asserted(self):
+        """Context manager that asserts the ADC's CS line (if GPIO-controlled)."""
+
+        class _CS:
+            def __init__(self, outer: "ADS124S08"):
+                self._outer = outer
+
+            def __enter__(self):
+                o = self._outer
+                if o._req_out is not None and o.cs_pin is not None:
+                    o._req_out.set_value(o.cs_pin, Value.ACTIVE)
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                o = self._outer
+                if o._req_out is not None and o.cs_pin is not None:
+                    o._req_out.set_value(o.cs_pin, Value.INACTIVE)
+                return False
+
+        return _CS(self)
+
     # ----------------- Low-level helpers -----------------
     def _send_cmd(self, cmd: int) -> None:
-        self.spi.xfer2([cmd])
+        with self._chip_select_asserted():
+            self.spi.xfer2([cmd])
 
     def wreg(self, addr: int, data_bytes: list[int]) -> None:
         """Write n bytes starting at register addr."""
         n = len(data_bytes)
-        self.spi.xfer2([0x40 | (addr & 0x1F), (n - 1)] + list(data_bytes))
+        with self._chip_select_asserted():
+            self.spi.xfer2([0x40 | (addr & 0x1F), (n - 1)] + list(data_bytes))
 
     def rreg(self, addr: int, n: int) -> list[int]:
         """Read n bytes starting at register addr."""
-        rx = self.spi.xfer2([0x20 | (addr & 0x1F), (n - 1)] + [0x00] * n)
+        with self._chip_select_asserted():
+            rx = self.spi.xfer2([0x20 | (addr & 0x1F), (n - 1)] + [0x00] * n)
         return rx[2:]
 
     def hardware_reset(self) -> None:
@@ -139,7 +182,8 @@ class ADS124S08:
 
     def read_raw_sample(self) -> int:
         """Send RDATA and read one 24-bit signed conversion result."""
-        rx = self.spi.xfer2([self.CMD_RDATA, 0x00, 0x00, 0x00])
+        with self._chip_select_asserted():
+            rx = self.spi.xfer2([self.CMD_RDATA, 0x00, 0x00, 0x00])
         b2, b1, b0 = rx[1], rx[2], rx[3]
         code = (b2 << 16) | (b1 << 8) | b0
         if code & 0x800000:

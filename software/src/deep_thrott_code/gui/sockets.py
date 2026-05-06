@@ -329,16 +329,16 @@ def register_socket_handlers(
 			if command_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
 				return
-			valve = payload.get("valve")
+			valve_id = payload.get("valve_id")
 			state = payload.get("state")
-			if not isinstance(valve, str) or not valve:
-				socketio.emit("command_reject", {"ok": False, "reason": "missing_valve"})
+			if not isinstance(valve_id, str) or not valve_id:
+				socketio.emit("command_reject", {"ok": False, "reason": "missing_valve_id"})
 				return
 			if not isinstance(state, str) or not state:
 				socketio.emit("command_reject", {"ok": False, "reason": "missing_state"})
 				return
 			try:
-				command_queue.put({"type": "set_valve", "valve": valve, "state": state}, timeout=0.1)
+				command_queue.put({"type": "set_valve", "valve_id": valve_id, "state": state}, timeout=0.1)
 			except Exception:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return
