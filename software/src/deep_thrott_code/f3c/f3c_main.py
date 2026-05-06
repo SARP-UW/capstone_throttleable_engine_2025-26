@@ -22,10 +22,18 @@ controller_thread.start()
 print("Single valve actuation command to controller: open")
 test_command_queue.put(("single valve actuation", "test valve", ValveState.OPEN))
 
-time.sleep(10)
+time.sleep(5)
 
 print("Single valve actuation command to controller: close")
 test_command_queue.put(("single valve actuation", "test valve", ValveState.CLOSED))
+
+print("GPIO command high")
+GPIO.output(pin, GPIO.HIGH)
+
+time.sleep(5)
+
+print("GPIO command low")
+GPIO.output(pin, GPIO.LOW)
 
 # time.sleep(10)
 
