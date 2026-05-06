@@ -61,9 +61,18 @@ def producer_loop(
     while not stop_event.is_set():
         t_start = time.perf_counter()
 
+        enqueued = 0
+
         for sensor in sensor_list:
-            sample = sensor.read_raw_sample()
+            try:
+                sample = sensor.read_raw_sample()
+            except TimeoutError:
+                # Treat ADC DRDY timeouts as a dropped sample for this cycle.
+                # Keep the producer loop alive so other channels can continue.
+                continue
+
             sample_queue.put(sample)
+            enqueued += 1
 
         t_end = time.perf_counter()
         elapsed = t_end - t_start
@@ -91,7 +100,7 @@ def producer_loop(
         if stats is not None:
             stats.update(
                 cycles=1,
-                samples=len(sensor_list),
+                samples=enqueued,
                 busy_s=elapsed,
                 sleep_requested_s=sleep_requested,
                 sleep_actual_s=sleep_actual,

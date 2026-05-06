@@ -295,6 +295,10 @@ class ADS124S08:
         """
         self.set_inpmux_single(ainp)
 
+        # After changing the mux, explicitly start a conversion. Depending on
+        # the ADC mode / wiring, conversions may not automatically continue.
+        self.start()
+
         if not self.wait_drdy(0.5):
             raise TimeoutError("DRDY timeout after MUX change")
 
@@ -323,6 +327,10 @@ class ADS124S08:
         Set MUX to AINp vs AINn and return one raw differential conversion code.
         """
         self.set_inpmux_diff(ainp, ainn)
+
+        # After changing the mux, explicitly start a conversion. Depending on
+        # the ADC mode / wiring, conversions may not automatically continue.
+        self.start()
 
         if not self.wait_drdy(0.5):
             raise TimeoutError("DRDY timeout after MUX change")
