@@ -163,10 +163,21 @@ class ADS124S08:
         time.sleep(0.005)
 
     def start(self) -> None:
+        # If START/SYNC is wired, assert it to allow conversions.
+        if self._req_out is not None and self.start_pin is not None:
+            try:
+                self._req_out.set_value(self.start_pin, Value.ACTIVE)
+            except Exception:
+                pass
         self._send_cmd(self.CMD_START)
 
     def stop(self) -> None:
         self._send_cmd(self.CMD_STOP)
+        if self._req_out is not None and self.start_pin is not None:
+            try:
+                self._req_out.set_value(self.start_pin, Value.INACTIVE)
+            except Exception:
+                pass
 
     def wait_drdy(self, timeout_s: float = 0.2) -> bool:
         """Wait for DRDY low (active-low)."""
@@ -284,6 +295,10 @@ class ADS124S08:
         """
         self.set_inpmux_single(ainp)
 
+        # After changing the mux, explicitly start a conversion. Depending on
+        # the ADC mode / wiring, conversions may not automatically continue.
+        self.start()
+
         if not self.wait_drdy(0.5):
             raise TimeoutError("DRDY timeout after MUX change")
 
@@ -312,6 +327,10 @@ class ADS124S08:
         Set MUX to AINp vs AINn and return one raw differential conversion code.
         """
         self.set_inpmux_diff(ainp, ainn)
+
+        # After changing the mux, explicitly start a conversion. Depending on
+        # the ADC mode / wiring, conversions may not automatically continue.
+        self.start()
 
         if not self.wait_drdy(0.5):
             raise TimeoutError("DRDY timeout after MUX change")
