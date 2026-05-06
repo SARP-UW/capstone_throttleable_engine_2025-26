@@ -1,6 +1,11 @@
 import numpy as np
 from scipy.signal import chirp
 import matplotlib.pyplot as plt
+import serial
+import time
+
+from f3c.controller import Controller
+from f3c.valve import ThrottleValve
 
 # Parameters
 T = 10.0             # Total time in seconds
@@ -29,3 +34,35 @@ plt.title("Linear Chirp Sine Wave")
 plt.xlabel("Time (s)")
 plt.ylabel("Amplitude (Degrees)")
 plt.show()
+
+# start serial
+ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
+
+# define uart helper functions
+def _checksum(uart_id, length, cmd, params):
+    total = uart_id + length + cmd + sum(params)
+    return (~total) & 0xFF
+
+def build_packet(uart_id, cmd, params=None):
+    length = len(params) + 3
+    chk = _checksum(length, cmd, params)
+    return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
+
+def send_packet(packet):
+    ser.write(packet)
+
+def read_response(expected_length):
+    return ser.read(expected_length)
+
+# get valve id
+send_packet(build_packet(0xFE, 14))
+response = read_response(6)
+valve_id = response[5]
+
+# initialize test throttle valve
+test_valve = ThrottleValve("test_valve", None, True, valve_id, ser)
+
+# test open and close servo to 60 deg
+test_valve.throttle(60, 2)
+time.sleep(5)
+test_valve.throttle(0, 2)
