@@ -752,19 +752,9 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
             drdy_gpio = cfg.get("drdy_gpio")
 
             cs_pin = int(cs_gpio) if cs_gpio is not None else None
-            # If the config points at the SPI0 hardware CS pins, don't try to
-            # drive them via libgpiod. Let the SPI controller manage CE0/CE1.
-            try:
-                spi_bus_i = int(spi_bus)
-                spi_dev_i = int(spi_dev)
-            except Exception:
-                spi_bus_i = -1
-                spi_dev_i = -1
-            if spi_bus_i == 0:
-                if spi_dev_i == 0 and cs_pin == 8:
-                    cs_pin = None
-                if spi_dev_i == 1 and cs_pin == 7:
-                    cs_pin = None
+            # Convention:
+            # - cs_gpio set  -> use GPIO-controlled chip select (for "extra" CS lines)
+            # - cs_gpio null -> use hardware CE line selected by spi_device
 
             adc = ADS124S08(
                 id=adc_id,

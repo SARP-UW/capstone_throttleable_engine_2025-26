@@ -6,7 +6,7 @@ adcs:
     transport: spi
     spi_bus: 0
     spi_device: 0
-    cs_gpio: 8
+    cs_gpio: null
     drdy_gpio: 25
     start_sync_gpio: 13
     notes: "DC #1"
@@ -16,7 +16,7 @@ adcs:
     transport: spi
     spi_bus: 0
     spi_device: 1
-    cs_gpio: 7
+    cs_gpio: null
     drdy_gpio: 5
     start_sync_gpio: 26
     notes: "ADC #2"
