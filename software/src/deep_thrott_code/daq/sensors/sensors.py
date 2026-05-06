@@ -580,10 +580,10 @@ class RTDSensor(Sensor):
         adc: Any,
         lead1_ain: int,
         lead2_ain: int,
+        idac1_ain: int,
+        idac2_ain: int,
         r0_ohms: float = 1000.0,
         idac_current_ua: float = 50.0,
-        idac1_ain: int = 5,
-        idac2_ain: int = 3,
         unit: str = "°C",
         offset: float = 0.0,
     ):
@@ -747,13 +747,20 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
             if spi_bus is None or spi_dev is None:
                 continue
 
+            cs_gpio = cfg.get("cs_gpio")
             reset_gpio = cfg.get("reset_gpio")
             drdy_gpio = cfg.get("drdy_gpio")
+
+            cs_pin = int(cs_gpio) if cs_gpio is not None else None
+            # Convention:
+            # - cs_gpio set  -> use GPIO-controlled chip select (for "extra" CS lines)
+            # - cs_gpio null -> use hardware CE line selected by spi_device
 
             adc = ADS124S08(
                 id=adc_id,
                 spi_bus=int(spi_bus),
                 spi_dev=int(spi_dev),
+                cs_pin=cs_pin,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
                 drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
             )

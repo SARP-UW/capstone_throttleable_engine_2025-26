@@ -4,75 +4,81 @@ adcs:
   ADC1:
     model: ADS124S08IRHBT
     transport: spi
-    spi_bus: null
-    spi_device: null
+    spi_bus: 0
+    spi_device: 0
     cs_gpio: null
-    drdy_gpio: null
-    reset_gpio: null
+    drdy_gpio: 25
+    start_sync_gpio: 13
     notes: "DC #1"
 
   ADC2:
     model: ADS124S08IRHBT
     transport: spi
-    spi_bus: null
-    spi_device: null
+    spi_bus: 0
+    spi_device: 1
     cs_gpio: null
-    drdy_gpio: null
-    reset_gpio: null
+    drdy_gpio: 5
+    start_sync_gpio: 26
     notes: "ADC #2"
 
   ADC3:
     model: ADS124S08IRHBT
     transport: spi
-    spi_bus: null
-    spi_device: null
-    cs_gpio: null
-    drdy_gpio: null
-    reset_gpio: null
+    spi_bus: 0
+    spi_device: 0
+    cs_gpio: 16
+    drdy_gpio: 6
+    start_sync_gpio: 20
     notes: "ADC #3"
 
 sensors:
   pressure_transducers:
     LF-PT:
       enabled: true
-      adc_id: ADC1
+      adc_id: ADC2
       signal_mode: single_ended
-      ain: null
+      pt_num: 1
+      ain: 1
       notes: "L Fuel pressure transducer"
 
     FT-PT:
       enabled: true
-      adc_id: ADC1
+      adc_id: ADC2
       signal_mode: single_ended
-      ain: null
+      ain: 0
+      pt_num: 2
       notes: "Fuel tank pressure transducer"
 
     FM-PT:
       enabled: true
       adc_id: ADC2
       signal_mode: single_ended
-      ain: null
+      ain: 11
+      pt_num: 3
       notes: "Fuel main pressure transducer"
 
     FI-PT:
       enabled: true
       adc_id: ADC2
       signal_mode: single_ended
-      ain: null
+      ain: 10
+      pt_num: 4
       notes: "Fuel injector pressure transducer"
 
     WM-PT:
       enabled: true
       adc_id: ADC3
       signal_mode: single_ended
-      ain: null
+      ain: 9
+      pt_num: 5
       notes: "Water main pressure transducer"
 
     CC-PT:
       enabled: true
       adc_id: ADC3
       signal_mode: single_ended
-      ain: null
+      ain: 8
+      pt_num: 6
       notes: "Combustion chamber pressure transducer"
 
   resistive temperature detectors:
@@ -80,14 +86,20 @@ sensors:
       enabled: true
       adc_id: ADC1
       signal_mode: rtd_3_wire
-      ain: null
+      lead1_ain: 4
+      lead2_ain: 2
+      idac1_ain: 5
+      idac2_ain: 3
       notes: "Water inlet RTD"
     
     WO-RTD:
       enabled: true
       adc_id: ADC2
       signal_mode: rtd_3_wire
-      ain: null
+      lead1_ain: 4
+      lead2_ain: 2
+      idac1_ain: 5
+      idac2_ain: 3
       notes: "Water outlet RTD"
     
   load cells:
@@ -95,16 +107,16 @@ sensors:
       enabled: true
       adc_id: ADC1
       signal_mode: differential
-      ain_positive: null
-      ain_negative: null
+      ain_pos: null
+      ain_neg: null
       notes: "Engine thrust load cell"
 
     N-LC:
       enabled: true
       adc_id: ADC2
       signal_mode: differential
-      ain_positive: null
-      ain_negative: null
+      ain_pos: null
+      ain_neg: null
       notes: "Nitrous load cell"
     
   flow meters:

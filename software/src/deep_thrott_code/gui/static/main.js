@@ -91,7 +91,7 @@
 			for (const step of steps) {
 				if (!step || typeof step !== 'object') continue;
 				const idx = typeof step.index === 'number' ? step.index : null;
-				const valve = typeof step.valve === 'string' ? step.valve : '';
+				const valveId = typeof step.valve_id === 'string' ? step.valve_id : '';
 				const action = typeof step.action === 'string' ? step.action : '';
 				const userInput = !!step.user_input;
 
@@ -106,7 +106,7 @@
 				else if (key === activeKey && idx !== null && idx === currentIdx) prefix = '▶ ';
 				else if (waitingSeq === key && idx !== null && idx === waitingIdx) prefix = '⏸ ';
 
-				left.textContent = `${prefix}${valve} ${action}${userInput ? ' (manual)' : ''}`;
+				left.textContent = `${prefix}${valveId} ${action}${userInput ? ' (manual)' : ''}`;
 				row.appendChild(left);
 
 				const right = document.createElement('div');
@@ -284,13 +284,13 @@
 			if (openBtn) {
 				openBtn.addEventListener('click', (e) => {
 					e.preventDefault();
-					emitGuiCommand({ name: 'set_valve', valve: valveName, state: 'open' });
+					emitGuiCommand({ name: 'set_valve', valve_id: valveName, state: 'open' });
 				});
 			}
 			if (closeBtn) {
 				closeBtn.addEventListener('click', (e) => {
 					e.preventDefault();
-					emitGuiCommand({ name: 'set_valve', valve: valveName, state: 'closed' });
+					emitGuiCommand({ name: 'set_valve', valve_id: valveName, state: 'closed' });
 				});
 			}
 
