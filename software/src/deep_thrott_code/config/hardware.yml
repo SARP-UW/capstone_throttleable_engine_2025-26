@@ -9,7 +9,7 @@ adcs:
     cs_gpio: null
     drdy_gpio: 25
     start_sync_gpio: 13
-    notes: "DC #1"
+    notes: "ADC #1"
 
   ADC2:
     model: ADS124S08IRHBT
