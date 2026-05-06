@@ -580,10 +580,10 @@ class RTDSensor(Sensor):
         adc: Any,
         lead1_ain: int,
         lead2_ain: int,
+        idac1_ain: int,
+        idac2_ain: int,
         r0_ohms: float = 1000.0,
         idac_current_ua: float = 50.0,
-        idac1_ain: int = 5,
-        idac2_ain: int = 3,
         unit: str = "°C",
         offset: float = 0.0,
     ):
