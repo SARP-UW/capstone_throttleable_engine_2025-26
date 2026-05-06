@@ -4,31 +4,31 @@ adcs:
   ADC1:
     model: ADS124S08IRHBT
     transport: spi
-    spi_bus: null
-    spi_device: null
-    cs_gpio: null
-    drdy_gpio: null
-    reset_gpio: null
+    spi_bus: 0
+    spi_device: 0
+    cs_gpio: 8
+    drdy_gpio: 25
+    start_sync_gpio: 13
     notes: "DC #1"
 
   ADC2:
     model: ADS124S08IRHBT
     transport: spi
-    spi_bus: null
-    spi_device: null
-    cs_gpio: null
-    drdy_gpio: null
-    reset_gpio: null
+    spi_bus: 0
+    spi_device: 0
+    cs_gpio: 7
+    drdy_gpio: 5
+    start_sync_gpio: 26
     notes: "ADC #2"
 
   ADC3:
     model: ADS124S08IRHBT
     transport: spi
-    spi_bus: null
-    spi_device: null
-    cs_gpio: null
-    drdy_gpio: null
-    reset_gpio: null
+    spi_bus: 0
+    spi_device: 0
+    cs_gpio: 16
+    drdy_gpio: 6
+    start_sync_gpio: 20
     notes: "ADC #3"
 
 sensors:
