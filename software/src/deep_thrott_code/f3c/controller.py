@@ -12,6 +12,7 @@ import os
 
 class State(Enum):
     IDLE = "idle"
+    FILL = "fill"
     FIRE = "fire"
     THROTTLE = "throttle"
     ABORT = "abort"
@@ -22,6 +23,7 @@ class TransitionAction(Enum):
     """
     END = "end"                  # when hitting the end of a sequence
     ABORT = "abort"              # when the user aborts a sequence
+    FILL = "fill"                # when a fill sequence starts
     FIRE = "fire"                # when a fire sequences starts
     AUTO = "auto"                # when automatically going to the next step (no user input)
     EXIT_SAFE = "exit_safe"      # when the system is allowed to exit safe mode (must receive user input)
@@ -56,9 +58,11 @@ class Controller:
 
         self._f3c_to_gui_queue = f3c_to_gui_queue
 
+        # getting config file directory
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         config_dir = os.path.join(base_dir, "config")
 
+        # defining where the config files are
         if sequence_config_path is not None:
             self.sequence_config_file = str(sequence_config_path)
         else:
@@ -69,17 +73,16 @@ class Controller:
         else:
             self.hardware_config_file = os.path.join(config_dir, str(hardware_config_file))
 
+        # building stuff from config files
         self.transitions = self._build_transitions()
         self.sequences = self._build_sequences(self.sequence_config_file)
         self.actuator_list = self._build_actuator_list(self.hardware_config_file)
-        # self.state = State.IDLE
+
+        self.fill_executed = False
         self.fire_executed = False
-        # self.step_status = StepStatus.READY
-        # self.current_step = None
-        # self.step_list = deque(maxlen=100)
+
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"
-        self._active_thread: threading.Thread | None = None
 
         # elyse added this
         self._lock = threading.RLock()
@@ -203,15 +206,21 @@ class Controller:
                 )
             out.append({"name": name, "key": key, "steps": steps})
         return out
-
+    
+    # main loop that is checking the command queue for gui commands always
     def start(self):
         while not self._stop_event.is_set():
-            # change implementation to 
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
+
+            # shutdown functionality
             if gui_input is None:
                 break
-            elif isinstance(gui_input, dict):
+            else:
+                
+                # unpacking gui input dict
                 cmd_type = gui_input.get("type")
+                
+                # single valve actuation
                 if cmd_type == "set_valve":
                     valve_id = gui_input.get("valve_id")
                     state = gui_input.get("state")
@@ -220,24 +229,27 @@ class Controller:
                         st = state.strip().lower()
                         if st == "open":
                             valve_goal_state = ValveState.OPEN
-                        elif st == "closed":
+                        else:
                             valve_goal_state = ValveState.CLOSED
                         self._execute_action(self.single_valve_actuation, valve_key, valve_goal_state)
                     self._command_queue.task_done()
                     continue
+                    
+                elif cmd_type == "pulse_valve":
+                    valve_id = gui_input.get("valve_id")
+                    if isinstance(valve_id, str):
+                        valve_key = valve_id.strip().lower()
+                        self._execute_action(self.pulse, valve_key)
+                # reset sequences for gui test
                 elif cmd_type == "reset_sequences":
                     self.reset_sequences()
                     self._command_queue.task_done()
                     continue
-            elif isinstance(gui_input, tuple):
-                command, *args = gui_input
-                if command in [s.value for s in State] or command in {self.single_valve_actuation, self.pulse}:
-                    self._execute_action(command, *args)
-            elif gui_input in [s.value for s in State]:
-                self._execute_action(gui_input)
-            else:
-                # send to gui that input is invalid
-                pass 
+                
+                # fill and fire sequences
+                elif cmd_type in (State.FILL.value, State.FIRE.value):
+                    self._execute_action(cmd_type)
+                    self._command_queue.task_done()
             try:
                 self._command_queue.task_done()
             except Exception:
@@ -248,7 +260,7 @@ class Controller:
         self.start()
 
     def _record_history(self, *, sequence: str, step_index: int, status: str,
-        valve_id: str | None = None, action: str | None = None):
+        valve_id: str | None = None, action: str | None = None, dt: float | None = None):
         with self._lock:
             rec: dict[str, Any] = {
                 "sequence": sequence,
@@ -260,9 +272,11 @@ class Controller:
                 rec["valve_id"] = str(valve_id)
             if action:
                 rec["action"] = str(action)
+            if dt:
+                rec["dt"] = float(dt)
             self.history.append(rec)
 
-    def _execute_action(self, action: str, valve_id=None, valve_state=None):
+    def _execute_action(self, action: str, valve_id: str | None =None, valve_state=None, dt: float | None = None):
         """
         Method for executing any type of action.
         Args:
@@ -270,109 +284,144 @@ class Controller:
             valve_id (int): valve id of the valve for single valve actuation, None by default
             valve_state (ValveState): valve state of the valve for single valve actuation, None by default
         """
+        
+        #if trying to fill or fire
+        if action in (State.FILL.value, State.FIRE.value):
+            threading.Thread(target=self._execute_sequence, args=(action,)).start()
 
+        # if performing single valve actuation or pulse
+        if action in (self.single_valve_actuation, self.pulse):
+            current_valve = self.actuator_list.get(valve_id)
+            if action == self.single_valve_actuation:
+                threading.Thread(target=self._execute_single_valve_actuation, args=(current_valve, valve_state)).start()
+            else:
+                threading.Thread(target=self._execute_pulse, args=(current_valve, dt)).start()
+                            
+    
+    def _execute_sequence(self, sequence_name: str):
         # if desired action is a valid, defined transition from current state
         with self._lock:
             current_state = self.state
-        transition_key = (current_state, TransitionAction(action))
+        transition_key = (current_state, TransitionAction(sequence_name))
         if transition_key in self.transitions:
 
-            # if trying to fire
-            if action  == State.FIRE.value:
+            # update system state to reflect command
+            sequence_state = self.transitions.get(transition_key)
+            with self._lock:
+                self.state = sequence_state
 
-                # update system state to reflect command
-                sequence_state = self.transitions.get(transition_key)
+            # loop through each step in sequence
+            # TO DO: add checks that see if next step is valid based on condition valve and state
+            current_sequence = self.sequences.get(sequence_name)
+            for idx, step in enumerate(current_sequence.get("steps")):
+
+                # check state at each step to catch aborts
+                # TO DO: change this to thread interrupt or maybe keep but do both
                 with self._lock:
-                    self.state = sequence_state
+                    current_state = self.state
+                if current_state == sequence_state:
+                    
+                    # get valve and individual valve action at this step
+                    valve_id = step.get("valve_id")
+                    action_seq = step.get("action")
+                    valve_key = str(valve_id).lower()
+                    current_valve = self.actuator_list.get(valve_key)
+                    
+                    # update current step information
+                    self.step_status = StepStatus.EXECUTING
+                    self.current_step_index = int(idx)
+                    self.current_step = {
+                        "index": int(idx),
+                        "valve_id": valve_id,
+                        "action": action_seq,
+                        "time_delay": step.get("time_delay", 0.0),
+                        "user_input": bool(step.get("user_input", False)),
+                        "condition_valve": step.get("condition_valve"),
+                        "condition_state": step.get("condition_state"),
+                        "system_state": self.state.value,
+                    }
+                    
+                    # record this step
+                    self._record_history(sequence=str(sequence_state.value), step_index=idx, status="READY",
+                                         valve_id=str(valve_id), action=action_seq)
 
-                # loop through each step in sequence
-                current_sequence = self.sequences.get(action)
-                for idx, step in enumerate(current_sequence.get("steps")):
-
-                    # check state at each step to catch aborts
-                    # TO DO: change this to thread interrupt or maybe keep but do both
-                    with self._lock:
-                        current_state = self.state
-                    if current_state == sequence_state:
-                        valve_id = step.get("valve_id")
-                        action_seq = step.get("action")
-                        valve_key = str(valve_id).lower() 
-                        current_valve = self.actuator_list.get(valve_key)
-                        self.step_status = StepStatus.EXECUTING
-                        self.current_step_index = int(idx)
-                        self.current_step = {
-                            "index": int(idx),
-                            "valve_id": valve_id,
-                            "action": action_seq,
-                            "time_delay": step.get("time_delay", 0.0),
-                            "user_input": bool(step.get("user_input", False)),
-                            "condition_valve": step.get("condition_valve"),
-                            "condition_state": step.get("condition_state"),
-                            "system_state": self.state.value,
-                        }
-                        self._record_history(sequence=sequence_state.value, step_index=idx, status="READY", valve_id=str(valve_id), action=action_seq)
-
-                        # if the valve for this step is a throttle valve
-                        if isinstance(current_valve, ThrottleValve):
-                            # TO DO: throttling implementation
-                            # TO DO: need to have something that limits what OF you can have based on angles provided by
-                            # throttle controller, absolute max of 1.2
-                            pass
+                    # if the valve for this step is a throttle valve
+                    if isinstance(current_valve, ThrottleValve):
+                        # TO DO: throttling implementation
+                        # TO DO: need to have something that limits what OF you can have based on angles provided by
+                        # throttle controller, absolute max of 1.2
+                        pass
+                    
+                    # if the valve for this step is an on/off valve
+                    else:
+                        # gets valve action
+                        act = str(step.get("action") or "").lower()
+                        if act == "open":
+                            valve_goal_state = ValveState.OPEN
                         else:
-                            act = str(step.get("action") or "").lower()
-                            if act == "open":
-                                valve_goal_state = ValveState.OPEN
-                            elif act in {"close", "closed"}:
-                                valve_goal_state = ValveState.CLOSED
+                            valve_goal_state = ValveState.CLOSED
+                            
+                        # actuates valve if current valve state is different from goal state
+                        if current_valve.get_state() != valve_goal_state:
                             current_valve.set_state(valve_goal_state)
+                        # if not, stop and move on to next step
+                        else:
+                            with self._lock:
+                                self.step_status = StepStatus.READY
+                            continue
 
-                            # wait for delay specified in step (can be 0.0)
-                            time.sleep(step.get("time_delay"))
-                            if bool(step.get("user_input")):
-                                with self._lock:
-                                    self.step_status = StepStatus.WAITING_USER
-                                self.waiting_manual = {"sequence": str(sequence_state.value), "step_index": int(idx)}
-                                self._record_history(sequence=sequence_state.value, step_index=idx, status="WAITING_USER", valve_id=str(valve_id), action=action_seq)
-                                # send message to gui that manual step is required with step details
-                                if self._f3c_to_gui_queue is not None:
-                                    self._f3c_to_gui_queue.put(
-                                        {
-                                            "type": "manual_step_required",
-                                            "sequence": str(sequence_state.value),
-                                            "step_index": int(idx),
-                                            "message": "Manual step required. Perform the required checks, then click Execute.",
-                                        },
-                                        timeout=0.1,
-                                    )
-                                # Block until matching acknowledgement arrives
-                                while True:
-                                    ack = self._ack_queue.get()
-                                    try:
-                                        if isinstance(ack, dict) and ack.get("type") == "reset_sequences":
-                                            self.reset_sequences()
-                                            return
-                                        if isinstance(ack, dict) and ack.get("type") == "manual_step_execute":
-                                            seq = ack.get("sequence")
-                                            step_index = ack.get("step_index")
-                                            ack_idx = int(step_index)
-                                            if seq == str(sequence_state.value) and ack_idx == int(idx):
-                                                break
-                                    finally:
-                                        self._ack_queue.task_done()
-                            self.step_list.append(self.current_step)
-                            self.step_status = StepStatus.READY
-            elif action in (self.single_valve_actuation, self.pulse):
-                current_valve = self.actuator_list.get(valve_id)
-                if action == self.single_valve_actuation:
-                    current_valve.set_state(valve_state)
-                else:
-                    current_valve.pulse_valve()
-                # TO DO: log valve actuation
+                        # wait for delay specified in step (can be 0.0)
+                        time.sleep(step.get("time_delay"))
+                        if bool(step.get("user_input")):
+                            with self._lock:
+                                self.step_status = StepStatus.WAITING_USER
+                            self.waiting_manual = {"sequence": str(sequence_state.value), "step_index": int(idx)}
+                            self._record_history(sequence=str(sequence_state.value), step_index=idx, status="WAITING_USER",
+                                                 valve_id=str(valve_id), action=action_seq)
+
+                            # send message to gui that manual step is required with step details
+                            if self._f3c_to_gui_queue is not None:
+                                self._f3c_to_gui_queue.put(
+                                    {
+                                        "type": "manual_step_required",
+                                        "sequence": str(sequence_state.value),
+                                        "step_index": int(idx),
+                                        "message": "Manual step required. Perform the required checks, then click Execute.",
+                                    },
+                                    timeout=0.1,
+                                )
+
+                            # Block until matching acknowledgement arrives
+                            while True:
+                                ack = self._ack_queue.get()
+                                try:
+                                    if isinstance(ack, dict) and ack.get("type") == "reset_sequences":
+                                        self.reset_sequences()
+                                        return
+
+                                    if isinstance(ack, dict) and ack.get("type") == "manual_step_execute":
+                                        seq = ack.get("sequence")
+                                        step_index = ack.get("step_index")
+                                        ack_idx = int(step_index)
+                                        # what happens if this isn't true?
+                                        if seq == str(sequence_state.value) and ack_idx == int(idx):
+                                            break
+                                finally:
+                                    self._ack_queue.task_done()
+                        self.step_list.append(self.current_step)
+                        self.step_status = StepStatus.READY
         else:
             # TO DO: send to gui "invalid state transition"
             pass
-                            
 
+    def _execute_single_valve_actuation(self, valve: Valve, valve_state: ValveState):
+        valve.set_state(valve_state)
+        # TO DO: log valve actuation
+
+    def _execute_pulse(self, valve: Valve, dt: float):
+        valve.pulse_valve(dt)
+        # TO DO: log valve actuation
+    
     @staticmethod
     def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
         """
