@@ -7,7 +7,7 @@ def throttle_loop(chamber_PT, stop_event, throttle_profile, state_store):
     chamber_PT: StateStore for chamber pressure
     stop_event: threading.Event()
     throttle_profile: function or object that returns Pc_ref at current time
-    state_store: interface to check if system state is"throttle"
+    state_store: interface to check if system state is "throttle"
     """
 
     # PID gains
@@ -54,7 +54,7 @@ def throttle_loop(chamber_PT, stop_event, throttle_profile, state_store):
             theta_cmd = theta_ff + theta_pid
 
             # 6. Clamp to physical valve limits
-            theta_cmd = max(0, min(theta_cmd, 60))
+            theta_cmd = max(0, min(theta_cmd, 90))
 
             # 7. Send to F3C?
             state_store.send_throttle_command(theta_cmd)
