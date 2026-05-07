@@ -69,6 +69,7 @@ class Valve:
                     # Best-effort: keep simulation runnable.
                     pass
             else:
+                # for when no rasp pi is connected, print statements instead of GPIO outputs
                 if new_state == ValveState.OPEN:
                     print(f"Valve {self.valve_id} is open")
                 else:
@@ -87,7 +88,7 @@ class ThrottleValve(Valve):
     """
     Class which represents a throttleable valve, inherits from Valve.
     """
-    def __init__(self, valve_id: str, pin: int | None, normally_closed: bool, uart_id: int, ser: serial.Serial):
+    def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
         super().__init__(valve_id, None, normally_closed)
         self.uart_id = uart_id
         self.ser = ser
