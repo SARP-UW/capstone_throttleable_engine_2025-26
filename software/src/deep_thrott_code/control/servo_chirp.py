@@ -54,10 +54,16 @@ def send_packet(packet):
     ser.write(packet)
 
 def read_response(expected_length):
-    return ser.read(expected_length)
+    serial_response = ser.read(expected_length)
+    if len(serial_response) == 0:
+        print("Timed out - no response received.")
+        return None
+    return serial_response
 
 # get valve id
 send_packet(build_packet(0xFE, 14))
+time.sleep(0.01)
+print(f"Bytes waiting: {ser.in_waiting}")
 response = read_response(6)
 valve_id = response[5]
 
