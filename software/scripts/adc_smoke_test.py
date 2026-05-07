@@ -138,8 +138,13 @@ def _check_one(adc_id: str, cfg: dict, ain: int) -> int:
     adc = _build_adc(adc_id, cfg)
 
     try:
-        print(f"\n[{adc_id}] Performing reset...")
-        adc.hardware_reset()
+        # print(f"\n[{adc_id}] Performing reset...")
+        # adc.hardware_reset()
+        adc.stop()
+        adc._send_cmd(adc.CMD_SDATAC)
+        time.sleep(0.01)
+
+        print(adc.rreg(0x00, 8))
 
         time.sleep(0.05)
 
