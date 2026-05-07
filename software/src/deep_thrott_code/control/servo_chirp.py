@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import serial
 import time
 
-from f3c.controller import Controller
 from f3c.valve import ThrottleValve
 
 # Parameters
