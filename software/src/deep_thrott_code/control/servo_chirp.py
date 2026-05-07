@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import serial
 import time
 
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from f3c.valve import ThrottleValve
 
 # Parameters
