@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 from valve import Valve, ValveState, ThrottleValve
 import os
+import serial
 
 class State(Enum):
     IDLE = "idle"
@@ -73,9 +74,13 @@ class Controller:
             self.hardware_config_file = os.path.join(config_dir, str(hardware_config_file))
 
         # building stuff from config files
+        print(f"Building transitions...")
         self.transitions = self._build_transitions()
+        print(f"Building sequences from {self.sequence_config_file}...")
         self.sequences = self._build_sequences(self.sequence_config_file)
+        print(f"Building actuator list from {self.hardware_config_file}...")
         self.actuator_list = self._build_actuator_list(self.hardware_config_file)
+        print(f"Initialization complete.")
 
         self.fill_executed = False
         self.fire_executed = False
@@ -99,6 +104,8 @@ class Controller:
             self.step_list = deque(maxlen=100)
             self.history: list[dict] = []
             self.waiting_manual: dict | None = None
+            # necessary to lock serial?
+            self.ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
 
     # elyse added this, for gui simulation mode, reset button will reset sequence and state
     def reset_sequences(self):
@@ -208,9 +215,11 @@ class Controller:
     
     # main loop that is checking the command queue for gui commands always
     def start(self):
+        print("Controller.start() loop entered")
         while not self._stop_event.is_set():
+            print("Controller.start() waiting for command...")
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
-            print("Queue item received")
+            print(f"Queue item received: {gui_input}")
 
             # shutdown functionality
             if gui_input is None:
@@ -482,5 +491,8 @@ class Controller:
             actuator_info_list = (hardware_config.get("actuators") or {}).get("valves") or {}
             actuator_list: dict[str, Any] = {}
             for valve_id, actuator_info in actuator_info_list.items():
-                actuator_list[str(valve_id)] = Valve(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("active_high")))
+                if actuator_info.get("mode") == "on_off":
+                    actuator_list[str(valve_id)] = Valve(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("active_high")))
+                else:
+                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("active_high")))
         return actuator_list
