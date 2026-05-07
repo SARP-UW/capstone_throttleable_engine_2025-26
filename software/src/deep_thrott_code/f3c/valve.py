@@ -68,6 +68,11 @@ class Valve:
                 except Exception:
                     # Best-effort: keep simulation runnable.
                     pass
+            else:
+                if new_state == ValveState.OPEN:
+                    print(f"Valve {self.valve_id} is open")
+                else:
+                    print(f"Valve {self.valve_id} is closed")
 
     def pulse_valve(self, dt: float):
         if self.state == ValveState.CLOSED:

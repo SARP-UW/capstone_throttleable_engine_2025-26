@@ -31,11 +31,11 @@ chirp_angle_10hz = 45*chirp_10hz + 45
 chirp_angle_20hz = 45*chirp_20hz + 45
 
 # Plot
-plt.plot(t, chirp_angle_10hz)
-plt.title("Linear Chirp Sine Wave")
-plt.xlabel("Time (s)")
-plt.ylabel("Amplitude (Degrees)")
-plt.show()
+# plt.plot(t, chirp_angle_10hz)
+# plt.title("Linear Chirp Sine Wave")
+# plt.xlabel("Time (s)")
+# plt.ylabel("Amplitude (Degrees)")
+# plt.show()
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=0.1)
@@ -61,11 +61,21 @@ def read_response(expected_length):
     return serial_response
 
 # get valve id
-send_packet(build_packet(0xFE, 14))
-time.sleep(0.01)
+print("Sending valve id request...")
+packet = build_packet(0xFE, 14)
+print(f"Packet bytes: {list(packet)}")
+send_packet(packet)
+time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
+
 response = read_response(6)
-valve_id = response[5]
+print(f"Response: {response}")
+
+if response is None:
+    print("No response received.")
+else:
+    valve_id = response[5]
+    print(f"Valve ID: {valve_id}")
 
 # initialize test throttle valve
 test_valve = ThrottleValve("test_valve", None, True, valve_id, ser)
