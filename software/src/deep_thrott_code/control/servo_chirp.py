@@ -38,7 +38,7 @@ plt.ylabel("Amplitude (Degrees)")
 plt.show()
 
 # start serial
-ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
+ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=0.1)
 
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
