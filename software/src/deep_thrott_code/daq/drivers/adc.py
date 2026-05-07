@@ -50,7 +50,7 @@ class ADS124S08:
         drdy_pin=None,
         start_pin=None,
         max_speed_hz=10_000,
-        spi_mode=0b01,
+        spi_mode=0b00,
     ):
         devpath = f"/dev/spidev{spi_bus}.{spi_dev}"
         if not os.path.exists(devpath):
