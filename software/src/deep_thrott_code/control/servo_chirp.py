@@ -45,9 +45,9 @@ def _checksum(uart_id, length, cmd, params):
     total = uart_id + length + cmd + sum(params)
     return (~total) & 0xFF
 
-def build_packet(uart_id, cmd, params=None):
+def build_packet(uart_id, cmd, params=[]):
     length = len(params) + 3
-    chk = _checksum(length, cmd, params)
+    chk = _checksum(uart_id, length, cmd, params)
     return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
 
 def send_packet(packet):
