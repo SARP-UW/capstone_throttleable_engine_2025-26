@@ -61,7 +61,7 @@ def _build_adc(adc_id: str, cfg: dict):
         start_pin=start_pin,
         reset_pin=None,
         max_speed_hz=10_000,
-        spi_mode=0b01,
+        spi_mode=0b00,
     )
 
     return adc
