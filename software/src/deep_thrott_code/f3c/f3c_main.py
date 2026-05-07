@@ -1,20 +1,9 @@
 try:
     import RPi.GPIO as GPIO
+    GPIO_AVAILABLE = True
 except ModuleNotFoundError:
-    class StubGPIO:
-        BCM = 11
-        OUT = 1
-        LOW = 0
-        HIGH = 1
-        @staticmethod
-        def setmode(mode): pass
-        @staticmethod
-        def setup(pin, mode, initial=None): pass
-        @staticmethod
-        def output(pin, val): pass
-        @staticmethod
-        def cleanup(): pass
-    GPIO = StubGPIO()
+    GPIO_AVAILABLE = False
+
 import time
 from valve import Valve, ValveState
 from controller import Controller
@@ -57,15 +46,16 @@ test_command_queue.put({
 
 time.sleep(5)
 
-print("GPIO command high")
-GPIO.output(pin, GPIO.HIGH)
+if GPIO_AVAILABLE:
+    print("GPIO command high")
+    GPIO.output(pin, GPIO.HIGH)
 
-time.sleep(5)
+    time.sleep(5)
 
-print("GPIO command low")
-GPIO.output(pin, GPIO.LOW)
+    print("GPIO command low")
+    GPIO.output(pin, GPIO.LOW)
 
-time.sleep(5)
+    time.sleep(5)
 
 # time.sleep(10)
 
