@@ -76,5 +76,52 @@ b = 6.7e7;
 k_chamber = -b/a;
 tau_chamber = -1/a;
 
+% Feedforward  example lookup table
+P_c_ref_bp = [ ...
+           0
+      344737.85
+      689475.70
+     1034213.55
+     1378951.40
+     1723689.25
+     2068427.10
+     2413164.95
+     2757902.80
+     3102640.65
+     3447378.50 ];
+theta_ff_table = [ ...
+     0    % Pc = 0 psi
+    10    % 50 psi
+    18    % 100 psi
+    26    % 150 psi
+    34    % 200 psi
+    42    % 250 psi
+    50    % 300 psi
+    58    % 350 psi
+    66    % 400 psi
+    78    % 450 psi
+    90 ]; % 500 psi
 
-
+% Valve CdA Example Lookup Table
+theta_bp = [ ...
+     0
+    10
+    20
+    30
+    40
+    50
+    60
+    70
+    80
+    90 ];
+CdA_table = [ ...
+    0.0e-6      % 0 deg
+    1.5e-6      % 10 deg
+    6.0e-6      % 20 deg
+    1.5e-5      % 30 deg
+    3.0e-5      % 40 deg
+    5.0e-5      % 50 deg
+    7.0e-5      % 60 deg
+    8.5e-5      % 70 deg
+    9.5e-5      % 80 deg
+    1.0e-4 ];   % 90 deg
