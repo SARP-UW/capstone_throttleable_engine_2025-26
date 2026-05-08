@@ -71,7 +71,7 @@ sensors:
 
     WM-PT:
       enabled: true
-      adc_id: ADC3
+      adc_id: ADC1
       signal_mode: single_ended
       ain: 9
       pt_num: 5
@@ -80,7 +80,7 @@ sensors:
 
     CC-PT:
       enabled: true
-      adc_id: ADC3
+      adc_id: ADC1
       signal_mode: single_ended
       ain: 8
       pt_num: 6
