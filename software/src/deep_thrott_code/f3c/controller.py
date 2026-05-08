@@ -306,6 +306,10 @@ class Controller:
         if action in (self.single_valve_actuation, self.pulse):
             current_valve = self.actuator_list.get(valve_id)
 
+            if current_valve is None:
+                print(f"Unknown or unconfigured valve_id: {valve_id}")
+                return
+
             # if single valve actuation
             if action == self.single_valve_actuation:
 
@@ -454,7 +458,9 @@ class Controller:
 
     def _execute_single_valve_actuation(self, valve: Valve, valve_state: ValveState):
         valve.set_state(valve_state)
-        self._record_history(status="READY", valve_id=str(valve.valve_id), action=str(valve_state.value))
+		# Manual/single-valve actions aren't part of a named sequence.
+		# Record them with a sentinel sequence + step index so history stays consistent.
+        self._record_history(sequence="manual", step_index=-1, status="READY", valve_id=str(valve.valve_id), action=str(valve_state.value))
 
     def _execute_pulse(self, valve: Valve, dt: float):
         valve.pulse_valve(dt)

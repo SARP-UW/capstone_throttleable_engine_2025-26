@@ -205,7 +205,7 @@ actuators:
     fmv:
       enabled: true
       mode: on_off
-      pin: 2
+      pin: 17
       normally_closed: true
       notes: "Fuel main valve"
 
@@ -226,7 +226,7 @@ actuators:
     otvv:
       enabled: true
       mode: on_off
-      pin: 17
+      pin: 2
       normally_closed: false
       notes: "Oxidizer tank vent valve"
 
