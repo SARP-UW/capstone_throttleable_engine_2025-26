@@ -21,6 +21,7 @@ ser.write(packet)
 ser.flush()
 GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
 
+ser.read(len(packet))
 time.sleep(0.2)
 print(f"Bytes waiting: {ser.in_waiting}")
 if ser.in_waiting:
