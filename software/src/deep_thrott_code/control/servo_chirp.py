@@ -72,7 +72,7 @@ print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
 send_packet(packet)
-time.sleep(0.1)
+time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
 
 response = read_response(6)
