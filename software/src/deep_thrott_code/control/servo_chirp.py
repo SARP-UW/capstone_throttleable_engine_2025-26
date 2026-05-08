@@ -91,7 +91,7 @@ send_packet(packet)
 time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
 
-response = read_response(6)
+response = read_response(7)
 print(f"Response: {response}")
 
 if response is None:
