@@ -64,10 +64,13 @@ def build_packet(uart_id, cmd, params=[]):
 def send_packet(packet):
     TX_ENABLE_PIN = 18
 
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+
     # pull low to say "i'm bouta transmit"
     GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
-    self.ser.write(packet)
-    self.ser.flush()
+    ser.write(packet)
+    ser.flush()
 
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
