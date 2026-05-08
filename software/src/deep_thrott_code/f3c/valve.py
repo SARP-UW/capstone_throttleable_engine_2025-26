@@ -13,9 +13,9 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
-TX_ENABLE_PIN = 18
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+# TX_ENABLE_PIN = 18
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
 class ValveState(Enum):
     """
