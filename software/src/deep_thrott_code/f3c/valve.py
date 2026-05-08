@@ -62,8 +62,11 @@ class Valve:
             try:
                 GPIO.setup(self.pin, GPIO.OUT)
             except Exception:
-                # Best-effort: keep simulation runnable.
-                pass
+                print(f"GPIO setup failed for valve {self.valve_id} on pin {self.pin}")
+        elif self.pin is None:
+            print(f"Valve {self.valve_id}: pin is None (not wired/configured)")
+        elif not GPIO_AVAILABLE:
+            print(f"Valve {self.valve_id}: RPi.GPIO unavailable; running in simulation mode")
 
     def set_state(self, new_state: ValveState):
         if self.state != new_state:
@@ -75,8 +78,10 @@ class Valve:
                     else:
                         GPIO.output(self.pin, GPIO.LOW if self.normally_closed else GPIO.HIGH)
                 except Exception:
-                    # Best-effort: keep simulation runnable.
-                    pass
+                    print(
+                        f"GPIO output failed for valve {self.valve_id} on pin {self.pin} "
+                        f"(requested {new_state.value})"
+                    )
             else:
                 # for when no rasp pi is connected, print statements instead of GPIO outputs
                 if new_state == ValveState.OPEN:

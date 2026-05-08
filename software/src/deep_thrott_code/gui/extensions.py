@@ -41,8 +41,9 @@ try:
 		async_mode="threading",
 		cors_allowed_origins="*",
 		serve_client=True,
-		logger=True,
-		engineio_logger=True,
+		# Keep terminal output readable; enable these only when debugging Socket.IO internals.
+		logger=False,
+		engineio_logger=False,
 	)
 	socketio.is_dummy = False
 
