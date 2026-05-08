@@ -153,89 +153,91 @@ actuators:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Water main valve"
 
     ftvv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: false
+      normally_closed: false
       notes: "Fuel tank vent valve"
 
     fmv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Fuel main valve"
 
     fmctv:
       enabled: true
       mode: throttle
+      uart_id: null
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Fuel main control/throttle valve"
 
     fifv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Fuel igniter flow valve"
 
     lffv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Pressurant fuel filling flow valve"
 
     xffv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Pressurant oxidizer filling flow valve"
 
     offv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Oxidizer filling flow valve"
 
     omv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Oxidizer main valve"
 
     omctv:
       enabled: true
       mode: throttle
+      uart_id: null
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Oxidizer main control/throttle valve"
 
     otvv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: false
+      normally_closed: false
       notes: "Oxidizer tank vent valve"
 
     oifv:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Oxidizer igniter flow valve"
 
     sparker:
       enabled: true
       mode: on_off
       pin: null
-      active_high: true
+      normally_closed: true
       notes: "Igniter sparker"

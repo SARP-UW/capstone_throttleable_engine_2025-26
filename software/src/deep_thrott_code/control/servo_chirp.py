@@ -39,6 +39,13 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=0.1)
+ser.close()
+time.sleep(0.5)
+ser.open()
+
+ser.reset_input_buffer()
+ser.reset_output_buffer()
+time.sleep(0.1)
 
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
@@ -73,16 +80,18 @@ print(f"Response: {response}")
 
 if response is None:
     print("No response received.")
+    quit()
 else:
     valve_id = response[5]
     print(f"Valve ID: {valve_id}")
 
 # initialize test throttle valve
-test_valve = ThrottleValve("test_valve", None, True, valve_id, ser)
+test_valve = ThrottleValve("test_valve", True, valve_id, ser)
 
 # test open and close servo to 60 deg
 test_valve.throttle(60, 2)
+time.sleep(2)
 print("Valve angle:", test_valve.read_pos())
-time.sleep(5)
+time.sleep(3)
 test_valve.throttle(0, 2)
 print("Valve angle:", test_valve.read_pos())

@@ -69,6 +69,7 @@ class Valve:
                     # Best-effort: keep simulation runnable.
                     pass
             else:
+                # for when no rasp pi is connected, print statements instead of GPIO outputs
                 if new_state == ValveState.OPEN:
                     print(f"Valve {self.valve_id} is open")
                 else:
@@ -87,10 +88,11 @@ class ThrottleValve(Valve):
     """
     Class which represents a throttleable valve, inherits from Valve.
     """
-    def __init__(self, valve_id: str, pin: int | None, normally_closed: bool, uart_id: int, ser: serial.Serial):
+    def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
         super().__init__(valve_id, None, normally_closed)
         self.uart_id = uart_id
         self.ser = ser
+        self.load_motor()
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):
@@ -101,12 +103,13 @@ class ThrottleValve(Valve):
             else:
                 self.throttle(0.0)
 
-    def throttle(self, angle_deg: float, time_ms):
+    def throttle(self, angle_deg: float, time_s):
         """
             Move servo to angle (0-1000 => 0-240°) over time_ms (0-30000ms).
             Moves immediately on receipt.
             Implementation of SERVO_MOVE_TIME_WRITE
             """
+        time_ms = int(time_s * 1000)
         angle_param = int(angle_deg * 1000.0 / 240.0)
         angle_param = max(0, min(1000, angle_param))
         time_ms = max(0, min(30000, time_ms))
@@ -134,13 +137,21 @@ class ThrottleValve(Valve):
             angle_deg = 0
         return angle_deg
 
+    #uart helper functions
+    def load_motor(self):
+        """
+        Enable torque output - must be called before servo will move
+        """
+        params = [1]
+        self.send_packet(self.build_packet(31, params))
+
     def _checksum(self, length, cmd, params):
         total = self.uart_id + length + cmd + sum(params)
         return (~total) & 0xFF
 
     def build_packet(self, cmd, params=[]):
         length = len(params) + 3
-        chk = self._checksum(self.uart_id, length, cmd, params)
+        chk = self._checksum(length, cmd, params)
         return bytes([0x55, 0x55, self.uart_id, length, cmd] + params + [chk])
 
     def send_packet(self, packet):
