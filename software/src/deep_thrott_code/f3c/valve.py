@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 import time
-import serial
+# import serial
 
 try:
     import RPi.GPIO as GPIO  # type: ignore
@@ -88,11 +88,11 @@ class ThrottleValve(Valve):
     """
     Class which represents a throttleable valve, inherits from Valve.
     """
-    def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
-        super().__init__(valve_id, None, normally_closed)
-        self.uart_id = uart_id
-        self.ser = ser
-        self.load_motor()
+    # def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
+    #     super().__init__(valve_id, None, normally_closed)
+    #     self.uart_id = uart_id
+    #     self.ser = ser
+    #     self.load_motor()
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):

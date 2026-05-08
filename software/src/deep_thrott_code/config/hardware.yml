@@ -132,7 +132,7 @@ sensors:
       sampling_rate_hz: 100
       notes: "Ox injector pressure transducer"
   
-  
+
   resistive temperature detectors:
     WI-RTD:
       enabled: true
@@ -195,95 +195,44 @@ sensors:
 
 actuators:
   valves:
-    wmv:
-      enabled: true
-      mode: on_off
-      pin: null
-      normally_closed: true
-      notes: "Water main valve"
-
     ftvv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 23
       normally_closed: false
       notes: "Fuel tank vent valve"
 
     fmv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 2
       normally_closed: true
       notes: "Fuel main valve"
-
-    fmctv:
-      enabled: true
-      mode: throttle
-      uart_id: null
-      pin: null
-      normally_closed: true
-      notes: "Fuel main control/throttle valve"
-
-    fifv:
-      enabled: true
-      mode: on_off
-      pin: null
-      normally_closed: true
-      notes: "Fuel igniter flow valve"
-
-    lffv:
-      enabled: true
-      mode: on_off
-      pin: null
-      normally_closed: true
-      notes: "Pressurant fuel filling flow valve"
-
-    xffv:
-      enabled: true
-      mode: on_off
-      pin: null
-      normally_closed: true
-      notes: "Pressurant oxidizer filling flow valve"
 
     offv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 4
       normally_closed: true
       notes: "Oxidizer filling flow valve"
 
     omv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 3
       normally_closed: true
       notes: "Oxidizer main valve"
-
-    omctv:
-      enabled: true
-      mode: throttle
-      uart_id: null
-      pin: null
-      normally_closed: true
-      notes: "Oxidizer main control/throttle valve"
 
     otvv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 17
       normally_closed: false
       notes: "Oxidizer tank vent valve"
-
-    oifv:
-      enabled: true
-      mode: on_off
-      pin: null
-      normally_closed: true
-      notes: "Oxidizer igniter flow valve"
 
     sparker:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 27
       normally_closed: true
       notes: "Igniter sparker"

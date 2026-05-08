@@ -8,7 +8,7 @@ from typing import Any
 import yaml
 from .valve import Valve, ValveState, ThrottleValve
 import os
-import serial
+# import serial
 
 computer_sim = True
 
@@ -106,10 +106,10 @@ class Controller:
             self.step_list = deque(maxlen=100)
             self.history: list[dict] = []
             self.waiting_manual: dict | None = None
-            if not computer_sim:
-                self.ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
-            else:
-                self.ser = None
+            # if not computer_sim:
+            #     self.ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
+            # else:
+            #     self.ser = None
 
     # elyse added this, for gui simulation mode, reset button will reset sequence and state
     def reset_sequences(self):
@@ -166,12 +166,6 @@ class Controller:
                 "valves": valves,
             }
 
-
-    # placeholder for single valve actuation (keep this method name so gui can call)
-    def _set_valve_from_gui(self):
-        return
-
-    # 
     def get_sequence_definitions_for_gui(self) -> list[dict[str, Any]]:
         # These keys should match `config/sequences.yaml` and the GUI command names.
         ordered = ["idle","fill", "fire"]
@@ -515,8 +509,8 @@ class Controller:
             actuator_info_list = (hardware_config.get("actuators") or {}).get("valves") or {}
             actuator_list: dict[str, Any] = {}
             for valve_id, actuator_info in actuator_info_list.items():
-                if actuator_info.get("mode") == "on_off":
-                    actuator_list[str(valve_id)] = Valve(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("active_high")))
-                else:
-                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), bool(actuator_info.get("normally_closed")), int(actuator_info.get("uart_id")), self.ser)
+                pin_raw = actuator_info.get("pin")
+                pin = int(pin_raw) if pin_raw is not None else None
+                normally_closed = bool(actuator_info.get("normally_closed", True))
+                actuator_list[str(valve_id)] = Valve(str(valve_id), pin, normally_closed)
         return actuator_list
