@@ -108,7 +108,7 @@ class ThrottleValve(Valve):
             Moves immediately on receipt.
             Implementation of SERVO_MOVE_TIME_WRITE
             """
-        time_ms = time_s * 1000
+        time_ms = int(time_s * 1000)
         angle_param = int(angle_deg * 1000.0 / 240.0)
         angle_param = max(0, min(1000, angle_param))
         time_ms = max(0, min(30000, time_ms))

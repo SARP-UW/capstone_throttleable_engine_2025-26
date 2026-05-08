@@ -83,7 +83,8 @@ test_valve = ThrottleValve("test_valve", True, valve_id, ser)
 
 # test open and close servo to 60 deg
 test_valve.throttle(60, 2)
+time.sleep(2)
 print("Valve angle:", test_valve.read_pos())
-time.sleep(5)
+time.sleep(3)
 test_valve.throttle(0, 2)
 print("Valve angle:", test_valve.read_pos())
