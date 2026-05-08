@@ -170,5 +170,4 @@ class ThrottleValve(Valve):
 
     def read_response(self, packet_length, expected_length):
         self.ser.read(packet_length)
-        time.sleep(0.1)
         return self.ser.read(expected_length)
