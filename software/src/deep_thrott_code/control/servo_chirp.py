@@ -39,6 +39,9 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=0.1)
+ser.close()
+time.sleep(0.5)
+ser.open()
 
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
