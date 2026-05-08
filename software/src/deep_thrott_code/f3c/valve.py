@@ -7,6 +7,15 @@ import time
 try:
     import RPi.GPIO as GPIO  # type: ignore
     GPIO_AVAILABLE = True
+
+    # Ensure GPIO numbering mode is configured once.
+    # We use BCM numbering, so `hardware.yml` pins should be BCM GPIO numbers.
+    try:
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+    except Exception:
+        # Keep imports runnable even if GPIO isn't fully usable.
+        GPIO_AVAILABLE = False
 except ModuleNotFoundError:
     # Windows/dev-machine friendly stub.
     # On non-Pi systems we still want to import and run the controller in
