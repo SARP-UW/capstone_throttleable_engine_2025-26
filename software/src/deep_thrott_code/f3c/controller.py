@@ -6,7 +6,7 @@ import time
 from enum import Enum
 from typing import Any
 import yaml
-from valve import Valve, ValveState, ThrottleValve
+from .valve import Valve, ValveState, ThrottleValve
 import os
 import serial
 
@@ -173,7 +173,8 @@ class Controller:
 
     # 
     def get_sequence_definitions_for_gui(self) -> list[dict[str, Any]]:
-        ordered = ["idle", "fire"]
+        # These keys should match `config/sequences.yaml` and the GUI command names.
+        ordered = ["idle","fill", "fire"]
         out: list[dict[str, Any]] = []
         for key in ordered:
             seq = self.sequences.get(key)
