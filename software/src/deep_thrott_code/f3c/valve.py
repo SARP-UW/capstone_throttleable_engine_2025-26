@@ -13,9 +13,10 @@ try:
     try:
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-    except Exception:
-        # Keep imports runnable even if GPIO isn't fully usable.
-        GPIO_AVAILABLE = False
+    except Exception as exc:
+        # Don't force simulation mode here; let setup/output attempts surface
+        # the real error (usually permissions) with explicit prints.
+        print(f"GPIO init (setmode BCM) failed: {exc!r}")
 except ModuleNotFoundError:
     # Windows/dev-machine friendly stub.
     # On non-Pi systems we still want to import and run the controller in
@@ -61,8 +62,8 @@ class Valve:
         if GPIO_AVAILABLE and self.pin is not None:
             try:
                 GPIO.setup(self.pin, GPIO.OUT)
-            except Exception:
-                print(f"GPIO setup failed for valve {self.valve_id} on pin {self.pin}")
+            except Exception as exc:
+                print(f"GPIO setup failed for valve {self.valve_id} on pin {self.pin}: {exc!r}")
         elif self.pin is None:
             print(f"Valve {self.valve_id}: pin is None (not wired/configured)")
         elif not GPIO_AVAILABLE:
@@ -74,13 +75,18 @@ class Valve:
             if GPIO_AVAILABLE and self.pin is not None:
                 try:
                     if new_state == ValveState.OPEN:
-                        GPIO.output(self.pin, GPIO.HIGH if self.normally_closed else GPIO.LOW)
+                        level = GPIO.HIGH if self.normally_closed else GPIO.LOW
                     else:
-                        GPIO.output(self.pin, GPIO.LOW if self.normally_closed else GPIO.HIGH)
-                except Exception:
+                        level = GPIO.LOW if self.normally_closed else GPIO.HIGH
+                    GPIO.output(self.pin, level)
+                    print(
+                        f"GPIO output valve {self.valve_id} pin {self.pin} -> "
+                        f"{'HIGH' if level else 'LOW'} ({new_state.value})"
+                    )
+                except Exception as exc:
                     print(
                         f"GPIO output failed for valve {self.valve_id} on pin {self.pin} "
-                        f"(requested {new_state.value})"
+                        f"(requested {new_state.value}): {exc!r}"
                     )
             else:
                 # for when no rasp pi is connected, print statements instead of GPIO outputs
