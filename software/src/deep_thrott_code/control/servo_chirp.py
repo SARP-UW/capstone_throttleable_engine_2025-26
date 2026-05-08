@@ -78,6 +78,7 @@ def send_packet(packet):
 
 def read_response(packet_length, expected_length):
     ser.read(packet_length)
+    time.sleep(0.1)
     serial_response = ser.read(expected_length)
     if len(serial_response) == 0:
         print("Timed out - no response received.")
