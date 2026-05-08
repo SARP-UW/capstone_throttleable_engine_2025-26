@@ -125,8 +125,8 @@ class ThrottleValve(Valve):
         self.send_packet(self.build_packet(1, params))
 
     def read_pos(self):
-        self.send_packet(self.build_packet(28))
-        response = self.read_response(7)
+        packet_length = self.send_packet(self.build_packet(28))
+        response = self.read_response(packet_length, 7)
 
         if len(response) >= 7 and response[0] == 0x55 and response[1] == 0x55:
             low = response[5]   # 6th byte is the lower 8 bits
@@ -160,13 +160,14 @@ class ThrottleValve(Valve):
         return bytes([0x55, 0x55, self.uart_id, length, cmd] + params + [chk])
 
     def send_packet(self, packet):
-        TX_ENABLE_PIN = 18
         # pull low to say "i'm bouta transmit"
         GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
         self.ser.write(packet)
         self.ser.flush()
         # pull high to say "i'm done transmitting"
         GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+        return len(packet)
 
-    def read_response(self, expected_length):
+    def read_response(self, packet_length, expected_length):
+        self.ser.read(packet_length)
         return self.ser.read(expected_length)

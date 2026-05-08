@@ -76,7 +76,8 @@ def send_packet(packet):
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
 
 
-def read_response(expected_length):
+def read_response(packet_length, expected_length):
+    ser.read(packet_length)
     serial_response = ser.read(expected_length)
     if len(serial_response) == 0:
         print("Timed out - no response received.")
@@ -91,7 +92,7 @@ send_packet(packet)
 time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
 
-response = read_response(7)
+response = read_response(len(packet), 7)
 print(f"Response: {response}")
 
 if response is None:
