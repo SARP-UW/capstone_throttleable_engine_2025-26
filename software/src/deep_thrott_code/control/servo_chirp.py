@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import serial
 import time
 
+import RPi.GPIO as GPIO
+
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -47,6 +49,7 @@ ser.reset_input_buffer()
 ser.reset_output_buffer()
 time.sleep(0.1)
 
+
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
     total = uart_id + length + cmd + sum(params)
@@ -57,8 +60,18 @@ def build_packet(uart_id, cmd, params=[]):
     chk = _checksum(uart_id, length, cmd, params)
     return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
 
-def send_packet(packet):
-    ser.write(packet)
+
+def send_packet(self, packet):
+    TX_ENABLE_PIN = 18
+
+    # pull low to say "i'm bouta transmit"
+    GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
+    self.ser.write(packet)
+    self.ser.flush()
+
+    # pull high to say "i'm done transmitting yo"
+    GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+
 
 def read_response(expected_length):
     serial_response = ser.read(expected_length)
