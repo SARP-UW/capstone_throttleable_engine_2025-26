@@ -155,7 +155,13 @@ class ThrottleValve(Valve):
         return bytes([0x55, 0x55, self.uart_id, length, cmd] + params + [chk])
 
     def send_packet(self, packet):
+        TX_ENABLE_PIN = 18
+        # pull low to say "i'm bouta transmit"
+        GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
         self.ser.write(packet)
+        self.ser.flush()
+        # pull high to say "i'm done transmitting"
+        GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
 
     def read_response(self, expected_length):
         return self.ser.read(expected_length)
