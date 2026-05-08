@@ -92,6 +92,7 @@ class ThrottleValve(Valve):
         super().__init__(valve_id, None, normally_closed)
         self.uart_id = uart_id
         self.ser = ser
+        self.load_motor()
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):
@@ -135,6 +136,14 @@ class ThrottleValve(Valve):
         else:
             angle_deg = 0
         return angle_deg
+
+    #uart helper functions
+    def load_motor(self):
+        """
+        Enable torque output - must be called before servo will move
+        """
+        params = [1]
+        self.send_packet(self.build_packet(31, params))
 
     def _checksum(self, length, cmd, params):
         total = self.uart_id + length + cmd + sum(params)
