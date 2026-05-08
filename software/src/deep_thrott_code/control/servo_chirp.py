@@ -69,11 +69,13 @@ def build_packet(uart_id, cmd, params=[]):
 def send_packet(packet):
     # pull low to say "i'm bouta transmit"
     GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
+    print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
     ser.write(packet)
     ser.flush()
 
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+    print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
 
 
 def read_response(packet_length, expected_length):

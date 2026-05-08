@@ -13,22 +13,6 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
-    class _StubGPIO:  # noqa: D401
-        OUT = 0
-        HIGH = 1
-        LOW = 0
-
-        def setup(self, *_args, **_kwargs) -> None:
-            return None
-
-        def output(self, *_args, **_kwargs) -> None:
-            return None
-
-        def cleanup(self, *_args, **_kwargs) -> None:
-            return None
-
-    GPIO = _StubGPIO()  # type: ignore
-
 TX_ENABLE_PIN = 18
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
