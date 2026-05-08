@@ -13,6 +13,11 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
+    TX_ENABLE_PIN = 18
+    if GPIO_AVAILABLE:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+
     class _StubGPIO:  # noqa: D401
         OUT = 0
         HIGH = 1
