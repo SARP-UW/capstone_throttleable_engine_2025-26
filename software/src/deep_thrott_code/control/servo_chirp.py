@@ -73,12 +73,13 @@ print(f"Response: {response}")
 
 if response is None:
     print("No response received.")
+    quit()
 else:
     valve_id = response[5]
     print(f"Valve ID: {valve_id}")
 
 # initialize test throttle valve
-test_valve = ThrottleValve("test_valve", None, True, valve_id, ser)
+test_valve = ThrottleValve("test_valve", True, valve_id, ser)
 
 # test open and close servo to 60 deg
 test_valve.throttle(60, 2)
