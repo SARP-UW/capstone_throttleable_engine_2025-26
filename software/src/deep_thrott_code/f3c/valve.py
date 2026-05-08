@@ -102,12 +102,13 @@ class ThrottleValve(Valve):
             else:
                 self.throttle(0.0)
 
-    def throttle(self, angle_deg: float, time_ms):
+    def throttle(self, angle_deg: float, time_s):
         """
             Move servo to angle (0-1000 => 0-240°) over time_ms (0-30000ms).
             Moves immediately on receipt.
             Implementation of SERVO_MOVE_TIME_WRITE
             """
+        time_ms = time_s * 1000.0
         angle_param = int(angle_deg * 1000.0 / 240.0)
         angle_param = max(0, min(1000, angle_param))
         time_ms = max(0, min(30000, time_ms))
