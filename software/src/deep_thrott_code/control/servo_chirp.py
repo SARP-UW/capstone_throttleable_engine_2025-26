@@ -87,8 +87,6 @@ def read_response(expected_length):
 print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
-raw = ser.read(ser.in_waiting)
-print(f"Raw bytes: {list(raw)}")
 send_packet(packet)
 time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
