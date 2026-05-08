@@ -43,6 +43,10 @@ ser.close()
 time.sleep(0.5)
 ser.open()
 
+ser.reset_input_buffer()
+ser.reset_output_buffer()
+time.sleep(0.1)
+
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
     total = uart_id + length + cmd + sum(params)
