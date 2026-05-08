@@ -126,6 +126,4 @@ CdA_table = [ ...
     9.5e-5      % 80 deg
     1.0e-4 ];   % 90 deg
 
-% Tiny epsilon for smoothing piecewise functions, no sharp clamps that ruin
-% algebraic loops
-epsilon = 1e-3;
+% 
