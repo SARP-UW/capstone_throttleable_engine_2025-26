@@ -38,7 +38,7 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 # plt.show()
 
 # start serial
-ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=1)
+ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=0.1)
 
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
@@ -65,7 +65,7 @@ print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
 send_packet(packet)
-time.sleep(0.5)
+time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
 
 response = read_response(6)
