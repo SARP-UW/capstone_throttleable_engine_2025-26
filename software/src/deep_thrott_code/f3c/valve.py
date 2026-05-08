@@ -29,6 +29,10 @@ except ModuleNotFoundError:
 
     GPIO = _StubGPIO()  # type: ignore
 
+TX_ENABLE_PIN = 18
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+
 class ValveState(Enum):
     """
     Defines the states a valve can be in.
