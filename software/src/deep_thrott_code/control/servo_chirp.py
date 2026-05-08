@@ -77,6 +77,7 @@ ser.reset_input_buffer()
 time.sleep(0.05)
 print(f"Bytes waiting: {ser.in_waiting}")
 
+ser.read(len(packet))
 response = read_response(6)
 print(f"Response: {response}")
 
