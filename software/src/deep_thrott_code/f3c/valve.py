@@ -141,7 +141,7 @@ class ThrottleValve(Valve):
 
     def build_packet(self, cmd, params=[]):
         length = len(params) + 3
-        chk = self._checksum(self.uart_id, length, cmd, params)
+        chk = self._checksum(length, cmd, params)
         return bytes([0x55, 0x55, self.uart_id, length, cmd] + params + [chk])
 
     def send_packet(self, packet):
