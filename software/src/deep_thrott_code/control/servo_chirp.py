@@ -61,7 +61,7 @@ def build_packet(uart_id, cmd, params=[]):
     return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
 
 
-def send_packet(self, packet):
+def send_packet(packet):
     TX_ENABLE_PIN = 18
 
     # pull low to say "i'm bouta transmit"
