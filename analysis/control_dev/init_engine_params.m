@@ -134,3 +134,6 @@ epsilon = 1e-3;
 mdot_nom_cstar_match = P_c_nom*A_t / cstar_nom;
 mdot_f_nom_cstar_match = mdot_nom_cstar_match / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
 mdot_ox_nom_cstar_match = mdot_nom_cstar_match * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
+
+% Add small damping/leak term to reduce chamber stiffness
+k_d_chamb = 0.1; % [s]
