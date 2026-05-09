@@ -136,4 +136,4 @@ mdot_f_nom_cstar_match = mdot_nom_cstar_match / (1 + OF); % [kg/s] nominal/max/f
 mdot_ox_nom_cstar_match = mdot_nom_cstar_match * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
 
 % Add small damping/leak term to reduce chamber stiffness
-k_d_chamb = 0.1; % [s]
+k_d_chamb = 10e-5; % [s]
