@@ -129,3 +129,8 @@ CdA_table = [ ...
 % Tiny epsilon for smoothing piecewise functions, no sharp clamps that ruin
 % algebraic loops
 epsilon = 1e-3;
+
+% Calculate mdot_nom from cstar_nom
+mdot_nom_cstar_match = P_c_nom*A_t / cstar_nom;
+mdot_f_nom_cstar_match = mdot_nom_cstar_match / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
+mdot_ox_nom_cstar_match = mdot_nom_cstar_match * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
