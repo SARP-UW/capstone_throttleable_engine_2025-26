@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from f3c.valve import ThrottleValve
 
-TX_ENABLE_PIN = 21
+TX_ENABLE_PIN = 18
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
@@ -86,11 +86,13 @@ def read_response(packet_length, expected_length):
     # get rid of echo with a shorter timeout
     old_timeout = ser.timeout
     ser.timeout = 0.02
-    ser.read(packet_length)
+    echo = ser.read(packet_length)
+    print(f"Echo bytes: {list(echo)}")
     ser.timeout = old_timeout
 
     # get actual response
     serial_response = ser.read(expected_length)
+    print(f"Response bytes: {list(serial_response)}")
     if len(serial_response) == 0:
         print("Timed out - no response received.")
         return None

@@ -145,12 +145,32 @@ class ThrottleValve(Valve):
     def send_packet(self, packet):
         # pull low to say "i'm bouta transmit"
         GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
+        print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
         self.ser.write(packet)
         self.ser.flush()
-        # pull high to say "i'm done transmitting"
+
+        # wait for all bits to clock out of the shift register at 115200 baud
+        # (len(packet) bytes * 8 bits/byte) / 115200 + margin
+        time.sleep(len(packet) * 10 / 115200 + 0.0002)
+
+        # pull high to say "i'm done transmitting yo"
         GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+        print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
         return len(packet)
 
     def read_response(self, packet_length, expected_length):
-        self.ser.read(packet_length)
-        return self.ser.read(expected_length)
+
+        # get rid of echo with a shorter timeout
+        old_timeout = self.ser.timeout
+        self.ser.timeout = 0.02
+        echo = self.ser.read(packet_length)
+        print(f"Echo bytes: {list(echo)}")
+        self.ser.timeout = old_timeout
+
+        # get actual response
+        serial_response = self.ser.read(expected_length)
+        print(f"Response bytes: {list(serial_response)}")
+        if len(serial_response) == 0:
+            print("Timed out - no response received.")
+            return None
+        return serial_response
