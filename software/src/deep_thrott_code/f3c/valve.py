@@ -13,7 +13,7 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
-# TX_ENABLE_PIN = 18
+TX_ENABLE_PIN = 18
 # GPIO.setmode(GPIO.BCM)
 # GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
@@ -109,7 +109,7 @@ class ThrottleValve(Valve):
 
     def read_pos(self):
         packet_length = self.send_packet(self.build_packet(28))
-        response = self.read_response(packet_length, 7)
+        response = self.read_response(packet_length, 8)
 
         if len(response) >= 7 and response[0] == 0x55 and response[1] == 0x55:
             low = response[5]   # 6th byte is the lower 8 bits

@@ -73,13 +73,23 @@ def send_packet(packet):
     ser.write(packet)
     ser.flush()
 
+    # wait for all bits to clock out of the shift register at 115200 baud
+    # (len(packet) bytes * 8 bits/byte) / 115200 + margin
+    time.sleep(len(packet) * 10 / 115200 + 0.0002)
+
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
     print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
 
 
 def read_response(packet_length, expected_length):
+    # get rid of echo with a shorter timeout
+    old_timeout = ser.timeout
+    ser.timeout = 0.02
     ser.read(packet_length)
+    ser.timeout = old_timeout
+
+    # get actual response
     serial_response = ser.read(expected_length)
     if len(serial_response) == 0:
         print("Timed out - no response received.")
