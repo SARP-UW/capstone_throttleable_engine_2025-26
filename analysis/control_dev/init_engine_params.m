@@ -76,5 +76,68 @@ b = 6.7e7;
 k_chamber = -b/a;
 tau_chamber = -1/a;
 
+% Feedforward  example lookup table
+P_c_ref_bp = [ ...
+           0
+      344737.85
+      689475.70
+     1034213.55
+     1378951.40
+     1723689.25
+     2068427.10
+     2413164.95
+     2757902.80
+     3102640.65
+     3447378.50 ];
+theta_ff_table = [ ...
+     0    % Pc = 0 psi
+    10    % 50 psi
+    18    % 100 psi
+    26    % 150 psi
+    34    % 200 psi
+    42    % 250 psi
+    50    % 300 psi
+    58    % 350 psi
+    66    % 400 psi
+    78    % 450 psi
+    90 ]; % 500 psi
 
+% Valve CdA Example Lookup Table
+theta_bp = [ ...
+     0
+    10
+    20
+    30
+    40
+    50
+    60
+    70
+    80
+    90 ];
+CdA_table = [ ...
+    2.0e-6      % 0 deg
+    3.0e-6      % 10 deg
+    4.0e-6      % 20 deg
+    5.0e-6      % 30 deg
+    6.0e-6      % 40 deg
+    7.0e-6      % 50 deg
+    8.0e-6      % 60 deg
+    9.0e-6      % 70 deg
+    1.0e-5      % 80 deg
+    1.1e-5 ];   % 90 deg
 
+% CdA if valve dP was 30 psi
+dP_v = 30 * psi_to_Pa;
+CdA_v_30_psi = mdot_ox_nom_cstar_match / sqrt(2 * rho_ox * dP_v);
+
+% Tiny epsilon for smoothing piecewise functions, no sharp clamps that ruin
+% algebraic loops
+epsilon = 1e-3;
+
+% Calculate mdot_nom from cstar_nom
+mdot_nom_cstar_match = P_c_nom*A_t / cstar_nom;
+mdot_f_nom_cstar_match = mdot_nom_cstar_match / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
+mdot_ox_nom_cstar_match = mdot_nom_cstar_match * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
+
+% Add small damping/leak term to reduce chamber stiffness
+k_d_chamb = 0.0005*mdot_nom_cstar_match/(P_c_nom - P_amb); % [s]
