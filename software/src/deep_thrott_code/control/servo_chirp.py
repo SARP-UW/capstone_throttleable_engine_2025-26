@@ -17,6 +17,8 @@ TX_ENABLE_PIN = 18
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
+time.sleep(3)
+
 # Parameters
 T = 10.0             # Total time in seconds
 fs = 1000           # Sampling frequency (Hz)
