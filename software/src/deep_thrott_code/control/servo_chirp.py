@@ -101,7 +101,7 @@ def read_response(packet_length, expected_length):
 
 # get valve id
 print(f"GPIO mode: {GPIO.getmode()}")
-print(f"GPIO function of pin {TX_ENABLE_PIN}: {GPIO.gpiofunction(TX_ENABLE_PIN)}")
+print(f"GPIO function of pin {TX_ENABLE_PIN}: {GPIO.gpio_function(TX_ENABLE_PIN)}")
 print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
