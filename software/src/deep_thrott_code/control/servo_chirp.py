@@ -70,17 +70,18 @@ def build_packet(uart_id, cmd, params=[]):
 def send_packet(packet):
     # pull low to say "i'm bouta transmit"
     GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
-    print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
+    print("Pulled pin low")
     ser.write(packet)
     ser.flush()
 
     # wait for all bits to clock out of the shift register at 115200 baud
     # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-    time.sleep(len(packet) * 10 / 115200 + 0.0002)
+    # time.sleep(len(packet) * 10 / 115200 + 0.0002)
+    time.sleep(3)
 
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
-    print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
+    print("Pulled pin high")
 
 
 def read_response(packet_length, expected_length):

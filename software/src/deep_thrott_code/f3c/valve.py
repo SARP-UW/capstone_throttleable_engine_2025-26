@@ -145,7 +145,6 @@ class ThrottleValve(Valve):
     def send_packet(self, packet):
         # pull low to say "i'm bouta transmit"
         GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
-        print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
         self.ser.write(packet)
         self.ser.flush()
 
@@ -155,7 +154,6 @@ class ThrottleValve(Valve):
 
         # pull high to say "i'm done transmitting yo"
         GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
-        print(f"TX enable pin state: {GPIO.input(TX_ENABLE_PIN)}")
         return len(packet)
 
     def read_response(self, packet_length, expected_length):
