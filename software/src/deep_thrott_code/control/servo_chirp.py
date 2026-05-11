@@ -1,4 +1,5 @@
 import numpy as np
+from debugpy._vendored.pydevd._pydevd_bundle import pydevd_io
 from scipy.signal import chirp
 import matplotlib.pyplot as plt
 import serial
@@ -99,6 +100,8 @@ def read_response(packet_length, expected_length):
     return serial_response
 
 # get valve id
+print(f"GPIO mode: {GPIO.getmode()}")
+print(f"GPIO function of pin {TX_ENABLE_PIN}: {GPIO.gpio.function(TX_ENABLE_PIN)}")
 print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
