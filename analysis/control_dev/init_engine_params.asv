@@ -140,7 +140,7 @@ mdot_f_min_cstar_match = mdot_min_cstar_match / (1 + OF); % [kg/s] 85% throttle 
 mdot_ox_min_cstar_match = mdot_min_cstar_match * OF / (1 + OF); % [kg/s] 85% throttle mdot_ox
 
 % Add small damping/leak term to reduce chamber stiffness
-k_d_chamb = 0.00005*mdot_nom_cstar_match/(P_c_nom - P_amb); % [s]
+k_d_chamb = 0.0005*mdot_nom_cstar_match/(P_c_nom - P_amb); % [s]
 
 % CdA if valve dP is 17 psi
 % NOTE: 17 psi is margin between P_1_ox (ox feed pressure) and P_c_nom +
@@ -159,11 +159,7 @@ DeltaP_inj_ox_min = mdot_ox_min_cstar_match^2 / (2 * Cd_inj_ox_cstar_match^2 * A
 DeltaP_inj_f_min = mdot_f_min_cstar_match^2 / (2 * Cd_inj_f_cstar_match^2 * A_inj_f^2 * rho_f) / psi_to_Pa;
 
 % Predict P_2 at min throttle
-P_2_predict_min_throttle = P_c_min /psi_to_Pa + DeltaP_inj_ox_min;
-dP_v_predict_min_throttle = P_1_ox / psi_to_Pa - P_2_predict_min_throttle;
+P_2_predict_min_throttle = P_c_min /psi_to_Pa + DeltaP_inj_ox_min
+dP_v_predict_min_throttle = P_1_ox / psi_to_Pa - P_2_predict_min_throttle
 
 % CdA if valve dP is 125 psi = dP_v_predict_min_throttle
-CdA_v_min_125_psi = mdot_ox_min_cstar_match / sqrt(2 * rho_ox * dP_v_predict_min_throttle);
-% this is higher than for mdot_nom. this is not quite right.
-
-P_1_ox_psi = P_1_ox / psi_to_Pa;
