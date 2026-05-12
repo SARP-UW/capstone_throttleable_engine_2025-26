@@ -16,8 +16,22 @@ TX_ENABLE_PIN = 18
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+print("GPIO setup complete.")
 
-time.sleep(3)
+time.sleep(10)
+
+GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+print("Pin 18 high.")
+
+time.sleep(10)
+
+GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
+print("Pin 18 low.")
+
+time.sleep(10)
+
+GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+print("Pin 18 high.")
 
 # Parameters
 T = 10.0             # Total time in seconds
