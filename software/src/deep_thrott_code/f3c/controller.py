@@ -12,6 +12,9 @@ import serial
 
 computer_sim = True
 
+if not computer_sim:
+    import RPi.GPIO as GPIO
+
 class State(Enum):
     IDLE = "idle"
     FILL = "fill"
@@ -84,8 +87,15 @@ class Controller:
         self.actuator_list = self._build_actuator_list(self.hardware_config_file)
         print(f"Initialization complete.")
 
+        # bools to track whether sequences have been executed to prevent repeating sequences
         self.fill_executed = False
         self.fire_executed = False
+
+        # setup tx_enable pin if running on rasp pi
+        if not computer_sim:
+            TX_ENABLE_PIN = 18
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"

@@ -13,7 +13,7 @@ import threading
 # single valve actuation test
 
 if GPIO_AVAILABLE:
-    pin = 21
+    pin = 2
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
