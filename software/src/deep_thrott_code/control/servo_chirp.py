@@ -131,3 +131,5 @@ def read_response(packet_length, expected_length):
 # GPIO.cleanup()
 
 ser.write(0x55)
+
+GPIO.cleanup()
