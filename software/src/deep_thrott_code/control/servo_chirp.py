@@ -48,13 +48,13 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=1.0)
-# ser.close()
+ser.close()
 time.sleep(0.5)
-# ser.open()
+ser.open()
 #
-# ser.reset_input_buffer()
-# ser.reset_output_buffer()
-# time.sleep(0.1)
+ser.reset_input_buffer()
+ser.reset_output_buffer()
+time.sleep(0.1)
 
 
 # define uart helper functions
@@ -72,11 +72,12 @@ def send_packet(packet):
     GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
     print("Pulled pin low")
     ser.write(packet)
-    # ser.flush()
+    ser.flush()    # waits for entire packet to be written
+
 
     # wait for all bits to clock out of the shift register at 115200 baud
     # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-    time.sleep(len(packet) * 10 / 115200 + 0.002)
+    # time.sleep(len(packet) * 10 / 115200 + 0.0002)
 
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
@@ -104,7 +105,7 @@ print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
 send_packet(packet)
-time.sleep(0.05)
+time.sleep(0.1)
 print(f"Bytes waiting: {ser.in_waiting}")
 
 response = read_response(len(packet), 7)
