@@ -146,3 +146,5 @@ print("Valve angle:", test_valve.read_pos())
 time.sleep(3)
 test_valve.throttle(0, 2)
 print("Valve angle:", test_valve.read_pos())
+
+GPIO.cleanup()
