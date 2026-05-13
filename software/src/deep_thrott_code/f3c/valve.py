@@ -7,6 +7,7 @@ import serial
 try:
     import pigpio  # type: ignore
     import RPi.GPIO as GPIO
+    pi = pigpio.pi()
     GPIO_AVAILABLE = True
 except ModuleNotFoundError:
     # Windows/dev-machine friendly stub.
@@ -145,7 +146,7 @@ class ThrottleValve(Valve):
 
     def send_packet(self, packet):
         # pull low to say "i'm bouta transmit"
-        pigpio.write(TX_ENABLE_PIN, 0)
+        pi.write(TX_ENABLE_PIN, 0)
         self.ser.write(packet)
         self.ser.flush()
 
@@ -154,7 +155,7 @@ class ThrottleValve(Valve):
         time.sleep(len(packet) * 10 / 115200 + 0.0002)
 
         # pull high to say "i'm done transmitting yo"
-        pigpio.write(TX_ENABLE_PIN, 1)
+        pi.write(TX_ENABLE_PIN, 1)
         return len(packet)
 
     def read_response(self, packet_length, expected_length):
