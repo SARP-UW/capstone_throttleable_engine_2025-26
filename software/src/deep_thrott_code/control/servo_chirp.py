@@ -99,37 +99,33 @@ def read_response(packet_length, expected_length):
         return None
     return serial_response
 
-# # get valve id
-# print("Sending valve id request...")
-# packet = build_packet(0xFE, 14)
-# print(f"Packet bytes: {list(packet)}")
-# send_packet(packet)
-# time.sleep(0.05)
-# print(f"Bytes waiting: {ser.in_waiting}")
-#
-# response = read_response(len(packet), 7)
-# print(f"Response: {response}")
-#
-# if response is None:
-#     print("No response received.")
-#     quit()
-# else:
-#     valve_id = response[5]
-#     print(f"Valve ID: {valve_id}")
-#
-# # initialize test throttle valve
-# test_valve = ThrottleValve("test_valve", True, valve_id, ser)
-#
-# # test open and close servo to 60 deg
-# test_valve.throttle(60, 2)
-# time.sleep(2)
-# print("Valve angle:", test_valve.read_pos())
-# time.sleep(3)
-# test_valve.throttle(0, 2)
-# print("Valve angle:", test_valve.read_pos())
-#
-# GPIO.cleanup()
+# get valve id
+print("Sending valve id request...")
+packet = build_packet(0xFE, 14)
+print(f"Packet bytes: {list(packet)}")
+send_packet(packet)
+time.sleep(0.05)
+print(f"Bytes waiting: {ser.in_waiting}")
 
-ser.write(0x55)
+response = read_response(len(packet), 7)
+print(f"Response: {response}")
+
+if response is None:
+    print("No response received.")
+    quit()
+else:
+    valve_id = response[5]
+    print(f"Valve ID: {valve_id}")
+
+# initialize test throttle valve
+test_valve = ThrottleValve("test_valve", True, valve_id, ser)
+
+# test open and close servo to 60 deg
+test_valve.throttle(60, 2)
+time.sleep(2)
+print("Valve angle:", test_valve.read_pos())
+time.sleep(3)
+test_valve.throttle(0, 2)
+print("Valve angle:", test_valve.read_pos())
 
 GPIO.cleanup()
