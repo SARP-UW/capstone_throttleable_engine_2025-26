@@ -18,21 +18,6 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 print("GPIO setup complete.")
 
-time.sleep(10)
-
-GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
-print("Pin 18 high.")
-
-time.sleep(10)
-
-GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
-print("Pin 18 low.")
-
-time.sleep(10)
-
-GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
-print("Pin 18 high.")
-
 # Parameters
 T = 10.0             # Total time in seconds
 fs = 1000           # Sampling frequency (Hz)
@@ -63,13 +48,13 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=1.0)
-ser.close()
+# ser.close()
 time.sleep(0.5)
-ser.open()
-
-ser.reset_input_buffer()
-ser.reset_output_buffer()
-time.sleep(0.1)
+# ser.open()
+#
+# ser.reset_input_buffer()
+# ser.reset_output_buffer()
+# time.sleep(0.1)
 
 
 # define uart helper functions
@@ -82,18 +67,16 @@ def build_packet(uart_id, cmd, params=[]):
     chk = _checksum(uart_id, length, cmd, params)
     return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
 
-
 def send_packet(packet):
     # pull low to say "i'm bouta transmit"
     GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
     print("Pulled pin low")
     ser.write(packet)
-    ser.flush()
+    # ser.flush()
 
     # wait for all bits to clock out of the shift register at 115200 baud
     # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-    # time.sleep(len(packet) * 10 / 115200 + 0.0002)
-    time.sleep(3)
+    time.sleep(len(packet) * 10 / 115200 + 0.0002)
 
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
@@ -102,11 +85,11 @@ def send_packet(packet):
 
 def read_response(packet_length, expected_length):
     # get rid of echo with a shorter timeout
-    old_timeout = ser.timeout
-    ser.timeout = 0.02
+    # old_timeout = ser.timeout
+    # ser.timeout = 0.02
     echo = ser.read(packet_length)
     print(f"Echo bytes: {list(echo)}")
-    ser.timeout = old_timeout
+    # ser.timeout = old_timeout
 
     # get actual response
     serial_response = ser.read(expected_length)
@@ -116,35 +99,35 @@ def read_response(packet_length, expected_length):
         return None
     return serial_response
 
-# get valve id
-print(f"GPIO mode: {GPIO.getmode()}")
-print(f"GPIO function of pin {TX_ENABLE_PIN}: {GPIO.gpio_function(TX_ENABLE_PIN)}")
-print("Sending valve id request...")
-packet = build_packet(0xFE, 14)
-print(f"Packet bytes: {list(packet)}")
-send_packet(packet)
-time.sleep(0.05)
-print(f"Bytes waiting: {ser.in_waiting}")
+# # get valve id
+# print("Sending valve id request...")
+# packet = build_packet(0xFE, 14)
+# print(f"Packet bytes: {list(packet)}")
+# send_packet(packet)
+# time.sleep(0.05)
+# print(f"Bytes waiting: {ser.in_waiting}")
+#
+# response = read_response(len(packet), 7)
+# print(f"Response: {response}")
+#
+# if response is None:
+#     print("No response received.")
+#     quit()
+# else:
+#     valve_id = response[5]
+#     print(f"Valve ID: {valve_id}")
+#
+# # initialize test throttle valve
+# test_valve = ThrottleValve("test_valve", True, valve_id, ser)
+#
+# # test open and close servo to 60 deg
+# test_valve.throttle(60, 2)
+# time.sleep(2)
+# print("Valve angle:", test_valve.read_pos())
+# time.sleep(3)
+# test_valve.throttle(0, 2)
+# print("Valve angle:", test_valve.read_pos())
+#
+# GPIO.cleanup()
 
-response = read_response(len(packet), 7)
-print(f"Response: {response}")
-
-if response is None:
-    print("No response received.")
-    quit()
-else:
-    valve_id = response[5]
-    print(f"Valve ID: {valve_id}")
-
-# initialize test throttle valve
-test_valve = ThrottleValve("test_valve", True, valve_id, ser)
-
-# test open and close servo to 60 deg
-test_valve.throttle(60, 2)
-time.sleep(2)
-print("Valve angle:", test_valve.read_pos())
-time.sleep(3)
-test_valve.throttle(0, 2)
-print("Valve angle:", test_valve.read_pos())
-
-GPIO.cleanup()
+ser.write(0x55)
