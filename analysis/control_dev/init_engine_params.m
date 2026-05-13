@@ -115,16 +115,16 @@ theta_bp = [ ...
     80
     90 ];
 CdA_table = [ ...
-    4.4e-6      % 0 deg
-    5.4e-6      % 10 deg
-    6.4e-6      % 20 deg
-    7.3e-6      % 30 deg
-    8.4e-6      % 40 deg
-    9.4e-6      % 50 deg
-    1.04e-5      % 60 deg
-    1.14e-5      % 70 deg
-    1.24e-5      % 80 deg
-    1.34e-5 ];   % 90 deg
+    1.5e-6      % 0 deg
+    1.6e-6      % 10 deg
+    1.7e-6      % 20 deg
+    1.8e-6      % 30 deg
+    1.9e-6      % 40 deg
+    2.0e-6      % 50 deg
+    2.1e-6      % 60 deg
+    2.2e-6      % 70 deg
+    2.3e-6      % 80 deg
+    2.4e-6 ];   % 90 deg
 
 % Tiny epsilon for smoothing piecewise functions, no sharp clamps that ruin
 % algebraic loops
