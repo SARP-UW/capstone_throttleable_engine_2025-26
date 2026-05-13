@@ -1,7 +1,7 @@
 import numpy as np
 # from debugpy._vendored.pydevd._pydevd_bundle import pydevd_io
 from scipy.signal import chirp
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import serial
 import time
 
