@@ -16,7 +16,7 @@ from f3c.valve import ThrottleValve
 TX_ENABLE_PIN = 18
 
 # TX_ENABLE pin setup
-pi.setmode(18, pigpio.OUTPUT)
+pi.set_mode(18, pigpio.OUTPUT)
 pi.write(18, 1)
 print("GPIO setup complete.")
 
