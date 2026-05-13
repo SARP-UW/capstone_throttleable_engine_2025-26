@@ -48,9 +48,9 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=1.0)
-ser.close()
-time.sleep(0.5)
-ser.open()
+# ser.close()
+# time.sleep(0.5)
+# ser.open()
 #
 ser.reset_input_buffer()
 ser.reset_output_buffer()
