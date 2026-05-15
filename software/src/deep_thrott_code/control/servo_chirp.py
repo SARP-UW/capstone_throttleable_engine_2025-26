@@ -72,12 +72,12 @@ def send_packet(packet):
     GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
     print("Pulled pin low")
     ser.write(packet)
-    ser.flush()    # waits for entire packet to be written
+    # ser.flush()    # waits for entire packet to be written
 
 
     # wait for all bits to clock out of the shift register at 115200 baud
     # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-    time.sleep(len(packet) * 10 / 115200 + 0.0002)
+    time.sleep(len(packet) * 10 / 115200 + 0.0005)
 
     # pull high to say "i'm done transmitting yo"
     GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
