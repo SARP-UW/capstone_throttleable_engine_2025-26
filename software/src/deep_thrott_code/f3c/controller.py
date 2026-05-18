@@ -12,6 +12,9 @@ import os
 
 computer_sim = True
 
+if not computer_sim:
+    import RPi.GPIO as GPIO
+
 class State(Enum):
     IDLE = "idle"
     FILL = "fill"
@@ -84,8 +87,15 @@ class Controller:
         self.actuator_list = self._build_actuator_list(self.hardware_config_file)
         print(f"Initialization complete.")
 
+        # bools to track whether sequences have been executed to prevent repeating sequences
         self.fill_executed = False
         self.fire_executed = False
+
+        # setup tx_enable pin if running on rasp pi
+        if not computer_sim:
+            TX_ENABLE_PIN = 18
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"
@@ -229,7 +239,6 @@ class Controller:
                 
                 # single valve actuation
                 if cmd_type == "set_valve":
-                    print("Single valve actuation branch in start() reached")
                     valve_id = gui_input.get("valve_id")
                     state = gui_input.get("state") or gui_input.get("valve_state")
                     if isinstance(valve_id, str) and isinstance(state, str):
@@ -258,6 +267,7 @@ class Controller:
                 
                 # fill and fire sequences
                 elif cmd_type in (State.FILL.value, State.FIRE.value):
+                    print(f"Executing sequence {cmd_type}...")
                     self._execute_action(cmd_type)
                     self._command_queue.task_done()
             try:
@@ -269,8 +279,7 @@ class Controller:
     def loop_forever(self) -> None:
         self.start()
 
-    # records a step in a sequence or a single valve actuation/pulse
-    # TODO: ask elyse how to format this for single valve actuation/pulse
+    # records a step in a sequence
     def _record_history(self, *, sequence: str, step_index: int, status: str,
         valve_id: str | None = None, action: str | None = None, dt: float | None = None):
         with self._lock:
@@ -293,14 +302,15 @@ class Controller:
         Method for executing any type of action.
         Args:
             action (str): action to execute, comes from GUI
-            valve_id (int): valve id of the valve for single valve actuation, None by default
+            valve_id (str): valve id of the valve for single valve actuation, None by default
             valve_state (ValveState): valve state of the valve for single valve actuation, None by default
+            dt (float): time delta for pulse valve, None by default
         """
         
         #if trying to fill or fire
         if action in (State.FILL.value, State.FIRE.value):
             # run helper method in its own thread
-            threading.Thread(target=self._execute_sequence, args=(action,)).start()
+            threading.Thread(target=self._execute_sequence, args=action).start()
 
         # if performing single valve actuation or pulse
         if action in (self.single_valve_actuation, self.pulse):
@@ -343,7 +353,6 @@ class Controller:
                 for idx, step in enumerate(current_sequence.get("steps")):
 
                     # check state at each step to catch aborts
-                    # TODO: change this to thread interrupt or maybe keep but do both
                     with self._lock:
                         current_state = self.state
                     if current_state == sequence_state:
@@ -393,13 +402,13 @@ class Controller:
                             elif act == "closed":
                                 valve_goal_state = ValveState.CLOSED
                             else:
-                                # Unknown action, skip or default to CLOSED
+                                # TODO: error handling for unknown action, skip or default to CLOSED
                                 continue
 
                             # actuates valve if current valve state is different from goal state
                             if current_valve.get_state() != valve_goal_state:
                                 current_valve.set_state(valve_goal_state)
-                            # if not, stop and move on to next step
+                            # if not, set step status back to ready and move on to next step
                             else:
                                 with self._lock:
                                     self.step_status = StepStatus.READY
@@ -425,6 +434,8 @@ class Controller:
                                         },
                                         timeout=0.1,
                                     )
+                                else:
+                                    user_input = input("Manual step required. Perform the required checks, then click Enter to continue.")
 
                                 # Block until matching acknowledgement arrives
                                 while True:
@@ -453,18 +464,16 @@ class Controller:
                     else:
                         fire_executed = True
         else:
-            # TO DO: send to gui "invalid state transition"
+            # TODO: send to gui "invalid state transition"
             pass
 
-    def _execute_single_valve_actuation(self, valve: Valve, valve_state: ValveState):
+    @staticmethod
+    def _execute_single_valve_actuation(valve: Valve, valve_state: ValveState):
         valve.set_state(valve_state)
-		# Manual/single-valve actions aren't part of a named sequence.
-		# Record them with a sentinel sequence + step index so history stays consistent.
-        self._record_history(sequence="manual", step_index=-1, status="READY", valve_id=str(valve.valve_id), action=str(valve_state.value))
 
-    def _execute_pulse(self, valve: Valve, dt: float):
+    @staticmethod
+    def _execute_pulse(valve: Valve, dt: float):
         valve.pulse_valve(dt)
-        # TO DO: log valve actuation
     
     @staticmethod
     def _build_transitions() -> dict[tuple[State, TransitionAction], State]:

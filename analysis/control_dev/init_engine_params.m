@@ -76,5 +76,94 @@ b = 6.7e7;
 k_chamber = -b/a;
 tau_chamber = -1/a;
 
+% Feedforward  example lookup table
+P_c_ref_bp = [ ...
+           0
+      344737.85
+      689475.70
+     1034213.55
+     1378951.40
+     1723689.25
+     2068427.10
+     2413164.95
+     2757902.80
+     3102640.65
+     3447378.50 ];
+theta_ff_table = [ ...
+     0    % Pc = 0 psi
+    10    % 50 psi
+    18    % 100 psi
+    26    % 150 psi
+    34    % 200 psi
+    42    % 250 psi
+    50    % 300 psi
+    58    % 350 psi
+    66    % 400 psi
+    78    % 450 psi
+    90 ]; % 500 psi
+
+% Valve CdA Example Lookup Table
+theta_bp = [ ...
+     0
+    10
+    20
+    30
+    40
+    50
+    60
+    70
+    80
+    90 ];
+CdA_table = [ ...
+    1.5e-6      % 0 deg
+    1.6e-6      % 10 deg
+    1.7e-6      % 20 deg
+    1.8e-6      % 30 deg
+    1.9e-6      % 40 deg
+    2.0e-6      % 50 deg
+    2.1e-6      % 60 deg
+    2.2e-6      % 70 deg
+    2.3e-6      % 80 deg
+    2.4e-6 ];   % 90 deg
+
+% Tiny epsilon for smoothing piecewise functions, no sharp clamps that ruin
+% algebraic loops
+epsilon = 1e-3;
+
+% Calculate mdot_nom from cstar_nom from CEA: CEA gives the realest physics we have
+mdot_nom_cstar_match = P_c_nom*A_t / cstar_nom;
+mdot_f_nom_cstar_match = mdot_nom_cstar_match / (1 + OF); % [kg/s] nominal/max/fully open mdot_f
+mdot_ox_nom_cstar_match = mdot_nom_cstar_match * OF / (1 + OF); % [kg/s] nominal/max/fully open mdot_ox
+% Now get mdot_min from cstar_min
+mdot_min_cstar_match = P_c_min*A_t / cstar_min;
+mdot_f_min_cstar_match = mdot_min_cstar_match / (1 + OF); % [kg/s] 85% throttle mdot_f
+mdot_ox_min_cstar_match = mdot_min_cstar_match * OF / (1 + OF); % [kg/s] 85% throttle mdot_ox
+
+% Add small damping/leak term to reduce chamber stiffness
+k_d_chamb = 0.00005*mdot_nom_cstar_match/(P_c_nom - P_amb); % [s]
+
+% CdA if valve dP is 17 psi
+% NOTE: 17 psi is margin between P_1_ox (ox feed pressure) and P_c_nom +
+% DeltaP_inj
+dP_v = 17 * psi_to_Pa; 
+CdA_v_nom_17_psi = mdot_ox_nom_cstar_match / sqrt(2 * rho_ox * dP_v);
+CdA_v_min_17_psi = mdot_ox_min_cstar_match / sqrt(2 * rho_ox * dP_v); % this uses same dP_v both times, not accurate
 
 
+% Cd for injector for mdot nom cstar match
+Cd_inj_ox_cstar_match = mdot_ox_nom_cstar_match / (A_inj_ox * sqrt(2 * rho_ox * DeltaP_inj));
+Cd_inj_f_cstar_match = mdot_f_nom_cstar_match / (A_inj_f * sqrt(2 * rho_f * DeltaP_inj));
+
+% DeltaP_inj for min throttle
+DeltaP_inj_ox_min = mdot_ox_min_cstar_match^2 / (2 * Cd_inj_ox_cstar_match^2 * A_inj_ox^2 * rho_ox) / psi_to_Pa;
+DeltaP_inj_f_min = mdot_f_min_cstar_match^2 / (2 * Cd_inj_f_cstar_match^2 * A_inj_f^2 * rho_f) / psi_to_Pa;
+
+% Predict P_2 at min throttle
+P_2_predict_min_throttle = P_c_min /psi_to_Pa + DeltaP_inj_ox_min;
+dP_v_predict_min_throttle = P_1_ox / psi_to_Pa - P_2_predict_min_throttle;
+
+% CdA if valve dP is 125 psi = dP_v_predict_min_throttle
+CdA_v_min_125_psi = mdot_ox_min_cstar_match / sqrt(2 * rho_ox * dP_v_predict_min_throttle);
+% this is higher than for mdot_nom. this is not quite right.
+
+P_1_ox_psi = P_1_ox / psi_to_Pa;
