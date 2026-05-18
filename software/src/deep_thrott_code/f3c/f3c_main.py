@@ -12,18 +12,6 @@ import threading
 
 # single valve actuation test
 
-<<<<<<< Updated upstream
-if GPIO_AVAILABLE:
-    pin = 2
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
-=======
-# if GPIO_AVAILABLE:
-#     pin = 21
-#     GPIO.setmode(GPIO.BCM)
-#     GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
->>>>>>> Stashed changes
-
 test_command_queue = Queue()
 test_ack_queue = Queue()
 
