@@ -23,7 +23,7 @@ class GuiCommandHandler:
 		*,
 		control_queue: queue.Queue,
 		emit_system: Callable[[str], None],
-		start_log: Callable[[bool], None],
+		start_log: Callable[[bool, str | None], None],
 		stop_log: Callable[[], None],
 		is_running: Callable[[], bool],
 	) -> None:
@@ -36,6 +36,8 @@ class GuiCommandHandler:
 		self._lock = threading.Lock()
 		# "Simulation Mode" is a latched setting that applies to the next Start Log.
 		self._simulation_enabled = True
+		# "Test" is a latched setting that applies to the next Start Log.
+		self._test_name: str | None = "hotfire"
 
 	def _emit(self, text: str) -> None:
 		try:
@@ -59,6 +61,26 @@ class GuiCommandHandler:
 		else:
 			self._emit(f"Simulation Mode set to {'ON' if enabled_bool else 'OFF'}.")
 
+	def set_test_name(self, test_name: str | None) -> None:
+		"""Update test selection.
+
+		If DAQ is running, this only affects the *next* `start_log`.
+		"""
+
+		normalized = str(test_name or "").strip().lower()
+		if normalized not in {"hotfire", "injector cold flow"}:
+			self._emit(f"Ignored unknown test: {test_name}")
+			return
+
+		with self._lock:
+			self._test_name = normalized
+			running = self._is_running()
+
+		if running:
+			self._emit("Test updated; takes effect next Start Log.")
+		else:
+			self._emit(f"Test set to {normalized}.")
+
 	def command_loop_forever(self) -> None:
 		"""Consume `control_queue` messages forever.
 
@@ -75,10 +97,13 @@ class GuiCommandHandler:
 				name = payload.get("name")
 				if name == "set_simulation":
 					self.set_simulation_enabled(bool(payload.get("enabled")))
+				elif name == "set_test":
+					self.set_test_name(payload.get("test"))
 				elif name == "start_log":
 					with self._lock:
 						simulation = bool(self._simulation_enabled)
-					self._start_log(simulation)
+						test_name = self._test_name
+					self._start_log(simulation, test_name)
 				elif name == "stop_log":
 					self._stop_log()
 				else:

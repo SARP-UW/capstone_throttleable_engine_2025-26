@@ -200,7 +200,7 @@ sensors:
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100
-        notes: "Placeholder injector cold flow PT #1"
+        notes: "Injector cold flow PT #1"
 
       IC-PT2:
         enabled: false
@@ -208,7 +208,7 @@ sensors:
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100
-        notes: "Placeholder injector cold flow PT #2"
+        notes: "Injector cold flow PT #2"
 
       IC-PT3:
         enabled: false
@@ -216,7 +216,7 @@ sensors:
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100
-        notes: "Placeholder injector cold flow PT #3"
+        notes: "Injector cold flow PT #3"
 
       IC-PT4:
         enabled: false
@@ -224,7 +224,7 @@ sensors:
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100
-        notes: "Placeholder injector cold flow PT #4"
+        notes: "Injector cold flow PT #4"
 
       IC-PT5:
         enabled: false
@@ -232,7 +232,7 @@ sensors:
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100
-        notes: "Placeholder injector cold flow PT #5"
+        notes: "Injector cold flow PT #5"
 
       IC-PT6:
         enabled: false
@@ -240,7 +240,7 @@ sensors:
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100
-        notes: "Placeholder injector cold flow PT #6"
+        notes: "Injector cold flow PT #6"
     
 
 actuators:

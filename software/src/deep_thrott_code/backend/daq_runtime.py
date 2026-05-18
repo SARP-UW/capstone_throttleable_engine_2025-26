@@ -73,7 +73,7 @@ class DaqRuntime:
 		with self._lock:
 			return bool(self._running)
 
-	def start(self, simulation: bool) -> None:
+	def start(self, simulation: bool, test_name: str | None = None) -> None:
 		"""Start DAQ threads and begin emitting samples to `gui_queue`."""
 
 		from deep_thrott_code.daq.services.loop import consumer_loop, producer_loop  # noqa: PLC0415
@@ -87,7 +87,7 @@ class DaqRuntime:
 				return
 
 		try:
-			sensors = build_sensors(simulation=bool(simulation))
+			sensors = build_sensors(simulation=bool(simulation), test_name=test_name)
 		except Exception as e:
 			self._emit_system(str(e))
 			return

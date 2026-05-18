@@ -856,12 +856,6 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 return default
 
-        alias_by_sensor_id = {
-            # Keep these names matching the GUI defaults/bindings.
-            "CC-PT": "chamber_pressure",
-            "FI-PT": "injector_pressure",
-        }
-
         sensors: list[Sensor] = []
         for sensor_id, cfg in pt_cfg.items():
             if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
@@ -877,7 +871,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 raise RuntimeError(f"Pressure transducer {sensor_id} is enabled but has no 'ain' set")
 
             v_min, v_max, p_min, p_max = _pt_calibration(sensor_id)
-            name = alias_by_sensor_id.get(sensor_id, sensor_id)
+            name = sensor_id
 
             sensors.append(
                 PressureTransducerSensor(
@@ -956,14 +950,14 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
     return [
         SimulatedPressureSensor(
-            name="chamber_pressure",
+            name="CC-PT",
             offset=200.0,
             amplitude=20.0,
             frequency_hz=0.2,
             seed=0,
         ),
         SimulatedPressureSensor(
-            name="injector_pressure",
+            name="FI-PT",
             offset=300.0,
             amplitude=10.0,
             frequency_hz=0.1,
