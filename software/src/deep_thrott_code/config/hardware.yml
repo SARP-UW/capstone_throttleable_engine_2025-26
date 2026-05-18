@@ -32,188 +32,273 @@ adcs:
     notes: "ADC #3"
 
 sensors:
-  pressure_transducers:
-    LF-PT:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      pt_num: 1
-      ain: 1
-      sampling_rate_hz: 100
-      notes: "L Fuel pressure transducer"
+  hotfire:
+    pressure_transducers:
+      LF-PT:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        pt_num: 1
+        ain: 1
+        sampling_rate_hz: 100
+        notes: "L Fuel pressure transducer"
 
-    FT-PT:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: 0
-      pt_num: 2
-      sampling_rate_hz: 100
-      notes: "Fuel tank pressure transducer"
+      FT-PT:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: 0
+        pt_num: 2
+        sampling_rate_hz: 100
+        notes: "Fuel tank pressure transducer"
 
-    FM-PT:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: 11
-      pt_num: 3
-      sampling_rate_hz: 100
-      notes: "Fuel main pressure transducer"
+      FM-PT:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: 11
+        pt_num: 3
+        sampling_rate_hz: 100
+        notes: "Fuel main pressure transducer"
 
-    FI-PT:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: 10
-      pt_num: 4
-      sampling_rate_hz: 100
-      notes: "Fuel injector pressure transducer"
+      FI-PT:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: 10
+        pt_num: 4
+        sampling_rate_hz: 100
+        notes: "Fuel injector pressure transducer"
 
-    WM-PT:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: 9
-      pt_num: 5
-      sampling_rate_hz: 100
-      notes: "Water main pressure transducer"
+      WM-PT:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: 9
+        pt_num: 5
+        sampling_rate_hz: 100
+        notes: "Water main pressure transducer"
 
-    CC-PT:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: 8
-      pt_num: 6
-      sampling_rate_hz: 100
-      notes: "Combustion chamber pressure transducer"
-    
-    XF-PT:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: single_ended
-      ain: 1
-      pt_num: 7
-      sampling_rate_hz: 100
-      notes: "XF pressure transducer"
+      CC-PT:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: 8
+        pt_num: 6
+        sampling_rate_hz: 100
+        notes: "Combustion chamber pressure transducer"
 
-    OT-PT:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: single_ended
-      ain: 0
-      pt_num: 8
-      sampling_rate_hz: 100
-      notes: "Ox tank pressure transducer"
+      XF-PT:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: single_ended
+        ain: 1
+        pt_num: 7
+        sampling_rate_hz: 100
+        notes: "XF pressure transducer"
 
-    OF-PT:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: single_ended
-      ain: 11
-      pt_num: 9
-      sampling_rate_hz: 100
-      notes: "Ox fill pressure transducer"
-    
-    OM-PT:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: single_ended
-      ain: 10
-      pt_num: 10
-      sampling_rate_hz: 100
-      notes: "Ox main pressure transducer"
+      OT-PT:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: single_ended
+        ain: 0
+        pt_num: 8
+        sampling_rate_hz: 100
+        notes: "Ox tank pressure transducer"
 
-    OI-PT:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: single_ended
-      ain: 9
-      pt_num: 11
-      sampling_rate_hz: 100
-      notes: "Ox injector pressure transducer"
-  
+      OF-PT:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: single_ended
+        ain: 11
+        pt_num: 9
+        sampling_rate_hz: 100
+        notes: "Ox fill pressure transducer"
 
-  resistive temperature detectors:
-    WI-RTD:
-      enabled: true
-      adc_id: ADC1
-      signal_mode: rtd_3_wire
-      lead1_ain: 4
-      lead2_ain: 2
-      idac1_ain: 5
-      idac2_ain: 3
-      sampling_rate_hz: 10
-      notes: "Water inlet RTD"
-    
-    WO-RTD:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: rtd_3_wire
-      lead1_ain: 4
-      lead2_ain: 2
-      idac1_ain: 5
-      idac2_ain: 3
-      sampling_rate_hz: 10
-      notes: "Water outlet RTD"
-    
-  load cells:
-    E-LC:
-      enabled: true
-      adc_id: ADC1
-      signal_mode: differential
-      ain_pos: null
-      ain_neg: null
-      sampling_rate_hz: 100
-      notes: "Engine thrust load cell"
+      OM-PT:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: single_ended
+        ain: 10
+        pt_num: 10
+        sampling_rate_hz: 100
+        notes: "Ox main pressure transducer"
 
-    N-LC:
-      enabled: true
-      adc_id: ADC2
-      signal_mode: differential
-      ain_pos: null
-      ain_neg: null
-      sampling_rate_hz: 100
-      notes: "Nitrous load cell"
-    
-  flow meters:
-    FM-FM:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: 8
-      sampling_rate_hz: 100
-      notes: "Fuel main flow meter"
+      OI-PT:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: single_ended
+        ain: 9
+        pt_num: 11
+        sampling_rate_hz: 100
+        notes: "Ox injector pressure transducer"
 
-    OM-FM:
-      enabled: true
-      adc_id: ADC3
-      signal_mode: single_ended
-      ain: null
-      sampling_rate_hz: 100
-      notes: "Oxidizer main flow meter"
+    resistive temperature detectors:
+      WI-RTD:
+        enabled: true
+        adc_id: ADC1
+        signal_mode: rtd_3_wire
+        lead1_ain: 4
+        lead2_ain: 2
+        idac1_ain: 5
+        idac2_ain: 3
+        sampling_rate_hz: 10
+        notes: "Water inlet RTD"
+
+      WO-RTD:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: rtd_3_wire
+        lead1_ain: 4
+        lead2_ain: 2
+        idac1_ain: 5
+        idac2_ain: 3
+        sampling_rate_hz: 10
+        notes: "Water outlet RTD"
+
+    load cells:
+      E-LC:
+        enabled: true
+        adc_id: ADC1
+        signal_mode: differential
+        ain_pos: null
+        ain_neg: null
+        sampling_rate_hz: 100
+        notes: "Engine thrust load cell"
+
+      N-LC:
+        enabled: true
+        adc_id: ADC2
+        signal_mode: differential
+        ain_pos: null
+        ain_neg: null
+        sampling_rate_hz: 100
+        notes: "Nitrous load cell"
+
+    flow meters:
+      FM-FM:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: 8
+        sampling_rate_hz: 100
+        notes: "Fuel main flow meter"
+
+      OM-FM:
+        enabled: true
+        adc_id: ADC3
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Oxidizer main flow meter"
+
+  injector cold flow:
+    pressure_transducers:
+      IC-PT1:
+        enabled: false
+        adc_id: null
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Placeholder injector cold flow PT #1"
+
+      IC-PT2:
+        enabled: false
+        adc_id: null
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Placeholder injector cold flow PT #2"
+
+      IC-PT3:
+        enabled: false
+        adc_id: null
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Placeholder injector cold flow PT #3"
+
+      IC-PT4:
+        enabled: false
+        adc_id: null
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Placeholder injector cold flow PT #4"
+
+      IC-PT5:
+        enabled: false
+        adc_id: null
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Placeholder injector cold flow PT #5"
+
+      IC-PT6:
+        enabled: false
+        adc_id: null
+        signal_mode: single_ended
+        ain: null
+        sampling_rate_hz: 100
+        notes: "Placeholder injector cold flow PT #6"
     
 
 actuators:
   valves:
+    wmv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Water main valve"
+
     ftvv:
       enabled: true
       mode: on_off
-      pin: 23
-      normally_closed: false
+      pin: null
+      active_high: false
       notes: "Fuel tank vent valve"
 
     fmv:
       enabled: true
       mode: on_off
-      pin: 17
-      normally_closed: true
+      pin: null
+      active_high: true
       notes: "Fuel main valve"
+
+    fmctv:
+      enabled: true
+      mode: throttle
+      pin: null
+      active_high: true
+      notes: "Fuel main control/throttle valve"
+
+    fifv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Fuel igniter flow valve"
+
+    lffv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Pressurant fuel filling flow valve"
+
+    xffv:
+      enabled: true
+      mode: on_off
+      pin: null
+      active_high: true
+      notes: "Pressurant oxidizer filling flow valve"
 
     offv:
       enabled: true
       mode: on_off
-      pin: 4
-      normally_closed: true
+      pin: null
+      active_high: true
       notes: "Oxidizer filling flow valve"
 
     omv:
