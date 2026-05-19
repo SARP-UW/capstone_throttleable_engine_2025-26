@@ -291,7 +291,7 @@ def register_socket_handlers(
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
 				return
 			try:
-				command_queue.put(name, timeout=0.1)
+				command_queue.put({"type": name}, timeout=0.1)
 			except Exception:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return
