@@ -315,19 +315,12 @@ actuators:
       normally_closed: true
       notes: "Oxidizer main valve"
 
-    omctv:
-      enabled: true
-      mode: throttle
-      pin: null
-      normally_closed: true
-      notes: "Oxidizer main control/throttle valve"
-
-    oifv:
-      enabled: true
-      mode: on_off
-      pin: null
-      normally_closed: true
-      notes: "Oxidizer igniter flow valve (ASI branch)"
+    # omctv:
+    #   enabled: true
+    #   mode: throttle
+    #   pin: null
+    #   normally_closed: true
+    #   notes: "Oxidizer main control/throttle valve"
 
     otvv:
       enabled: true
