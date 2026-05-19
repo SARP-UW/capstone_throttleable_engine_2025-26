@@ -1012,25 +1012,42 @@
     })();
   </script>
   <script>
-    const pidCanvas = document.getElementById('pidCanvasEthanol');
-    const pidStage = document.getElementById('pidStageEthanol');
+    const pidStages = {
+      ethanol: {
+        stage: document.getElementById('pidStageEthanol'),
+        canvas: document.getElementById('pidCanvasEthanol'),
+      },
+      nitrous: {
+        stage: document.getElementById('pidStageNitrous'),
+        canvas: document.getElementById('pidCanvasNitrous'),
+      },
+    };
 
-    let scale = 1;
+    // Fit target dimensions (used by the existing Ethanol layout).
+    const PID_FIT_W = 1700;
+    const PID_FIT_H = 664;
 
-    function applyScale() {
-      pidCanvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    let activeTab = 'ethanol';
+
+    function applyScaleFor(tabName, scale) {
+      const entry = pidStages[tabName];
+      if (!entry || !entry.canvas) return;
+      entry.canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
 
     function fitCanvasToPanel() {
-      if (!pidStage || pidStage.classList.contains('hidden')) return;
-      const stageWidth = pidStage.clientWidth - 24;
-      const stageHeight = pidStage.clientHeight - 24;
-      const fitScale = Math.min(stageWidth / 1700, stageHeight / 664);
-      scale = Math.min(fitScale, 1);
-      applyScale();
+      const entry = pidStages[activeTab];
+      if (!entry || !entry.stage || !entry.canvas) return;
+      if (entry.stage.classList.contains('hidden')) return;
+      const stageWidth = entry.stage.clientWidth - 24;
+      const stageHeight = entry.stage.clientHeight - 24;
+      const fitScale = Math.min(stageWidth / PID_FIT_W, stageHeight / PID_FIT_H);
+      const scale = Math.min(fitScale, 1);
+      applyScaleFor(activeTab, scale);
     }
 
     function setActiveTab(tabName) {
+      activeTab = tabName;
       document.querySelectorAll('.tab[data-tab]').forEach((t) => {
         t.classList.toggle('active', t.dataset.tab === tabName);
       });
