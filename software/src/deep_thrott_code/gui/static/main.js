@@ -235,6 +235,11 @@
 		{ sensorName: 'FT-PT', elementId: 'sensor-FT-PT' },
 		{ sensorName: 'FM-PT', elementId: 'sensor-FM-PT' },
 		{ sensorName: 'WM-PT', elementId: 'sensor-WM-PT' },
+		{ sensorName: 'XF-PT', elementId: 'sensor-XF-PT' },
+		{ sensorName: 'OT-PT', elementId: 'sensor-OT-PT' },
+		{ sensorName: 'OF-PT', elementId: 'sensor-OF-PT' },
+		{ sensorName: 'OM-PT', elementId: 'sensor-OM-PT' },
+		{ sensorName: 'OI-PT', elementId: 'sensor-OI-PT' },
 	];
 
 	const valveStateByName = new Map(); // valveName -> 'open' | 'closed'
