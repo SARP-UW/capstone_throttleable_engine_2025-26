@@ -12,6 +12,7 @@
 	let socketRef = null;
 	let telemetryFrozen = false;
 	let simulationEnabled = true;
+	let selectedTest = 'hotfire';
 	let sequenceDefs = null;
 	let systemSnapshot = null;
 	let pendingSequenceCommand = null; // 'fill' | 'fire' | null
@@ -177,6 +178,27 @@
 		return true;
 	}
 
+	function getSavedSelectedTest() {
+		const raw = String(localStorage.getItem('selectedTest') || '').trim();
+		if (raw === 'hotfire' || raw === 'injector cold flow') return raw;
+		return 'hotfire';
+	}
+
+	function setSelectedTest(testName) {
+		const normalized = testName === 'injector cold flow' ? 'injector cold flow' : 'hotfire';
+		selectedTest = normalized;
+		localStorage.setItem('selectedTest', selectedTest);
+		updateTestTicks(selectedTest);
+		emitGuiCommand({ name: 'set_test', test: selectedTest });
+	}
+
+	function updateTestTicks(testName) {
+		document.querySelectorAll('[data-test-tick]').forEach((el) => {
+			const key = el.getAttribute('data-test-tick');
+			el.textContent = key === testName ? '✓' : '';
+		});
+	}
+
 	function setSimulationEnabled(enabled) {
 		simulationEnabled = !!enabled;
 		localStorage.setItem('simulationEnabled', simulationEnabled ? 'true' : 'false');
@@ -199,18 +221,16 @@
 	const plotWidgets = [
 		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'thrust' },
 		{ canvasId: 'daqPlot2', selectId: 'daqSelect2', defaultSensor: 'tank_temp' },
-		{ canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'injector_pressure' },
-		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'chamber_pressure' },
+		{ canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'FI-PT' },
+		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'CC-PT' },
 		{ canvasId: 'daqPlot5', selectId: 'daqSelect5', defaultSensor: '' },
 		{ canvasId: 'daqPlot6', selectId: 'daqSelect6', defaultSensor: '' },
 	];
 
 	const bindings = [
-		// Keep these two tied to the simulated snapshot keys.
-		{ sensorName: 'chamber_pressure', elementId: 'sensor-CC-PT' },
-		{ sensorName: 'injector_pressure', elementId: 'sensor-FI-PT' },
-
 		// Untied PTs: expect distinct sensor names from the DAQ state store.
+		{ sensorName: 'CC-PT', elementId: 'sensor-CC-PT' },
+		{ sensorName: 'FI-PT', elementId: 'sensor-FI-PT' },
 		{ sensorName: 'LF-PT', elementId: 'sensor-LF-PT' },
 		{ sensorName: 'FT-PT', elementId: 'sensor-FT-PT' },
 		{ sensorName: 'FM-PT', elementId: 'sensor-FM-PT' },
@@ -602,6 +622,7 @@
 			setSystemMessage('System message: Connected to DAQ stream.');
 
 			emitGuiCommand({ name: 'set_simulation', enabled: simulationEnabled });
+			emitGuiCommand({ name: 'set_test', test: selectedTest });
 		});
 		socket.on('disconnect', () => {
 			setSystemMessage('System message: Disconnected from DAQ stream.');
@@ -755,6 +776,7 @@
 		const menu = document.getElementById('settingsMenu');
 		const themeSubmenu = document.getElementById('themeSubmenu');
 		const simSubmenu = document.getElementById('simulationSubmenu');
+		const testSubmenu = document.getElementById('testSubmenu');
 		if (!toggle || !menu) return;
 
 		function closeMenu() {
@@ -762,6 +784,7 @@
 			toggle.setAttribute('aria-expanded', 'false');
 			if (themeSubmenu) themeSubmenu.classList.add('hidden');
 			if (simSubmenu) simSubmenu.classList.add('hidden');
+			if (testSubmenu) testSubmenu.classList.add('hidden');
 		}
 
 		function openMenu() {
@@ -777,6 +800,7 @@
 		function showSubmenu(which) {
 			if (themeSubmenu) themeSubmenu.classList.toggle('hidden', which !== 'theme');
 			if (simSubmenu) simSubmenu.classList.toggle('hidden', which !== 'simulation');
+			if (testSubmenu) testSubmenu.classList.toggle('hidden', which !== 'test');
 		}
 
 		toggle.addEventListener('click', (e) => {
@@ -807,6 +831,13 @@
 			});
 		});
 
+		document.querySelectorAll('[data-test]').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				setSelectedTest(btn.getAttribute('data-test'));
+			});
+		});
+
 		document.addEventListener('click', closeMenu);
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') closeMenu();
@@ -815,8 +846,10 @@
 
 	window.addEventListener('load', () => {
 		simulationEnabled = getSavedSimulationEnabled();
+		selectedTest = getSavedSelectedTest();
 		applyTheme(getSavedTheme());
 		updateSimulationTicks(simulationEnabled);
+		updateTestTicks(selectedTest);
 		resetAllSensorBoxes();
 		initSettingsMenu();
 		initDaqControls();

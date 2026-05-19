@@ -2,32 +2,26 @@ from __future__ import annotations
 
 from enum import Enum
 import time
-import serial
+# import serial
 
 try:
     import RPi.GPIO as GPIO  # type: ignore
     GPIO_AVAILABLE = True
+
+    # Ensure GPIO numbering mode is configured once.
+    # We use BCM numbering, so `hardware.yml` pins should be BCM GPIO numbers.
+    try:
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+    except Exception as exc:
+        # Don't force simulation mode here; let setup/output attempts surface
+        # the real error (usually permissions) with explicit prints.
+        print(f"GPIO init (setmode BCM) failed: {exc!r}")
 except ModuleNotFoundError:
     # Windows/dev-machine friendly stub.
     # On non-Pi systems we still want to import and run the controller in
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
-
-    class _StubGPIO:  # noqa: D401
-        OUT = 0
-        HIGH = 1
-        LOW = 0
-
-        def setup(self, *_args, **_kwargs) -> None:
-            return None
-
-        def output(self, *_args, **_kwargs) -> None:
-            return None
-
-        def cleanup(self, *_args, **_kwargs) -> None:
-            return None
-
-    GPIO = _StubGPIO()  # type: ignore
 
 class ValveState(Enum):
     """
@@ -55,6 +49,12 @@ class Valve:
             except Exception:
                 # Best-effort: keep simulation runnable.
                 pass
+            except Exception as exc:
+                print(f"GPIO setup failed for valve {self.valve_id} on pin {self.pin}: {exc!r}")
+        elif self.pin is None:
+            print(f"Valve {self.valve_id}: pin is None (not wired/configured)")
+        elif not GPIO_AVAILABLE:
+            print(f"Valve {self.valve_id}: RPi.GPIO unavailable; running in simulation mode")
 
     def get_state(self) -> ValveState:
         return self.state
@@ -65,12 +65,19 @@ class Valve:
             if GPIO_AVAILABLE and self.pin is not None:
                 try:
                     if new_state == ValveState.OPEN:
-                        GPIO.output(self.pin, GPIO.HIGH if self.normally_closed else GPIO.LOW)
+                        level = GPIO.HIGH if self.normally_closed else GPIO.LOW
                     else:
-                        GPIO.output(self.pin, GPIO.LOW if self.normally_closed else GPIO.HIGH)
-                except Exception:
-                    # Best-effort: keep simulation runnable.
-                    pass
+                        level = GPIO.LOW if self.normally_closed else GPIO.HIGH
+                    GPIO.output(self.pin, level)
+                    print(
+                        f"GPIO output valve {self.valve_id} pin {self.pin} -> "
+                        f"{'HIGH' if level else 'LOW'} ({new_state.value})"
+                    )
+                except Exception as exc:
+                    print(
+                        f"GPIO output failed for valve {self.valve_id} on pin {self.pin} "
+                        f"(requested {new_state.value}): {exc!r}"
+                    )
             else:
                 # for when no rasp pi is connected, print statements instead of GPIO outputs
                 if new_state == ValveState.OPEN:
@@ -91,11 +98,11 @@ class ThrottleValve(Valve):
     """
     Class which represents a throttleable valve, inherits from Valve.
     """
-    def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
-        super().__init__(valve_id, None, normally_closed)
-        self.uart_id = uart_id
-        self.ser = ser
-        self.load_motor()
+    # def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
+    #     super().__init__(valve_id, None, normally_closed)
+    #     self.uart_id = uart_id
+    #     self.ser = ser
+    #     self.load_motor()
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):

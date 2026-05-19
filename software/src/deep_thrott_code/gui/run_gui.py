@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -37,6 +38,9 @@ def main() -> None:
         backend_socket_url=str(args.backend),
         enable_socketio=False,
     )
+
+    # Keep terminal output readable (suppress per-request logs).
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     app.run(host=str(args.host), port=int(args.port), debug=bool(args.debug), use_reloader=False)
 
