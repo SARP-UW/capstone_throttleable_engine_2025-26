@@ -618,7 +618,9 @@
 
 		const socketOpts = {
 			path: '/socket.io',
-			transports: ['websocket', 'polling'],
+			// Polling-only avoids WebSocket upgrade issues in some dev servers
+			// (e.g., Werkzeug/simple-websocket raising "write() before start_response").
+			transports: ['polling'],
 			timeout: 5000,
 		};
 		const socket = socketUrl ? window.io(socketUrl, socketOpts) : window.io(socketOpts);
