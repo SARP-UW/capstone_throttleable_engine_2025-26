@@ -17,6 +17,14 @@ calibration_profiles:
       psi_min: 0.0
       psi_max: 500.0
 
+    v_to_psi_0p5_4p5V_0_80psi:
+      units: psi
+      type: volts_to_psi
+      v_min: 0.5
+      v_max: 4.5
+      psi_min: 0.0
+      psi_max: 80.0
+
 
 calibration:
   pressure_transducers:
@@ -26,7 +34,12 @@ calibration:
     FI-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
     WM-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
     CC-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
-
+    IC-PT1: { profile: v_to_psi_0p5_4p5V_0_80psi }
+    IC-PT2: { profile: v_to_psi_0p5_4p5V_0_80psi }
+    IC-PT3: { profile: v_to_psi_0p5_4p5V_0_80psi }
+    IC-PT4: { profile: v_to_psi_0p5_4p5V_0_80psi }
+    IC-PT5: { profile: v_to_psi_0p5_4p5V_0_80psi }
+    IC-PT6: { profile: v_to_psi_0p5_4p5V_0_80psi }
 
 limits:
   pressure_transducers:

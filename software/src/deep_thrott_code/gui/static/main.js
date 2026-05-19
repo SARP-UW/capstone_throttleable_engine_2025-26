@@ -189,6 +189,7 @@
 		selectedTest = normalized;
 		localStorage.setItem('selectedTest', selectedTest);
 		updateTestTicks(selectedTest);
+		updateDaqTabModeUi();
 		emitGuiCommand({ name: 'set_test', test: selectedTest });
 	}
 
@@ -217,6 +218,80 @@
 	const MAX_POINTS = 300;
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
 	let knownSensorNames = [];
+	let _daqReadoutSig = '';
+	const _daqReadoutByName = new Map(); // sensorName -> { valueEl: HTMLElement, unitsEl: HTMLElement, boxEl: HTMLElement }
+
+	function isHotfireSelected() {
+		return selectedTest === 'hotfire';
+	}
+
+	function updateDaqTabModeUi() {
+		const plots = document.getElementById('daqPlots');
+		const readouts = document.getElementById('daqReadouts');
+		if (!plots || !readouts) return;
+		const showReadouts = !isHotfireSelected();
+		plots.classList.toggle('hidden', showReadouts);
+		readouts.classList.toggle('hidden', !showReadouts);
+	}
+
+	function renderDaqReadouts(states) {
+		const host = document.getElementById('daqReadouts');
+		if (!host) return;
+		if (!states || typeof states !== 'object') return;
+
+		const names = Object.keys(states).filter((n) => typeof n === 'string' && n).sort();
+		const sig = names.join('|');
+		if (sig !== _daqReadoutSig) {
+			_daqReadoutSig = sig;
+			_daqReadoutByName.clear();
+			host.innerHTML = '';
+
+			for (const name of names) {
+				const wrap = document.createElement('div');
+				wrap.className = 'daq-readout';
+
+				const label = document.createElement('div');
+				label.className = 'overlay-label';
+				label.textContent = name;
+				wrap.appendChild(label);
+
+				const box = document.createElement('div');
+				box.className = 'sensor-box is-placeholder';
+
+				const reading = document.createElement('div');
+				reading.className = 'sensor-reading';
+				reading.textContent = '--';
+
+				const units = document.createElement('div');
+				units.className = 'sensor-deriv';
+				units.textContent = '';
+
+				box.appendChild(reading);
+				box.appendChild(units);
+				wrap.appendChild(box);
+
+				host.appendChild(wrap);
+				_daqReadoutByName.set(name, { valueEl: reading, unitsEl: units, boxEl: box });
+			}
+		}
+
+		for (const name of names) {
+			const el = _daqReadoutByName.get(name);
+			if (!el) continue;
+			const state = states[name];
+			const value = state && typeof state === 'object' ? state.value : undefined;
+			const units = state && typeof state === 'object' && typeof state.units === 'string' ? state.units : '';
+			if (typeof value === 'number' && Number.isFinite(value)) {
+				el.valueEl.textContent = value.toFixed(2);
+				el.unitsEl.textContent = units ? units : '';
+				el.boxEl.classList.remove('is-placeholder');
+			} else {
+				el.valueEl.textContent = '--';
+				el.unitsEl.textContent = '';
+				el.boxEl.classList.add('is-placeholder');
+			}
+		}
+	}
 
 	const plotWidgets = [
 		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'thrust' },
@@ -247,7 +322,7 @@
 	const prevPressureBySensor = new Map(); // sensorName -> { t: number, v: number }
 
 	function resetAllSensorBoxes() {
-		document.querySelectorAll('.sensor-box').forEach((el) => {
+		document.querySelectorAll('.sensor-box[id^="sensor-"]').forEach((el) => {
 			el.classList.remove('good');
 			el.classList.add('is-placeholder');
 			el.innerHTML = '<div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div>';
@@ -559,27 +634,32 @@
 		if (!packet || typeof packet !== 'object') return;
 		const states = packet.states;
 		if (!states || typeof states !== 'object') return;
+		updateDaqTabModeUi();
 
 		const fallbackT = typeof packet.t_wall === 'number' ? packet.t_wall : Date.now() / 1000;
 		const pressureRateBySensorName = new Map();
 
-		for (const { sensorName, elementId } of bindings) {
-			const state = states[sensorName];
-			if (!state || typeof state !== 'object') continue;
-			const value = state.value;
-			if (typeof value !== 'number') continue;
-			const t = typeof state.t_monotonic === 'number' ? state.t_monotonic : fallbackT;
-			let rate = pressureRateBySensorName.get(sensorName);
-			if (rate === undefined) {
-				rate = computePressureRatePsiPerMin(sensorName, t, value);
-				pressureRateBySensorName.set(sensorName, rate);
+		if (isHotfireSelected()) {
+			for (const { sensorName, elementId } of bindings) {
+				const state = states[sensorName];
+				if (!state || typeof state !== 'object') continue;
+				const value = state.value;
+				if (typeof value !== 'number') continue;
+				const t = typeof state.t_monotonic === 'number' ? state.t_monotonic : fallbackT;
+				let rate = pressureRateBySensorName.get(sensorName);
+				if (rate === undefined) {
+					rate = computePressureRatePsiPerMin(sensorName, t, value);
+					pressureRateBySensorName.set(sensorName, rate);
+				}
+				const el = document.getElementById(elementId);
+				setPressureBox(el, value, rate);
 			}
-			const el = document.getElementById(elementId);
-			setPressureBox(el, value, rate);
-		}
 
-		ingestPacketForPlots(packet);
-		renderAllPlots();
+			ingestPacketForPlots(packet);
+			renderAllPlots();
+		} else {
+			renderDaqReadouts(states);
+		}
 	}
 
 	function connectSocket() {
@@ -856,6 +936,7 @@
 		applyTheme(getSavedTheme());
 		updateSimulationTicks(simulationEnabled);
 		updateTestTicks(selectedTest);
+		updateDaqTabModeUi();
 		resetAllSensorBoxes();
 		initSettingsMenu();
 		initDaqControls();

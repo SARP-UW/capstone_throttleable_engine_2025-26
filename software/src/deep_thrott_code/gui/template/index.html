@@ -273,6 +273,10 @@
       background: white;
     }
 
+    .daq-grid.hidden {
+      display: none;
+    }
+
     .daq-panel {
       border: 1px solid var(--border);
       background: var(--surface);
@@ -312,6 +316,27 @@
       padding: 4px 6px;
       border: 1px solid var(--border);
       background: white;
+    }
+
+    .daq-readouts {
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      padding: 10px;
+      background: white;
+      overflow-y: auto;
+    }
+
+    .daq-readouts.hidden {
+      display: none;
+    }
+
+    .daq-readout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
     }
 
     .pid-image {
@@ -851,7 +876,7 @@
           </div>
 
           <div class="pid-stage hidden" id="daqStage" data-stage="daq">
-            <div class="daq-grid">
+            <div class="daq-grid" id="daqPlots">
               <div class="daq-panel">
                 <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot1"></canvas></div>
                 <div class="daq-select"><select id="daqSelect1" aria-label="Select signal for plot 1"></select></div>
@@ -882,6 +907,8 @@
                 <div class="daq-select"><select id="daqSelect6" aria-label="Select signal for plot 6"></select></div>
               </div>
             </div>
+
+            <div class="daq-readouts hidden" id="daqReadouts"></div>
           </div>
         </div>
       </div>
