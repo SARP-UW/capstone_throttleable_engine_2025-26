@@ -64,7 +64,7 @@ class GuiCommandHandler:
 	def set_test_name(self, test_name: str | None) -> None:
 		"""Update test selection.
 
-		If DAQ is running, this only affects the *next* `start_log`.
+		If DAQ is running, restart the log to apply immediately.
 		"""
 
 		normalized = str(test_name or "").strip().lower()
@@ -74,12 +74,22 @@ class GuiCommandHandler:
 
 		with self._lock:
 			self._test_name = normalized
+			simulation = bool(self._simulation_enabled)
 			running = self._is_running()
 
-		if running:
-			self._emit("Test updated; takes effect next Start Log.")
-		else:
+		if not running:
 			self._emit(f"Test set to {normalized}.")
+			return
+
+		self._emit("Test changed; restarting log to apply.")
+		try:
+			self._stop_log()
+		except Exception:
+			pass
+		try:
+			self._start_log(simulation, normalized)
+		except Exception:
+			pass
 
 	def command_loop_forever(self) -> None:
 		"""Consume `control_queue` messages forever.

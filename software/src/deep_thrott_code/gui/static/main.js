@@ -559,7 +559,6 @@
 		if (!packet || typeof packet !== 'object') return;
 		const states = packet.states;
 		if (!states || typeof states !== 'object') return;
-		updateDaqTabModeUi();
 
 		const fallbackT = typeof packet.t_wall === 'number' ? packet.t_wall : Date.now() / 1000;
 		const pressureRateBySensorName = new Map();
