@@ -311,7 +311,7 @@ actuators:
     omv:
       enabled: true
       mode: on_off
-      pin: 2
+      pin: 17
       normally_closed: true
       notes: "Oxidizer main valve"
 
