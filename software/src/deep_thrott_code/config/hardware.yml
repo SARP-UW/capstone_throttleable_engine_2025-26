@@ -256,14 +256,14 @@ actuators:
       enabled: true
       mode: on_off
       pin: 23
-      active_high: false
+      normally_closed: false
       notes: "Fuel tank vent valve"
 
     fmv:
       enabled: true
       mode: on_off
       pin: 2
-      active_high: true
+      normally_closed: true
       notes: "Fuel main valve"
 
     # fmctv:
@@ -277,35 +277,35 @@ actuators:
       enabled: true
       mode: on_off
       pin: 27
-      active_high: true
+      normally_closed: true
       notes: "Fuel igniter flow valve"
 
     lffv:
       enabled: true
       mode: on_off
       pin: 24
-      active_high: true
+      normally_closed: true
       notes: "Pressurant fuel filling flow valve"
 
     xffv:
       enabled: true
       mode: on_off
       pin: 22
-      active_high: true
+      normally_closed: true
       notes: "Pressurant oxidizer filling flow valve"
 
     offv:
       enabled: true
       mode: on_off
       pin: 7
-      active_high: true
+      normally_closed: true
       notes: "Oxidizer filling flow valve"
 
     oifv:
       enabled: true
       mode: on_off
       pin: 27
-      active_high: true
+      normally_closed: true
       notes: "Oxidizer igniter flow valve"
 
     omv:
