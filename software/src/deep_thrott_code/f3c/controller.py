@@ -229,6 +229,9 @@ class Controller:
             print("Controller.start() waiting for command...")
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
 
+            # Debug breadcrumb: confirms the queue item actually reached the controller.
+            print(f"Controller.start() got command: {gui_input}")
+
             # shutdown functionality
             if gui_input is None:
                 break
@@ -346,6 +349,10 @@ class Controller:
             if sequence_state.value == "fill" and not self.fill_executed or sequence_state.value == "fire" and not self.fire_executed:
                 with self._lock:
                     self.state = sequence_state
+                    self.active_sequence = str(sequence_name)
+                    self.current_step_index = None
+                    self.current_step = None
+                    self.waiting_manual = None
 
                 # loop through each step in sequence
                 # TODO: add checks that see if next step is valid based on condition valve and state
@@ -399,7 +406,7 @@ class Controller:
                             act = str(step.get("action") or "").lower()
                             if act == "open":
                                 valve_goal_state = ValveState.OPEN
-                            elif act == "closed":
+                            elif act in ("closed", "close"):
                                 valve_goal_state = ValveState.CLOSED
                             else:
                                 # TODO: error handling for unknown action, skip or default to CLOSED
@@ -419,7 +426,7 @@ class Controller:
                             if bool(step.get("user_input")):
                                 with self._lock:
                                     self.step_status = StepStatus.WAITING_USER
-                                self.waiting_manual = {"sequence": str(sequence_state.value), "step_index": int(idx)}
+                                    self.waiting_manual = {"sequence": str(sequence_state.value), "step_index": int(idx)}
                                 self._record_history(sequence=str(sequence_state.value), step_index=idx, status="WAITING_USER",
                                                      valve_id=str(valve_id), action=action_seq)
 
@@ -458,11 +465,18 @@ class Controller:
                                 self.step_list.append(self.current_step)
                                 self.step_status = StepStatus.READY
 
-                    # set fill_executed or fire_executed to True if the sequence is finished
-                    if current_sequence == "fill":
-                        fill_executed = True
-                    else:
-                        fire_executed = True
+                # sequence finished: mark as executed and return to IDLE
+                with self._lock:
+                    if str(sequence_name) == State.FILL.value:
+                        self.fill_executed = True
+                    elif str(sequence_name) == State.FIRE.value:
+                        self.fire_executed = True
+                    self.state = State.IDLE
+                    self.active_sequence = "idle"
+                    self.current_step_index = None
+                    self.current_step = None
+                    self.waiting_manual = None
+                    self.step_status = StepStatus.READY
         else:
             # TODO: send to gui "invalid state transition"
             pass
@@ -485,8 +499,11 @@ class Controller:
         Value: next state
         """""
         return {
+            (State.IDLE, TransitionAction.FILL): State.FILL,
             (State.IDLE, TransitionAction.FIRE): State.FIRE,
             (State.IDLE, TransitionAction.ABORT): State.ABORT,
+            (State.FILL, TransitionAction.END): State.IDLE,
+            (State.FILL, TransitionAction.ABORT): State.ABORT,
             (State.FIRE, TransitionAction.END): State.IDLE,
             (State.FIRE, TransitionAction.ABORT): State.ABORT,
             (State.FIRE, TransitionAction.AUTO): State.THROTTLE,

@@ -83,6 +83,7 @@ def register_socket_handlers(
 	- Emit reject or enqueue to command_queue and emit accept
 	"""
 
+
 	# latest_states is a "latest value" cache used to build `daq_packet`.
 	# We keep this lock small/fast so the 10 Hz loop stays stable.
 	latest_lock = threading.Lock()
@@ -284,7 +285,6 @@ def register_socket_handlers(
 		if not isinstance(name, str) or not name:
 			socketio.emit("command_reject", {"ok": False, "reason": "missing_name"})
 			return
-
 		# Commands intended for the sequencer/controller loop.
 		if name in {"fill", "fire"}:
 			if command_queue is None:
@@ -295,6 +295,7 @@ def register_socket_handlers(
 			except Exception:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return
+			pass
 		elif name in {"reset_sequences", "clear_test"}:
 			# Used by the GUI to clear sequence state/history so fill/fire can be rerun.
 			# Always put it on the command_queue so the controller can clear its
