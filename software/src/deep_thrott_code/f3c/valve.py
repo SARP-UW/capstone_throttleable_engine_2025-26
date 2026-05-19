@@ -51,10 +51,13 @@ class Valve:
         # Only touch GPIO when available and wired.
         if GPIO_AVAILABLE and self.pin is not None:
             try:
-                GPIO.setup(self.pin, GPIO.OUT)
+                GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.LOW)
             except Exception:
                 # Best-effort: keep simulation runnable.
                 pass
+
+    def get_state(self) -> ValveState:
+        return self.state
 
     def set_state(self, new_state: ValveState):
         if self.state != new_state:
