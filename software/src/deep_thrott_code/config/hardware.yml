@@ -238,7 +238,7 @@ sensors:
         enabled: true
         adc_id: ADC3
         signal_mode: single_ended
-        ain: null
+        ain: 8
         sampling_rate_hz: 100
         notes: "Injector cold flow PT #6"
     
