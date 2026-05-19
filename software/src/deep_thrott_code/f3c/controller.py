@@ -413,7 +413,7 @@ class Controller:
                                 continue
 
                             # actuates valve if current valve state is different from goal state
-                            if current_valve.get_state() != valve_goal_state:
+                            if current_valve.state != valve_goal_state:
                                 current_valve.set_state(valve_goal_state)
                             # if not, set step status back to ready and move on to next step
                             else:
