@@ -21,51 +21,6 @@
 	let _sequenceRenderScheduled = false;
 	let _lastSequenceRenderSig = '';
 
-	function _normalizeValveAction(action) {
-		const a = String(action || '').trim().toLowerCase();
-		if (a === 'open') return 'open';
-		if (a === 'close' || a === 'closed') return 'closed';
-		return '';
-	}
-
-	function _getManualStepDefinition(sequenceKey, stepIdx) {
-		if (!Array.isArray(sequenceDefs)) return null;
-		const seq = sequenceDefs.find((s) => s && typeof s === 'object' && s.key === sequenceKey);
-		if (!seq || !Array.isArray(seq.steps)) return null;
-		return seq.steps.find((st) => st && typeof st === 'object' && st.index === stepIdx) || null;
-	}
-
-	function _getWaitingManual() {
-		const snap = systemSnapshot && typeof systemSnapshot === 'object' ? systemSnapshot : {};
-		const waiting = snap.waiting_manual && typeof snap.waiting_manual === 'object' ? snap.waiting_manual : null;
-		if (!waiting) return null;
-		const sequence = typeof waiting.sequence === 'string' ? waiting.sequence : null;
-		const step_index = typeof waiting.step_index === 'number' ? waiting.step_index : null;
-		if (!sequence || step_index === null) return null;
-		const stepDef = _getManualStepDefinition(sequence, step_index);
-		const valve_id = stepDef && typeof stepDef.valve_id === 'string' ? stepDef.valve_id : '';
-		const action = stepDef && typeof stepDef.action === 'string' ? stepDef.action : '';
-		return { sequence, step_index, valve_id, action };
-	}
-
-	function _emitManualStepExecute(sequence, step_index) {
-		if (!socketRef) {
-			setSystemMessage('System message: Not connected (manual step execute not sent).');
-			return;
-		}
-		if (
-			pendingManualExecute &&
-			pendingManualExecute.sequence === sequence &&
-			pendingManualExecute.step_index === step_index
-		) {
-			return;
-		}
-		pendingManualExecute = { sequence, step_index };
-		scheduleRenderSequenceTabs();
-		setSystemMessage('System message: Manual step execute sent.');
-		socketRef.emit('manual_step_execute', { sequence, step_index });
-	}
-
 	function _getSequenceRenderSig(snapshot) {
 		const snap = snapshot && typeof snapshot === 'object' ? snapshot : {};
 		const active = typeof snap.active_sequence === 'string' ? snap.active_sequence : '';
@@ -157,8 +112,23 @@
 
 				const right = document.createElement('div');
 				if (waitingSeq === key && idx !== null && idx === waitingIdx) {
+					const btn = document.createElement('button');
+					btn.type = 'button';
+					btn.className = 'mini-btn';
 					const pending = pendingManualExecute && pendingManualExecute.sequence === key && pendingManualExecute.step_index === idx;
-					right.textContent = pending ? 'Waiting…' : 'Awaiting P&ID click';
+					btn.textContent = pending ? 'Waiting…' : 'Execute';
+					btn.disabled = !!pending;
+					btn.addEventListener('click', () => {
+						if (!socketRef) {
+							setSystemMessage('System message: Not connected (manual execute not sent).');
+							return;
+						}
+						pendingManualExecute = { sequence: key, step_index: idx };
+						scheduleRenderSequenceTabs();
+						setSystemMessage('System message: Manual execute sent.');
+						socketRef.emit('manual_step_execute', { sequence: key, step_index: idx });
+					});
+					right.appendChild(btn);
 				}
 				row.appendChild(right);
 				details.appendChild(row);
@@ -265,11 +235,6 @@
 		{ sensorName: 'FT-PT', elementId: 'sensor-FT-PT' },
 		{ sensorName: 'FM-PT', elementId: 'sensor-FM-PT' },
 		{ sensorName: 'WM-PT', elementId: 'sensor-WM-PT' },
-		{ sensorName: 'XF-PT', elementId: 'sensor-XF-PT' },
-		{ sensorName: 'OT-PT', elementId: 'sensor-OT-PT' },
-		{ sensorName: 'OF-PT', elementId: 'sensor-OF-PT' },
-		{ sensorName: 'OM-PT', elementId: 'sensor-OM-PT' },
-		{ sensorName: 'OI-PT', elementId: 'sensor-OI-PT' },
 	];
 
 	const valveStateByName = new Map(); // valveName -> 'open' | 'closed'
@@ -334,46 +299,18 @@
 			if (!valveName) return;
 			if (!valveStateByName.has(valveName)) valveStateByName.set(valveName, 'closed');
 
-			overlay.addEventListener('click', (e) => {
-				// Ignore clicks on the explicit OPEN/CLOSE buttons; those have their own handlers.
-				if (e && e.target && typeof e.target.closest === 'function' && e.target.closest('button')) return;
-				const waiting = _getWaitingManual();
-				if (!waiting) return;
-				const waitingValve = String(waiting.valve_id || '').trim().toUpperCase();
-				if (waitingValve && waitingValve !== String(valveName).trim().toUpperCase()) {
-					setSystemMessage(`System message: Manual step pending for ${waitingValve}; click that valve on the P&ID.`);
-					return;
-				}
-				e.preventDefault();
-				const desired = _normalizeValveAction(waiting.action);
-				if (desired === 'open' || desired === 'closed') {
-					emitGuiCommand({ name: 'set_valve', valve_id: valveName, state: desired });
-				}
-				_emitManualStepExecute(waiting.sequence, waiting.step_index);
-			});
-
 			const openBtn = overlay.querySelector('[data-valve-action="open"]');
 			const closeBtn = overlay.querySelector('[data-valve-action="close"]');
 			if (openBtn) {
 				openBtn.addEventListener('click', (e) => {
 					e.preventDefault();
 					emitGuiCommand({ name: 'set_valve', valve_id: valveName, state: 'open' });
-					const waiting = _getWaitingManual();
-					if (waiting && String(waiting.valve_id || '').trim().toUpperCase() === String(valveName).trim().toUpperCase()) {
-						const desired = _normalizeValveAction(waiting.action);
-						if (desired === 'open') _emitManualStepExecute(waiting.sequence, waiting.step_index);
-					}
 				});
 			}
 			if (closeBtn) {
 				closeBtn.addEventListener('click', (e) => {
 					e.preventDefault();
 					emitGuiCommand({ name: 'set_valve', valve_id: valveName, state: 'closed' });
-					const waiting = _getWaitingManual();
-					if (waiting && String(waiting.valve_id || '').trim().toUpperCase() === String(valveName).trim().toUpperCase()) {
-						const desired = _normalizeValveAction(waiting.action);
-						if (desired === 'closed') _emitManualStepExecute(waiting.sequence, waiting.step_index);
-					}
 				});
 			}
 
@@ -676,9 +613,7 @@
 
 		const socketOpts = {
 			path: '/socket.io',
-			// Polling-only avoids WebSocket upgrade issues in some dev servers
-			// (e.g., Werkzeug/simple-websocket raising "write() before start_response").
-			transports: ['polling'],
+			transports: ['websocket', 'polling'],
 			timeout: 5000,
 		};
 		const socket = socketUrl ? window.io(socketUrl, socketOpts) : window.io(socketOpts);
@@ -702,7 +637,7 @@
 			if (msg && msg.name) setSystemMessage(`System message: Command accepted (${msg.name}).`);
 			if (msg && msg.name === 'manual_step_execute') {
 				// Clear the local pending flag once the backend has accepted the request.
-				// Manual-step gating still comes from `system_packet.waiting_manual`.
+				// The Execute button itself is still gated by `system_packet.waiting_manual`.
 				pendingManualExecute = null;
 				scheduleRenderSequenceTabs();
 			}
@@ -764,9 +699,9 @@
 		});
 
 		socket.on('manual_step_required', (msg) => {
-			const waiting = _getWaitingManual();
-			const valveHint = waiting && waiting.valve_id ? ` Click ${waiting.valve_id} on the P&ID to continue.` : '';
-			setSystemMessage(`System message: Manual step required.${valveHint}`);
+			const text = msg && msg.message ? msg.message : 'Manual step required.';
+			setSystemMessage(`System message: ${text}`);
+			// The UI will also show an Execute button via system_packet.waiting_manual.
 		});
 
 		socket.on('daq_packet', (pkt) => {

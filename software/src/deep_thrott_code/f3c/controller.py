@@ -412,17 +412,6 @@ class Controller:
                                 # TODO: error handling for unknown action, skip or default to CLOSED
                                 continue
 
-                            # actuates valve if current valve state is different from goal state
-                            if current_valve.state != valve_goal_state:
-                                current_valve.set_state(valve_goal_state)
-                            # if not, set step status back to ready and move on to next step
-                            else:
-                                with self._lock:
-                                    self.step_status = StepStatus.READY
-                                continue
-
-                            # wait for delay specified in step (can be 0.0)
-                            time.sleep(step.get("time_delay", 0.0))
                             if bool(step.get("user_input")):
                                 with self._lock:
                                     self.step_status = StepStatus.WAITING_USER
@@ -461,6 +450,19 @@ class Controller:
                                                 break
                                     finally:
                                         self._ack_queue.task_done()
+
+                                                        # actuates valve if current valve state is different from goal state
+                            if current_valve.state != valve_goal_state:
+                                current_valve.set_state(valve_goal_state)
+                            # if not, set step status back to ready and move on to next step
+                            else:
+                                with self._lock:
+                                    self.step_status = StepStatus.READY
+                                continue
+
+                            # wait for delay specified in step (can be 0.0)
+                            time.sleep(step.get("time_delay", 0.0))    
+                            
                             with self._lock:
                                 self.step_list.append(self.current_step)
                                 self.step_status = StepStatus.READY
