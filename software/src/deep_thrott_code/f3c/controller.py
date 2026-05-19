@@ -310,7 +310,7 @@ class Controller:
         #if trying to fill or fire
         if action in (State.FILL.value, State.FIRE.value):
             # run helper method in its own thread
-            threading.Thread(target=self._execute_sequence, args=action).start()
+            threading.Thread(target=self._execute_sequence, args=(action,)).start()
 
         # if performing single valve actuation or pulse
         if action in (self.single_valve_actuation, self.pulse):
