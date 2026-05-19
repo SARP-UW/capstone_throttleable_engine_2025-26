@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import queue
 import threading
@@ -157,7 +158,21 @@ def main() -> None:
 		daq.start(cfg.simulation)
 
 	print(f"Backend listening on http://{cfg.host}:{cfg.port} (Socket.IO)")
-	socketio.run(app, host=cfg.host, port=cfg.port, debug=cfg.debug, use_reloader=False)
+
+	# Keep terminal output readable: Flask/Werkzeug logs every polling request.
+	# Raise these log levels so Socket.IO transport traffic doesn't spam stdout.
+	logging.getLogger("werkzeug").setLevel(logging.ERROR)
+	logging.getLogger("engineio").setLevel(logging.ERROR)
+	logging.getLogger("socketio").setLevel(logging.ERROR)
+
+	socketio.run(
+		app,
+		host=cfg.host,
+		port=cfg.port,
+		debug=cfg.debug,
+		use_reloader=False,
+		log_output=False,
+	)
 
 if __name__ == "__main__":
 	main()

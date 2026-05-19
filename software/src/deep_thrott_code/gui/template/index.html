@@ -989,11 +989,9 @@
         document.head.appendChild(main);
       }
 
-      const backendBase = deriveBackendBaseUrl();
-      const candidates = [
-        `${backendBase}/socket.io/socket.io.js`,
-        'https://cdn.socket.io/4.7.5/socket.io.min.js',
-      ];
+    // Flask-SocketIO does not serve the browser Socket.IO client at
+    // /socket.io/socket.io.js in this project setup. Always load from CDN.
+    const candidates = ['https://cdn.socket.io/4.7.5/socket.io.min.js'];
 
       (function tryLoad(i) {
         if (i >= candidates.length) {
