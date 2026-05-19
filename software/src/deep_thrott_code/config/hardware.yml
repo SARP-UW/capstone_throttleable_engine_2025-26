@@ -245,61 +245,68 @@ sensors:
 
 actuators:
   valves:
-    wmv:
-      enabled: true
-      mode: on_off
-      pin: null
-      active_high: true
-      notes: "Water main valve"
+    # wmv:
+    #   enabled: true
+    #   mode: throttle
+    #   pin: null
+    #   active_high: true
+    #   notes: "Water main valve"
 
     ftvv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 23
       active_high: false
       notes: "Fuel tank vent valve"
 
     fmv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 2
       active_high: true
       notes: "Fuel main valve"
 
-    fmctv:
-      enabled: true
-      mode: throttle
-      pin: null
-      active_high: true
-      notes: "Fuel main control/throttle valve"
+    # fmctv:
+    #   enabled: true
+    #   mode: throttle
+    #   pin: null
+    #   active_high: true
+    #   notes: "Fuel main control/throttle valve"
 
-    fifv:
+    fimv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 27
       active_high: true
       notes: "Fuel igniter flow valve"
 
     lffv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 24
       active_high: true
       notes: "Pressurant fuel filling flow valve"
 
     xffv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 22
       active_high: true
       notes: "Pressurant oxidizer filling flow valve"
 
     offv:
       enabled: true
       mode: on_off
-      pin: null
+      pin: 7
       active_high: true
       notes: "Oxidizer filling flow valve"
+
+    oimv:
+      enabled: true
+      mode: on_off
+      pin: 27
+      active_high: true
+      notes: "Oxidizer igniter flow valve"
 
     omv:
       enabled: true
