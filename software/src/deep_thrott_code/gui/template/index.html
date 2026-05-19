@@ -772,8 +772,73 @@
           </div>
 
           <div class="pid-stage hidden" id="pidStageNitrous" data-stage="nitrous">
-            <div style="padding: 16px; font-size: 1rem;">
-              Nitrous line diagram not yet provided.
+            <div class="pid-canvas" id="pidCanvasNitrous">
+              <img class="pid-image" src="{{ url_for('static', filename='nitrous_line_pid.png') }}">
+
+              <div class="overlay" style="left: 605px;top: 146px;" data-valve="XFFV">
+                <div class="overlay-label">XFFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 510px;top: 508px;" data-valve="OFFV">
+                <div class="overlay-label">OFFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 1090px;top: 330px;" data-valve="OIFV">
+                <div class="overlay-label">OIFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 1040px;top: 538px;" data-valve="OMV">
+                <div class="overlay-label">OMV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 1280px;top: 564px;" data-valve="OMCTV">
+                <div class="overlay-label">OMCTV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 410px;top: 132px;">
+                <div class="overlay-label">XF-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-XF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 862px;top: 232px;">
+                <div class="overlay-label">OT-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OT-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 430px;top: 432px;">
+                <div class="overlay-label">OF-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 1090px;top: 466px;">
+                <div class="overlay-label">OM-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 1410px;top: 566px;">
+                <div class="overlay-label">OI-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OI-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
             </div>
           </div>
 
