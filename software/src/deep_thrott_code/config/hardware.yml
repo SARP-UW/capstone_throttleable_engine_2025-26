@@ -195,7 +195,7 @@ sensors:
   injector cold flow:
     pressure_transducers:
       IC-PT1:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 1
@@ -203,7 +203,7 @@ sensors:
         notes: "Injector cold flow PT #1"
 
       IC-PT2:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 0
@@ -211,7 +211,7 @@ sensors:
         notes: "Injector cold flow PT #2"
 
       IC-PT3:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 11
@@ -219,7 +219,7 @@ sensors:
         notes: "Injector cold flow PT #3"
 
       IC-PT4:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 10
@@ -227,7 +227,7 @@ sensors:
         notes: "Injector cold flow PT #4"
 
       IC-PT5:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 9
@@ -235,10 +235,10 @@ sensors:
         notes: "Injector cold flow PT #5"
 
       IC-PT6:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
-        ain: 8
+        ain: null
         sampling_rate_hz: 100
         notes: "Injector cold flow PT #6"
     
