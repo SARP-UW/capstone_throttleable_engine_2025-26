@@ -216,6 +216,7 @@
 
 	const MAX_POINTS = 300;
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
+	const latestVoltageBySensor = new Map(); // sensorName -> { v: number|null, v1: number|null, v2: number|null }
 	let knownSensorNames = [];
 
 	const plotWidgets = [
@@ -417,6 +418,15 @@
 		for (const name of sensorNames) {
 			const state = states[name];
 			if (!state || typeof state !== 'object') continue;
+
+			// Cache latest voltage for display.
+			const v = typeof state.voltage_v === 'number' && Number.isFinite(state.voltage_v) ? state.voltage_v : null;
+			const v1 = typeof state.V_diff_1 === 'number' && Number.isFinite(state.V_diff_1) ? state.V_diff_1 : null;
+			const v2 = typeof state.V_diff_2 === 'number' && Number.isFinite(state.V_diff_2) ? state.V_diff_2 : null;
+			if (v !== null || v1 !== null || v2 !== null) {
+				latestVoltageBySensor.set(name, { v, v1, v2 });
+			}
+
 			const value = state.value;
 			if (typeof value !== 'number') continue;
 			const units = typeof state.units === 'string' ? state.units : '';
@@ -516,9 +526,25 @@
 		// Title / latest value
 		const latestV = rec.v[rec.v.length - 1];
 		const units = rec.units ? ` ${rec.units}` : '';
+		const vrec = latestVoltageBySensor.get(sensorName);
+		let vText = '';
+		if (vrec && typeof vrec === 'object') {
+			if (typeof vrec.v === 'number' && Number.isFinite(vrec.v)) {
+				vText = `  V=${vrec.v.toFixed(3)}V`;
+			} else if (
+				typeof vrec.v1 === 'number' &&
+				Number.isFinite(vrec.v1) &&
+				typeof vrec.v2 === 'number' &&
+				Number.isFinite(vrec.v2)
+			) {
+				vText = `  ΔV=${Math.abs(vrec.v1 - vrec.v2).toFixed(3)}V`;
+			} else if (typeof vrec.v1 === 'number' && Number.isFinite(vrec.v1)) {
+				vText = `  V=${vrec.v1.toFixed(3)}V`;
+			}
+		}
 		ctx.fillStyle = '#111111';
 		ctx.font = `${Math.max(12, Math.floor(h * 0.08))}px Arial`;
-		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}`, left, Math.max(top - 6, Math.floor(h * 0.12)));
+		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}`, left, Math.max(top - 6, Math.floor(h * 0.12)));
 	}
 
 	function renderAllPlots() {
