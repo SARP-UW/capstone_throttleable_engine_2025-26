@@ -297,7 +297,7 @@ actuators:
     offv:
       enabled: true
       mode: on_off
-      pin: 7
+      pin: 4
       normally_closed: true
       notes: "Oxidizer filling flow valve"
 
@@ -311,7 +311,7 @@ actuators:
     omv:
       enabled: true
       mode: on_off
-      pin: 17
+      pin: 3
       normally_closed: true
       notes: "Oxidizer main valve"
 
@@ -325,7 +325,7 @@ actuators:
     otvv:
       enabled: true
       mode: on_off
-      pin: 3
+      pin: 17
       normally_closed: false
       notes: "Oxidizer tank vent valve"
 
