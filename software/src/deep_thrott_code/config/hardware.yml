@@ -273,7 +273,7 @@ actuators:
     #   active_high: true
     #   notes: "Fuel main control/throttle valve"
 
-    fimv:
+    fifv:
       enabled: true
       mode: on_off
       pin: 27
@@ -301,7 +301,7 @@ actuators:
       active_high: true
       notes: "Oxidizer filling flow valve"
 
-    oimv:
+    oifv:
       enabled: true
       mode: on_off
       pin: 27
@@ -329,7 +329,7 @@ actuators:
       normally_closed: false
       notes: "Oxidizer tank vent valve"
 
-    sparker:
+    igniter:
       enabled: true
       mode: on_off
       pin: 27
