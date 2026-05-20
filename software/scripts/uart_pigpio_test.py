@@ -4,6 +4,7 @@ import time
 # Initialize pigpio
 pi = pigpio.pi()
 if not pi.connected:
+    print("Failed to connect to pigpio daemon. Make sure pigpiod is running.")
     exit()
 
 TX_PIN = 14       # The GPIO pin you use for UART TX
@@ -11,10 +12,12 @@ TX_ENABLE = 18    # The GPIO pin connected to the 74AHCT125 *1OE
 BAUD = 115200     # Hiwonder servo baud rate
 
 # Ensure pins are set as outputs
+print("seetting gpio shiz up")
 pi.set_mode(TX_PIN, pigpio.OUTPUT)
 pi.set_mode(TX_ENABLE, pigpio.OUTPUT)
 
 # Start with TX_ENABLE HIGH (Buffer disabled / listening mode)
+print("set tx pin high")
 pi.write(TX_PIN, 1) 
 
 # def send_servo_command(data_bytes):
