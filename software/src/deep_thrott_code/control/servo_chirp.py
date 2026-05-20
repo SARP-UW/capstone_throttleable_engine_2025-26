@@ -72,7 +72,7 @@ def build_packet(uart_id, cmd, params=[]):
 def send_packet(packet):
     bits_total = len(packet) * 10        # 1 Start bit + 8 Data bits + 1 Stop bit = 10 bits per byte
     duration_us = int((bits_total * 1_000_000) / BAUD)           # time in microseconds to send all bytes
-    margin_us = 20          # margin to prevent clipping the stop bit
+    margin_us = 10          # margin to prevent clipping the stop bit
     total_wave_time = margin_us + duration_us + margin_us          # total time TX_ENABLE stays low (transmission time with margin before and after)
 
     pi.wave_clear()      # clears last waveform before sending a new one
