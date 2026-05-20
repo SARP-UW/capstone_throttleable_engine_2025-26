@@ -15,7 +15,7 @@ pi.set_mode(TX_PIN, pigpio.OUTPUT)
 pi.set_mode(TX_ENABLE, pigpio.OUTPUT)
 
 # Start with TX_ENABLE HIGH (Buffer disabled / listening mode)
-pi.write(TX_ENABLE, 1) 
+pi.write(TX_PIN, 1) 
 
 # def send_servo_command(data_bytes):
 #     # 1. Calculate transmission timing
