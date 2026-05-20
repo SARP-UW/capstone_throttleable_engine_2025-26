@@ -7,33 +7,28 @@ import time
 
 import pigpio
 pi = pigpio.pi()
+if not pi.connected:
+    print("Failed to connect to pigpiod")
+    exit()
 
+# TODO: evaluate whether this is needed
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from f3c.valve import ThrottleValve
 
 TX_ENABLE_PIN = 18
+TX_PIN = 14
+RX_PIN = 15     # check this!
+BAUD = 115200
 
 # TX_ENABLE pin setup
-pi.set_mode(18, pigpio.OUTPUT)
-pi.write(18, 1)
-print("GPIO setup complete.")
+pi.set_mode(TX_ENABLE_PIN, pigpio.OUTPUT)
+pi.set_mode(TX_PIN, pigpio.OUTPUT)
+pi.write(TX_ENABLE_PIN, 1)     # start in receive mode
 
-time.sleep(10)
-
-pi.write(TX_ENABLE_PIN, 1)
-print("Pin 18 high.")
-
-time.sleep(10)
-
-pi.write(TX_ENABLE_PIN, 0)
-print("Pin 18 low.")
-
-time.sleep(10)
-
-pi.write(TX_ENABLE_PIN, 1)
-print("Pin 18 high.")
+# Open pigpio serial port for reading responses
+serial_handle = pi.serial_open("/dev/ttyS0", BAUD)
 
 # Parameters
 T = 10.0             # Total time in seconds
@@ -63,16 +58,6 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 # plt.ylabel("Amplitude (Degrees)")
 # plt.show()
 
-# start serial
-ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=1.0)
-# ser.close()
-# time.sleep(0.5)
-# ser.open()
-#
-ser.reset_input_buffer()
-ser.reset_output_buffer()
-time.sleep(0.1)
-
 
 # define uart helper functions
 def _checksum(uart_id, length, cmd, params):
@@ -85,65 +70,85 @@ def build_packet(uart_id, cmd, params=[]):
     return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
 
 def send_packet(packet):
-    # pull low to say "i'm bouta transmit"
-    pi.write(TX_ENABLE_PIN, 0)
-    print("Pulled pin low")
-    ser.write(packet)
-    # ser.flush()    # waits for entire packet to be written
+    bits_total = len(packet) * 10        # 1 Start bit + 8 Data bits + 1 Stop bit = 10 bits per byte
+    duration_us = int((bits_total * 1_000_000) / BAUD)           # time in microseconds to send all bytes
+    margin_us = 10          # margin to prevent clipping the stop bit
+    total_wave_time = margin_us + duration_us + margin_us          # total time TX_ENABLE stays low (transmission time with margin before and after)
 
+    pi.wave_clear()      # clears last waveform before sending a new one
+    pi.wave_add_serial(TX_PIN, BAUD, packet, offset=margin_us)        # adds waveform from packet to staging area
 
-    # wait for all bits to clock out of the shift register at 115200 baud
-    # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-    time.sleep(len(packet) * 10 / 115200 + 0.0005)
+    enable_pulses = [
+        # Set TX_ENABLE low, hold for total_wave_time microseconds
+        pigpio.pulse(0, 1 << TX_ENABLE_PIN, total_wave_time),
+        # Set TX_ENABLE high, hold for 0 microseconds (end of wave)
+        pigpio.pulse(1 << TX_ENABLE_PIN, 0, 0)
+    ]
+    pi.wave_add_generic(enable_pulses)      # adds TX_ENABLE pulses to staging area
 
-    # pull high to say "i'm done transmitting yo"
-    pi.write(TX_ENABLE_PIN, 1)
-    print("Pulled pin high")
+    # Create wave id from waveforms in staging area and send
+    wave_id = pi.wave_create()
+    pi.wave_send_once(wave_id)
+
+    # Polls until DMA is done
+    while pi.wave_tx_busy():
+        time.sleep(0.001)
+
+    # Frees up memory
+    pi.wave_delete(wave_id)
+
+    return len(packet)
 
 
 def read_response(packet_length, expected_length):
-    # get rid of echo with a shorter timeout
-    # old_timeout = ser.timeout
-    # ser.timeout = 0.02
-    echo = ser.read(packet_length)
+    # drain the echo
+    time.sleep(0.02)
+    count, echo = pi.serial_read(serial_handle, packet_length)
     print(f"Echo bytes: {list(echo)}")
-    # ser.timeout = old_timeout
 
-    # get actual response
-    serial_response = ser.read(expected_length)
+    # read the response
+    time.sleep(0.02)
+    count, serial_response = pi.serial_read(serial_handle, expected_length)
     print(f"Response bytes: {list(serial_response)}")
-    if len(serial_response) == 0:
+
+    if count == 0:
         print("Timed out - no response received.")
         return None
     return serial_response
 
-# get valve id
-print("Sending valve id request...")
-packet = build_packet(0xFE, 14)
-print(f"Packet bytes: {list(packet)}")
-send_packet(packet)
-time.sleep(0.1)
-print(f"Bytes waiting: {ser.in_waiting}")
+# # get valve id
+# print("Sending valve id request...")
+# packet = build_packet(0xFE, 14)
+# print(f"Packet bytes: {list(packet)}")
+# send_packet(packet)
+# time.sleep(0.1)
 
-response = read_response(len(packet), 7)
-print(f"Response: {response}")
+# response = read_response(len(packet), 7)
+# print(f"Response: {response}")
 
-if response is None:
-    print("No response received.")
-    quit()
-else:
-    valve_id = response[5]
-    print(f"Valve ID: {valve_id}")
+# if response is None:
+#     print("No response received.")
+#     pi.serial_close(serial_handle)
+#     pi.stop()
+#     exit()
+#
+# valve_id = response[5]
+# print(f"Valve ID: {valve_id}")
+
+valve_id = 1
 
 # initialize test throttle valve
-test_valve = ThrottleValve("test_valve", True, valve_id, ser)
+test_valve = ThrottleValve("test_valve", True, valve_id, serial_handle)
 
-# test open and close servo to 60 deg
-test_valve.throttle(60, 2)
-time.sleep(2)
-print("Valve angle:", test_valve.read_pos())
-time.sleep(3)
-test_valve.throttle(0, 2)
-print("Valve angle:", test_valve.read_pos())
+while True:
+    # test open and close servo to 90 deg
+    test_valve.throttle(90, 2)
+    time.sleep(2)
+    # print("Valve angle:", test_valve.read_pos())
+    time.sleep(3)
+    test_valve.throttle(0, 2)
+    # print("Valve angle:", test_valve.read_pos())
+    time.sleep(5)
 
-GPIO.cleanup()
+pi.serial_close(serial_handle)
+pi.stop()

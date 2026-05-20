@@ -12,6 +12,7 @@ import os
 
 computer_sim = True
 
+# TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
     import RPi.GPIO as GPIO
 
