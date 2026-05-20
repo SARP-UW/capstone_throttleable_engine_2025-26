@@ -11,6 +11,7 @@ if not pi.connected:
     print("Failed to connect to pigpiod")
     exit()
 
+# TODO: evaluate whether this is needed
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -101,12 +102,12 @@ def send_packet(packet):
 
 def read_response(packet_length, expected_length):
     # drain the echo
-    time.sleep(0.02)
+    # time.sleep(0.02)
     count, echo = pi.serial_read(serial_handle, packet_length)
     print(f"Echo bytes: {list(echo)}")
 
     # read the response
-    time.sleep(0.02)
+    time.sleep(0.002)
     count, serial_response = pi.serial_read(serial_handle, expected_length)
     print(f"Response bytes: {list(serial_response)}")
 
@@ -120,7 +121,7 @@ print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
 send_packet(packet)
-time.sleep(0.1)
+# time.sleep(0.1)
 
 response = read_response(len(packet), 7)
 print(f"Response: {response}")
