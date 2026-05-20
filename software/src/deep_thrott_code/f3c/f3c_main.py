@@ -26,7 +26,7 @@ print("Controller thread started.")
 
 print("Sending fill sequence command to controller...")
 test_command_queue.put({
-    "type": "fill_sequence",
+    "type": "fill",
 })
 
 # print("Single valve actuation command to controller: open")

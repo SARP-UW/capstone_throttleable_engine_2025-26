@@ -26,7 +26,7 @@ sequences:
         system_state: fill
 
       - valve_id: offv
-        action: close
+        action: closed
         time_delay: 0.0
         user_input: true
         condition_valve: otvv
@@ -116,7 +116,7 @@ sequences:
         system_state: throttle
 
       - valve_id: fifv
-        action: close
+        action: closed
         time_delay: 0.0
         user_input: false
         condition_valve: wmv
@@ -124,7 +124,7 @@ sequences:
         system_state: throttle
 
       - valve_id: oifv
-        action: close
+        action: closed
         time_delay: 2.0
         user_input: false
         condition_valve: fifv
@@ -132,7 +132,7 @@ sequences:
         system_state: throttle
 
       - valve_id: sparker
-        action: close
+        action: closed
         time_delay: 4.0
         user_input: false
         condition_valve: oifv
@@ -140,7 +140,7 @@ sequences:
         system_state: throttle
 
       - valve_id: lffv
-        action: close
+        action: closed
         time_delay: 0.0
         user_input: false
         condition_valve: igniter
@@ -148,7 +148,7 @@ sequences:
         system_state: fire
 
       - valve_id: xffv
-        action: close
+        action: closed
         time_delay: 0.0
         user_input: true
         condition_valve: lffv
