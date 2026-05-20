@@ -1,6 +1,6 @@
 import pigpio
 import time
-import RPI.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 # Initialize pigpio
 pi = pigpio.pi()
