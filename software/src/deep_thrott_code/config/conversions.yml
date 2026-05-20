@@ -25,6 +25,17 @@ calibration_profiles:
       psi_min: 0.0
       psi_max: 80.0
 
+  load_cells:
+    # force_n = (|V_plus - V_minus| / excitation_voltage) / sensitivity_v_per_v * max_load_n - offset_n
+    # where sensitivity_v_per_v is in V/V at full-scale load.
+    generic_bridge_vdiff_to_force_1000N:
+      units: N
+      type: vdiff_to_force
+      max_load_n: 1000.0
+      excitation_voltage: 5.0
+      sensitivity_v_per_v: 0.0020
+      offset_n: 0.0
+
 
 calibration:
   pressure_transducers:
@@ -40,6 +51,10 @@ calibration:
     IC-PT4: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT5: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT6: { profile: v_to_psi_0p5_4p5V_0_80psi }
+
+  load_cells:
+    E-LC: { profile: generic_bridge_vdiff_to_force_1000N }
+    N-LC: { profile: generic_bridge_vdiff_to_force_1000N }
 
 limits:
   pressure_transducers:

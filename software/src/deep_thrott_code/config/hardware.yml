@@ -176,6 +176,8 @@ sensors:
         signal_mode: differential
         ain_pos: 1
         ain_neg: 0
+        # Optional: ADS124S08 PGA gain (1,2,4,8,16,32,64,128)
+        adc_gain: 64
         sampling_rate_hz: 100
         notes: "Engine thrust load cell"
 
@@ -185,6 +187,7 @@ sensors:
         signal_mode: differential
         ain_pos: 11
         ain_neg: 10
+        adc_gain: 64
         sampling_rate_hz: 100
         notes: "Nitrous load cell"
 

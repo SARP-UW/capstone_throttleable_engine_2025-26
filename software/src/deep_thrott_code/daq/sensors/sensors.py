@@ -459,6 +459,12 @@ class LoadCellSensor(Sensor):
         t_mono = time.perf_counter()
         t_wall = time.time()
 
+        # ADS124S08 PGA gain is global (not per-channel), so set it before reading.
+        try:
+            self.adc.configure_basic(use_internal_ref=False, gain=int(self.adc_gain))
+        except Exception:
+            pass
+
         settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
         sig_plus_raw = self.adc.read_raw_single(self.sig_plus_ain, settle_discard=settle_discard)
         sig_minus_raw = self.adc.read_raw_single(self.sig_minus_ain, settle_discard=settle_discard)
@@ -537,6 +543,12 @@ class PressureTransducerSensor(Sensor):
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
         t_wall = time.time()
+
+        # ADS124S08 PGA gain is global (not per-channel), so set it before reading.
+        try:
+            self.adc.configure_basic(use_internal_ref=False, gain=int(self.adc_gain))
+        except Exception:
+            pass
         settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
         raw_code = self.adc.read_raw_single(self.sig_ain, settle_discard=settle_discard)
         return RawSample(
@@ -611,6 +623,12 @@ class RTDSensor(Sensor):
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
         t_wall = time.time()
+
+        # RTD mode uses internal reference + IDAC; keep gain at 1 unless changed elsewhere.
+        try:
+            self.adc.configure_basic(use_internal_ref=True, gain=1)
+        except Exception:
+            pass
 
         self.adc.enable_rtd_mode(
             current_ua=self.idac_current_ua,
@@ -1000,6 +1018,45 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 return default
 
+        def _lc_calibration(sensor_id: str) -> tuple[float, float, float, float]:
+            """Return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n)."""
+
+            default = (1000.0, 5.0, 0.0020, 0.0)
+
+            cal = conversions_cfg.get("calibration")
+            if not isinstance(cal, dict):
+                return default
+            cal_lc = cal.get("load_cells")
+            if not isinstance(cal_lc, dict):
+                return default
+            entry = cal_lc.get(sensor_id)
+            if not isinstance(entry, dict):
+                return default
+            profile_id = entry.get("profile")
+            if not isinstance(profile_id, str) or not profile_id:
+                return default
+
+            profiles = conversions_cfg.get("calibration_profiles")
+            if not isinstance(profiles, dict):
+                return default
+            lc_profiles = profiles.get("load_cells")
+            if not isinstance(lc_profiles, dict):
+                return default
+            profile = lc_profiles.get(profile_id)
+            if not isinstance(profile, dict):
+                return default
+            if str(profile.get("type", "")).lower() != "vdiff_to_force":
+                return default
+
+            try:
+                max_load_n = float(profile.get("max_load_n", default[0]))
+                excitation_voltage = float(profile.get("excitation_voltage", default[1]))
+                sensitivity_v_per_v = float(profile.get("sensitivity_v_per_v", default[2]))
+                offset_n = float(profile.get("offset_n", default[3]))
+                return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n)
+            except Exception:
+                return default
+
         sensors: list[Sensor] = []
         for sensor_id, cfg in pt_cfg.items():
             if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
@@ -1022,12 +1079,18 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 sampling_rate_hz = None
 
+            try:
+                adc_gain = float(cfg.get("adc_gain")) if cfg.get("adc_gain") is not None else 1.0
+            except Exception:
+                adc_gain = 1.0
+
             sensors.append(
                 PressureTransducerSensor(
                     name=name,
                     adc=adc_by_id[adc_id],
                     sig_ain=int(ain),
                     sampling_rate_hz=sampling_rate_hz,
+                    adc_gain=adc_gain,
                     v_min=v_min,
                     v_max=v_max,
                     p_min=p_min,
@@ -1035,61 +1098,103 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 )
             )
 
-        # rtd_cfg = rtd_cfg if isinstance(rtd_cfg, dict) else {}
-        # for sensor_id, cfg in rtd_cfg.items():
-        #     if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
-        #         continue
-        #     if not bool(cfg.get("enabled", False)):
-        #         continue
+        rtd_cfg = rtd_cfg if isinstance(rtd_cfg, dict) else {}
+        for sensor_id, cfg in rtd_cfg.items():
+            if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+                continue
+            if not bool(cfg.get("enabled", False)):
+                continue
 
-        #     adc_id = cfg.get("adc_id")
-        #     if not isinstance(adc_id, str) or adc_id not in adc_by_id:
-        #         raise RuntimeError(f"RTD {sensor_id} references unknown adc_id={adc_id}")
-        #     lead1_ain = cfg.get("lead1_ain")
-        #     lead2_ain = cfg.get("lead2_ain")
-        #     idac1_ain = cfg.get("idac1_ain")
-        #     idac2_ain = cfg.get("idac2_ain")
-        #     if None in (lead1_ain, lead2_ain, idac1_ain, idac2_ain):
-        #         raise RuntimeError(f"RTD {sensor_id} is enabled but missing one of lead1_ain/lead2_ain/idac1_ain/idac2_ain")
+            adc_id = cfg.get("adc_id")
+            if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                raise RuntimeError(f"RTD {sensor_id} references unknown adc_id={adc_id}")
+            lead1_ain = cfg.get("lead1_ain")
+            lead2_ain = cfg.get("lead2_ain")
+            idac1_ain = cfg.get("idac1_ain")
+            idac2_ain = cfg.get("idac2_ain")
+            if None in (lead1_ain, lead2_ain, idac1_ain, idac2_ain):
+                raise RuntimeError(f"RTD {sensor_id} is enabled but missing one of lead1_ain/lead2_ain/idac1_ain/idac2_ain")
 
-        #     sensors.append(
-        #         RTDSensor(
-        #             name=sensor_id,
-        #             adc=adc_by_id[adc_id],
-        #             lead1_ain=int(lead1_ain),
-        #             lead2_ain=int(lead2_ain),
-        #             idac1_ain=int(idac1_ain),
-        #             idac2_ain=int(idac2_ain),
-        #         )
-        #     )
+            try:
+                sampling_rate_hz = float(cfg.get("sampling_rate_hz")) if cfg.get("sampling_rate_hz") is not None else None
+            except Exception:
+                sampling_rate_hz = None
 
-        # lc_cfg = lc_cfg if isinstance(lc_cfg, dict) else {}
-        # for sensor_id, cfg in lc_cfg.items():
-        #     if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
-        #         continue
-        #     if not bool(cfg.get("enabled", False)):
-        #         continue
+            sensors.append(
+                RTDSensor(
+                    name=sensor_id,
+                    adc=adc_by_id[adc_id],
+                    lead1_ain=int(lead1_ain),
+                    lead2_ain=int(lead2_ain),
+                    idac1_ain=int(idac1_ain),
+                    idac2_ain=int(idac2_ain),
+                    sampling_rate_hz=sampling_rate_hz,
+                )
+            )
 
-        #     adc_id = cfg.get("adc_id")
-        #     if not isinstance(adc_id, str) or adc_id not in adc_by_id:
-        #         raise RuntimeError(f"Load cell {sensor_id} references unknown adc_id={adc_id}")
-        #     sig_plus_ain = cfg.get("ain_pos")
-        #     sig_minus_ain = cfg.get("ain_neg")
-        #     if sig_plus_ain is None or sig_minus_ain is None:
-        #         raise RuntimeError(f"Load cell {sensor_id} is enabled but missing ain_pos/ain_neg configuration")
+        lc_cfg = lc_cfg if isinstance(lc_cfg, dict) else {}
+        for sensor_id, cfg in lc_cfg.items():
+            if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+                continue
+            if not bool(cfg.get("enabled", False)):
+                continue
 
-        #     sensors.append(
-        #         LoadCellSensor(
-        #             name=sensor_id,
-        #             adc=adc_by_id[adc_id],
-        #             sig_plus_ain=int(sig_plus_ain),
-        #             sig_minus_ain=int(sig_minus_ain),
-        #             max_load_n=float(cfg.get("max_load", 1000.0)),
-        #             excitation_voltage=float(cfg.get("excitation_voltage", 5.0)),
-        #             sensitivity_v_per_v=float(cfg.get("sensitivity", 0.0020)),
-        #             offset_n=float(cfg.get("offset", 0.0)),
-        #         )
-        #     )
+            adc_id = cfg.get("adc_id")
+            if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                raise RuntimeError(f"Load cell {sensor_id} references unknown adc_id={adc_id}")
+            sig_plus_ain = cfg.get("ain_pos")
+            sig_minus_ain = cfg.get("ain_neg")
+            if sig_plus_ain is None or sig_minus_ain is None:
+                raise RuntimeError(f"Load cell {sensor_id} is enabled but missing ain_pos/ain_neg configuration")
+
+            try:
+                sampling_rate_hz = float(cfg.get("sampling_rate_hz")) if cfg.get("sampling_rate_hz") is not None else None
+            except Exception:
+                sampling_rate_hz = None
+
+            try:
+                adc_gain = float(cfg.get("adc_gain")) if cfg.get("adc_gain") is not None else 1.0
+            except Exception:
+                adc_gain = 1.0
+
+            max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n = _lc_calibration(sensor_id)
+
+            # Allow hardware.yml to override calibration profile values.
+            try:
+                if cfg.get("max_load") is not None:
+                    max_load_n = float(cfg.get("max_load"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("excitation_voltage") is not None:
+                    excitation_voltage = float(cfg.get("excitation_voltage"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("sensitivity") is not None:
+                    sensitivity_v_per_v = float(cfg.get("sensitivity"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("offset") is not None:
+                    offset_n = float(cfg.get("offset"))
+            except Exception:
+                pass
+
+            sensors.append(
+                LoadCellSensor(
+                    name=sensor_id,
+                    adc=adc_by_id[adc_id],
+                    sig_plus_ain=int(sig_plus_ain),
+                    sig_minus_ain=int(sig_minus_ain),
+                    sampling_rate_hz=sampling_rate_hz,
+                    max_load_n=max_load_n,
+                    excitation_voltage=excitation_voltage,
+                    sensitivity_v_per_v=sensitivity_v_per_v,
+                    offset_n=offset_n,
+                    adc_gain=adc_gain,
+                )
+            )
 
         if not sensors:
             raise RuntimeError(
