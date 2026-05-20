@@ -65,10 +65,10 @@ chirp_angle_20hz = 45*chirp_20hz + 45
 
 # start serial
 ser = serial.Serial("/dev/ttyS0", baudrate=115200, timeout=1.0)
-ser.close()
-time.sleep(0.5)
-ser.open()
-
+# ser.close()
+# time.sleep(0.5)
+# ser.open()
+#
 ser.reset_input_buffer()
 ser.reset_output_buffer()
 time.sleep(0.1)
@@ -84,18 +84,17 @@ def build_packet(uart_id, cmd, params=[]):
     chk = _checksum(uart_id, length, cmd, params)
     return bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
 
-
 def send_packet(packet):
     # pull low to say "i'm bouta transmit"
     pi.write(TX_ENABLE_PIN, 0)
     print("Pulled pin low")
     ser.write(packet)
-    ser.flush()
+    # ser.flush()    # waits for entire packet to be written
+
 
     # wait for all bits to clock out of the shift register at 115200 baud
     # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-    # time.sleep(len(packet) * 10 / 115200 + 0.0002)
-    time.sleep(3)
+    time.sleep(len(packet) * 10 / 115200 + 0.0005)
 
     # pull high to say "i'm done transmitting yo"
     pi.write(TX_ENABLE_PIN, 1)
@@ -104,11 +103,11 @@ def send_packet(packet):
 
 def read_response(packet_length, expected_length):
     # get rid of echo with a shorter timeout
-    old_timeout = ser.timeout
-    ser.timeout = 0.02
+    # old_timeout = ser.timeout
+    # ser.timeout = 0.02
     echo = ser.read(packet_length)
     print(f"Echo bytes: {list(echo)}")
-    ser.timeout = old_timeout
+    # ser.timeout = old_timeout
 
     # get actual response
     serial_response = ser.read(expected_length)
@@ -123,7 +122,7 @@ print("Sending valve id request...")
 packet = build_packet(0xFE, 14)
 print(f"Packet bytes: {list(packet)}")
 send_packet(packet)
-time.sleep(0.05)
+time.sleep(0.1)
 print(f"Bytes waiting: {ser.in_waiting}")
 
 response = read_response(len(packet), 7)
@@ -146,3 +145,5 @@ print("Valve angle:", test_valve.read_pos())
 time.sleep(3)
 test_valve.throttle(0, 2)
 print("Valve angle:", test_valve.read_pos())
+
+GPIO.cleanup()
