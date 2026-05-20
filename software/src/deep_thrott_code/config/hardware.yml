@@ -6,6 +6,13 @@ adcs:
     transport: spi
     spi_bus: 0
     spi_device: 0
+    # Optional (tuning): SPI clock for this ADC (Hz)
+    # spi_max_speed_hz: 500000
+    # Optional (tuning): force ADS124S08 data rate (choose one)
+    # - datarate_sps: desired conversions/sec (rounded up to supported setting)
+    # - datarate_dr: raw DR[3:0] register code (0..15)
+    # datarate_sps: 2000
+    # datarate_dr: 12
     cs_gpio: null
     drdy_gpio: 25
     start_sync_gpio: 13
@@ -16,6 +23,9 @@ adcs:
     transport: spi
     spi_bus: 0
     spi_device: 1
+    # spi_max_speed_hz: 500000
+    # datarate_sps: 2000
+    # datarate_dr: 12
     cs_gpio: null
     drdy_gpio: 5
     start_sync_gpio: 26
@@ -26,6 +36,9 @@ adcs:
     transport: spi
     spi_bus: 0
     spi_device: 0
+    # spi_max_speed_hz: 500000
+    # datarate_sps: 2000
+    # datarate_dr: 12
     cs_gpio: 16
     drdy_gpio: 6
     start_sync_gpio: 20
@@ -161,8 +174,8 @@ sensors:
         enabled: true
         adc_id: ADC1
         signal_mode: differential
-        ain_pos: null
-        ain_neg: null
+        ain_pos: 1
+        ain_neg: 0
         sampling_rate_hz: 100
         notes: "Engine thrust load cell"
 
@@ -170,8 +183,8 @@ sensors:
         enabled: true
         adc_id: ADC2
         signal_mode: differential
-        ain_pos: null
-        ain_neg: null
+        ain_pos: 11
+        ain_neg: 10
         sampling_rate_hz: 100
         notes: "Nitrous load cell"
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import math
 import random
+import logging
 import sys
 import time
 from abc import ABC, abstractmethod
@@ -21,6 +22,9 @@ from typing import Any
 
 from .. import config
 from ..services.sample import RawSample, Sample
+
+
+_log = logging.getLogger(__name__)
 
 
 class Sensor(ABC):
@@ -432,6 +436,7 @@ class LoadCellSensor(Sensor):
         sig_plus_ain: int,
         sig_minus_ain: int,
         max_load_n: float,
+        sampling_rate_hz: float | None = None,
         excitation_voltage: float = 5.0,
         sensitivity_v_per_v: float = 0.0020,
         offset_n: float = 0.0,
@@ -443,6 +448,7 @@ class LoadCellSensor(Sensor):
         self.sig_plus_ain = int(sig_plus_ain)
         self.sig_minus_ain = int(sig_minus_ain)
         self.max_load_n = float(max_load_n)
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
         self.excitation_voltage = float(excitation_voltage)
         self.sensitivity_v_per_v = float(sensitivity_v_per_v)
         self.offset_n = float(offset_n)
@@ -505,6 +511,7 @@ class PressureTransducerSensor(Sensor):
         *,
         adc: Any,
         sig_ain: int,
+        sampling_rate_hz: float | None = None,
         v_min: float = 0.5,
         v_max: float = 4.5,
         p_min: float = 0.0,
@@ -516,6 +523,7 @@ class PressureTransducerSensor(Sensor):
         self.name = str(name)
         self.adc = adc
         self.sig_ain = int(sig_ain)
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
         self.v_min = float(v_min)
         self.v_max = float(v_max)
         self.v_span = self.v_max - self.v_min
@@ -582,6 +590,7 @@ class RTDSensor(Sensor):
         lead2_ain: int,
         idac1_ain: int,
         idac2_ain: int,
+        sampling_rate_hz: float | None = None,
         r0_ohms: float = 1000.0,
         idac_current_ua: float = 50.0,
         unit: str = "°C",
@@ -591,6 +600,7 @@ class RTDSensor(Sensor):
         self.adc = adc
         self.lead1_ain = int(lead1_ain)
         self.lead2_ain = int(lead2_ain)
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
         self.r0_ohms = float(r0_ohms)
         self.idac_current_ua = float(idac_current_ua)
         self.idac1_ain = int(idac1_ain)
@@ -714,6 +724,40 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         from deep_thrott_code.daq.drivers.adc import ADS124S08  # noqa: PLC0415
 
+        # ADS124S08 DATARATE.DR[3:0] mapping (Table 30 in SBAS660).
+        # Register reset value is 0x14 -> FILTER=1 (low-latency), DR=0x4 (20 SPS).
+        _ADS124S08_ALLOWED_ODR: list[tuple[float, int]] = [
+            (2.5, 0x0),
+            (5.0, 0x1),
+            (10.0, 0x2),
+            (16.6, 0x3),
+            (20.0, 0x4),
+            (50.0, 0x5),
+            (60.0, 0x6),
+            (100.0, 0x7),
+            (200.0, 0x8),
+            (400.0, 0x9),
+            (800.0, 0xA),
+            (1000.0, 0xB),
+            (2000.0, 0xC),
+            (4000.0, 0xD),
+        ]
+
+        def _pick_ads124s08_dr_code(min_sps: float) -> tuple[int, float]:
+            min_sps = float(min_sps)
+            for sps, code in _ADS124S08_ALLOWED_ODR:
+                if sps + 1e-9 >= min_sps:
+                    return int(code), float(sps)
+            sps, code = _ADS124S08_ALLOWED_ODR[-1]
+            return int(code), float(sps)
+
+        def _set_ads124s08_datarate_dr_bits(adc: ADS124S08, dr_code: int) -> None:
+            # Preserve the upper DATARATE bits (G_CHOP/CLK/MODE/FILTER).
+            cur = adc.rreg(adc.REG_DATARATE, 1)[0]
+            new = (cur & 0xF0) | (int(dr_code) & 0x0F)
+            if new != cur:
+                adc.wreg(adc.REG_DATARATE, [new])
+
         def _load_yaml(path: Path) -> dict[str, Any]:
             if not path.exists():
                 return {}
@@ -756,6 +800,16 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             # - cs_gpio set  -> use GPIO-controlled chip select (for "extra" CS lines)
             # - cs_gpio null -> use hardware CE line selected by spi_device
 
+            # NOTE: The ADS124S08 driver defaulted to a very low SPI clock (10 kHz),
+            # which is fine for smoke-testing but will cap DAQ throughput once you
+            # raise the ADC output data rate. Default to a more realistic value here
+            # for the DAQ runner; allow per-ADC override in hardware.yml.
+            spi_max_speed_hz = cfg.get("spi_max_speed_hz")
+            try:
+                spi_max_speed_hz_i = int(spi_max_speed_hz) if spi_max_speed_hz is not None else 500_000
+            except Exception:
+                spi_max_speed_hz_i = 500_000
+
             adc = ADS124S08(
                 id=adc_id,
                 spi_bus=int(spi_bus),
@@ -763,6 +817,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 cs_pin=cs_pin,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
                 drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
+                max_speed_hz=spi_max_speed_hz_i,
             )
             try:
                 adc.hardware_reset()
@@ -820,6 +875,95 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         if not isinstance(pt_cfg, dict) or not pt_cfg:
             raise RuntimeError(f"No pressure transducers configured in {hardware_path}")
 
+        # Configure ADC output data rates based on requested sensor sampling.
+        # The producer loop reads sensors sequentially, and each sensor read can
+        # require multiple ADC conversions (e.g., settle-discard doubles it).
+        # If DATARATE is left at its reset default (20 SPS), overall throughput
+        # can easily land in the single-digit Hz range across all channels.
+        settle_discard = bool(getattr(config, "ADC_SETTLE_DISCARD", True))
+
+        def _sensor_rate_hz(cfg: dict[str, Any], default_hz: float = 100.0) -> float:
+            try:
+                return float(cfg.get("sampling_rate_hz", default_hz))
+            except Exception:
+                return float(default_hz)
+
+        # conversions per sample depends on implementation details
+        pt_conversions = 2.0 if settle_discard else 1.0
+        rtd_conversions = 3.0 * (2.0 if settle_discard else 1.0)  # lead1 + lead2 + diff
+        lc_conversions = 3.0 * (2.0 if settle_discard else 1.0)  # plus + minus + diff
+
+        conversions_per_sec_by_adc: dict[str, float] = {k: 0.0 for k in adc_by_id.keys()}
+
+        for _sid, cfg in pt_cfg.items():
+            if not isinstance(cfg, dict) or not bool(cfg.get("enabled", False)):
+                continue
+            adc_id = cfg.get("adc_id")
+            if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                continue
+            conversions_per_sec_by_adc[adc_id] += _sensor_rate_hz(cfg) * pt_conversions
+
+        if isinstance(rtd_cfg, dict):
+            for _sid, cfg in rtd_cfg.items():
+                if not isinstance(cfg, dict) or not bool(cfg.get("enabled", False)):
+                    continue
+                adc_id = cfg.get("adc_id")
+                if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                    continue
+                conversions_per_sec_by_adc[adc_id] += _sensor_rate_hz(cfg, default_hz=10.0) * rtd_conversions
+
+        if isinstance(lc_cfg, dict):
+            for _sid, cfg in lc_cfg.items():
+                if not isinstance(cfg, dict) or not bool(cfg.get("enabled", False)):
+                    continue
+                adc_id = cfg.get("adc_id")
+                if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                    continue
+                conversions_per_sec_by_adc[adc_id] += _sensor_rate_hz(cfg) * lc_conversions
+
+        for adc_id, convs_per_sec in conversions_per_sec_by_adc.items():
+            if convs_per_sec <= 0:
+                continue
+
+            adc_cfg = adcs_cfg.get(adc_id) if isinstance(adcs_cfg, dict) else None
+            adc_cfg = adc_cfg if isinstance(adc_cfg, dict) else {}
+
+            # Optional overrides:
+            # - datarate_sps: desired ODR in samples/sec
+            # - datarate_dr: raw DR[3:0] code (0..15)
+            override_sps = adc_cfg.get("datarate_sps")
+            if override_sps is None:
+                override_sps = adc_cfg.get("data_rate_sps")
+            override_dr = adc_cfg.get("datarate_dr")
+
+            try:
+                force_max = bool(getattr(config, "ADC_FORCE_MAX_DATARATE", False))
+
+                if override_dr is not None:
+                    dr_code = int(override_dr) & 0x0F
+                    chosen_sps = float("nan")
+                elif override_sps is not None:
+                    target_sps = float(override_sps) if override_sps is not None else float(convs_per_sec)
+                    dr_code, chosen_sps = _pick_ads124s08_dr_code(target_sps)
+                elif force_max:
+                    # Max valid DR code per Table 30: 0xD = 4000 SPS (0xE also maps to 4000 SPS).
+                    dr_code = 0x0D
+                    chosen_sps = 4000.0
+                else:
+                    dr_code, chosen_sps = _pick_ads124s08_dr_code(float(convs_per_sec))
+
+                _set_ads124s08_datarate_dr_bits(adc_by_id[adc_id], dr_code)
+                if override_dr is not None:
+                    _log.info("[%s] ADS124S08 DATARATE DR bits forced to 0x%X", adc_id, dr_code)
+                elif override_sps is not None:
+                    _log.info("[%s] ADS124S08 DATARATE set to %.1f SPS (override)", adc_id, chosen_sps)
+                elif force_max:
+                    _log.info("[%s] ADS124S08 DATARATE forced to max (%.1f SPS)", adc_id, chosen_sps)
+                else:
+                    _log.info("[%s] ADS124S08 DATARATE set for ~%.1f conv/s (chose %.1f SPS)", adc_id, convs_per_sec, chosen_sps)
+            except Exception as e:
+                _log.warning("[%s] Failed to configure ADS124S08 DATARATE: %s", adc_id, e)
+
         def _pt_calibration(sensor_id: str) -> tuple[float, float, float, float]:
             default = (0.5, 4.5, 0.0, 1000.0)
             cal = conversions_cfg.get("calibration")
@@ -873,11 +1017,17 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             v_min, v_max, p_min, p_max = _pt_calibration(sensor_id)
             name = sensor_id
 
+            try:
+                sampling_rate_hz = float(cfg.get("sampling_rate_hz")) if cfg.get("sampling_rate_hz") is not None else None
+            except Exception:
+                sampling_rate_hz = None
+
             sensors.append(
                 PressureTransducerSensor(
                     name=name,
                     adc=adc_by_id[adc_id],
                     sig_ain=int(ain),
+                    sampling_rate_hz=sampling_rate_hz,
                     v_min=v_min,
                     v_max=v_max,
                     p_min=p_min,
