@@ -1,7 +1,6 @@
 import pigpio
 import time
 import RPi.GPIO as GPIO
-import src.deep_thrott_code.f3c.valve as valve
 
 # Initialize pigpio
 pi = pigpio.pi()
