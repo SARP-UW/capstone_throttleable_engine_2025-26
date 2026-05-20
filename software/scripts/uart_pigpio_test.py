@@ -1,5 +1,6 @@
 import pigpio
 import time
+import RPI.GPIO as GPIO
 
 # Initialize pigpio
 pi = pigpio.pi()
@@ -12,17 +13,29 @@ TX_ENABLE = 18    # The GPIO pin connected to the 74AHCT125 *1OE
 BAUD = 115200     # Hiwonder servo baud rate
 
 # Ensure pins are set as outputs
-pi.set_mode(TX_PIN, pigpio.OUTPUT)
-pi.set_mode(TX_ENABLE, pigpio.OUTPUT)
+# pi.set_mode(TX_PIN, pigpio.OUTPUT)
+# pi.set_mode(TX_ENABLE, pigpio.OUTPUT)
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(TX_ENABLE, GPIO.OUT, initial=GPIO.HIGH)
+
+
 
 # Start with TX_ENABLE HIGH (Buffer disabled / listening mode)
-pi.write(TX_ENABLE, 1) 
+print("High")
+# pi.write(TX_ENABLE, 1) 
+GPIO.output(TX_ENABLE, GPIO.HIGH)
 
 ##### DEBUGGING
 time.sleep(2)
-pi.write(TX_ENABLE, 0)  # Idle state for UART is HIGH
+print("Low")
+# pi.write(TX_ENABLE, 0)  # Idle state for UART is HIGH
+GPIO.output(TX_ENABLE, GPIO.LOW)
+
 time.sleep(2)
-pi.write(TX_ENABLE, 1)  # Set TX pin high
+print("High")
+# pi.write(TX_ENABLE, 1)  # Set TX pin high
+GPIO.output(TX_ENABLE, GPIO.HIGH)
 #####git 
 
 # def send_servo_command(data_bytes):
