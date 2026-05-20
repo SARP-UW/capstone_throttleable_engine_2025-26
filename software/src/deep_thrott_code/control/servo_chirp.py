@@ -1,11 +1,12 @@
 import numpy as np
 # from debugpy._vendored.pydevd._pydevd_bundle import pydevd_io
 from scipy.signal import chirp
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import serial
 import time
 
-import RPi.GPIO as GPIO
+import pigpio
+pi = pigpio.pi()
 
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,9 +15,25 @@ from f3c.valve import ThrottleValve
 
 TX_ENABLE_PIN = 18
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+# TX_ENABLE pin setup
+pi.set_mode(18, pigpio.OUTPUT)
+pi.write(18, 1)
 print("GPIO setup complete.")
+
+time.sleep(10)
+
+pi.write(TX_ENABLE_PIN, 1)
+print("Pin 18 high.")
+
+time.sleep(10)
+
+pi.write(TX_ENABLE_PIN, 0)
+print("Pin 18 low.")
+
+time.sleep(10)
+
+pi.write(TX_ENABLE_PIN, 1)
+print("Pin 18 high.")
 
 # Parameters
 T = 10.0             # Total time in seconds
@@ -69,7 +86,7 @@ def build_packet(uart_id, cmd, params=[]):
 
 def send_packet(packet):
     # pull low to say "i'm bouta transmit"
-    GPIO.output(TX_ENABLE_PIN, GPIO.LOW)
+    pi.write(TX_ENABLE_PIN, 0)
     print("Pulled pin low")
     ser.write(packet)
     # ser.flush()    # waits for entire packet to be written
@@ -80,7 +97,7 @@ def send_packet(packet):
     time.sleep(len(packet) * 10 / 115200 + 0.0005)
 
     # pull high to say "i'm done transmitting yo"
-    GPIO.output(TX_ENABLE_PIN, GPIO.HIGH)
+    pi.write(TX_ENABLE_PIN, 1)
     print("Pulled pin high")
 
 
