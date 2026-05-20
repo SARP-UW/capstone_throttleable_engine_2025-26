@@ -60,8 +60,14 @@ def send_servo_command(data_bytes):
     # Clean up the memory
     pi.wave_delete(wave_id)
 
+
+
 # Example Usage:
-command_data = b'\x55\x55\x08\x03\x01\x00'
-send_servo_command(command_data)
+packet = b'\x55\x55\x08\x03\x01\x00'
+print("Sending command: ", packet)
+time.sleep(1)
+send_servo_command(packet)
+time.sleep(1)
+print("Command sent")
 
 # You can now immediately read from standard serial RX!
