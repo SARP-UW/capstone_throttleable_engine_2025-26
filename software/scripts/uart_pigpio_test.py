@@ -22,19 +22,19 @@ pi.set_mode(TX_ENABLE, pigpio.OUTPUT)
 
 
 # Start with TX_ENABLE HIGH (Buffer disabled / listening mode)
-print("High")
+# print("High")
 pi.write(TX_ENABLE, 1) 
 # GPIO.output(TX_ENABLE, GPIO.HIGH)
 
 ##### DEBUGGING
-time.sleep(2)
-print("Low")
-pi.write(TX_ENABLE, 0)  # Idle state for UART is HIGH
+# time.sleep(2)
+# print("Low")
+# pi.write(TX_ENABLE, 0)  # Idle state for UART is HIGH
 # GPIO.output(TX_ENABLE, GPIO.LOW)
 
-time.sleep(2)
-print("High")
-pi.write(TX_ENABLE, 1)  # Set TX pin high
+# time.sleep(2)
+# print("High")
+# pi.write(TX_ENABLE, 1)  # Set TX pin high
 # GPIO.output(TX_ENABLE, GPIO.HIGH)
 #####git 
 
