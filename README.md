@@ -4,5 +4,5 @@
 This repository includes...
 - software (Python) for data acquisition, valve actuation, and throttle control
 - hardware (KiCAD) design of the PCB for data acquisition, valve actuation, and throttle control
-- thermal and structural analysis (Ansys) of the engine
+- thermal and structural analysis (Ansys) of the engine and fluid-feed/cooling system
 
