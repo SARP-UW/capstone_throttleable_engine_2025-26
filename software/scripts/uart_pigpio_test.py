@@ -1,6 +1,7 @@
 import pigpio
 import time
 import RPi.GPIO as GPIO
+import src.deep_thrott_code.f3c.valve as valve
 
 # Initialize pigpio
 pi = pigpio.pi()
@@ -82,7 +83,25 @@ def send_servo_command(data_bytes):
     pi.wave_delete(wave_id)
 
 # Example Usage:
-command_data = b'\x55\x55\x08\x03\x01\x00'
-send_servo_command(command_data)
+
+# def _checksum(self, length, cmd, params):
+#         total = self.uart_id + length + cmd + sum(params)
+#         return (~total) & 0xFF
+
+# def build_packet(self, cmd, params=[]):
+#     length = len(params) + 3
+#     chk = self._checksum(length, cmd, params)
+#     return bytes([0x55, 0x55, self.uart_id, length, cmd] + params + [chk])
+
+uart_id = 0xFE
+cmd = 14
+length = 3
+params = []
+total = uart_id + length + cmd + sum(params)
+chk = (~total) & 0xFF
+packet = bytes([0x55, 0x55, uart_id, length, cmd] + params + [chk])
+
+# lengthm cmd, params, checksum
+send_servo_command(packet)
 
 # You can now immediately read from standard serial RX!
