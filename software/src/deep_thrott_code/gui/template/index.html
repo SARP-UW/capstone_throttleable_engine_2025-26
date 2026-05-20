@@ -314,6 +314,27 @@
       background: white;
     }
 
+    .daq-readouts {
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      padding: 10px;
+      background: white;
+      overflow-y: auto;
+    }
+
+    .daq-readouts.hidden {
+      display: none;
+    }
+
+    .daq-readout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
     .pid-image {
       position: absolute;
       inset: 0;
@@ -772,13 +793,86 @@
           </div>
 
           <div class="pid-stage hidden" id="pidStageNitrous" data-stage="nitrous">
-            <div style="padding: 16px; font-size: 1rem;">
-              Nitrous line diagram not yet provided.
+            <div class="pid-canvas" id="pidCanvasNitrous">
+              <img class="pid-image" src="{{ url_for('static', filename='nitrous_line_pid.png') }}">
+
+              <div class="overlay" style="left: 377px;top: 220px;" data-valve="XFFV">
+                <div class="overlay-label">XFFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 375px;top: 476px;" data-valve="OFFV">
+                <div class="overlay-label">OFFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 945px;top: 220px;" data-valve="OIFV">
+                <div class="overlay-label">OIFV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 679px;top: 83px;" data-valve="OTVV">
+                <div class="overlay-label">OTVV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 942px;top: 473px;" data-valve="OMV">
+                <div class="overlay-label">OMV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 1168px;top: 474px;" data-valve="OMCTV">
+                <div class="overlay-label">OMCTV</div>
+                <div class="valve-controls">
+                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
+                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
+                </div>
+              </div>
+
+              <div class="overlay" style="left: 267px;top: 73px;">
+                <div class="overlay-label">XF-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-XF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 788px;top: 218px;">
+                <div class="overlay-label">OT-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OT-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 342px;top: 338px;">
+                <div class="overlay-label">OF-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 1024px;top: 343px;">
+                <div class="overlay-label">OM-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
+
+              <div class="overlay" style="left: 1249px;top: 366px;">
+                <div class="overlay-label">OI-PT</div>
+                <div class="sensor-box is-placeholder" id="sensor-OI-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
+              </div>
             </div>
           </div>
 
           <div class="pid-stage hidden" id="daqStage" data-stage="daq">
-            <div class="daq-grid">
+            <div class="daq-grid" id="daqPlots">
               <div class="daq-panel">
                 <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot1"></canvas></div>
                 <div class="daq-select"><select id="daqSelect1" aria-label="Select signal for plot 1"></select></div>
@@ -809,6 +903,8 @@
                 <div class="daq-select"><select id="daqSelect6" aria-label="Select signal for plot 6"></select></div>
               </div>
             </div>
+
+            <div class="daq-readouts hidden" id="daqReadouts"></div>
           </div>
         </div>
       </div>
@@ -869,6 +965,19 @@
               <span>Disable</span><span class="settings-tick" data-sim-tick="disabled" aria-hidden="true"></span>
             </button>
           </div>
+
+          <button class="settings-btn" type="button" data-settings-section="test" role="menuitem">
+            <span>Test</span>
+            <span class="settings-tick" aria-hidden="true">▸</span>
+          </button>
+          <div class="settings-submenu hidden" id="testSubmenu" aria-label="Test">
+            <button class="settings-btn" type="button" data-test="hotfire" role="menuitem">
+              <span>Hotfire</span><span class="settings-tick" data-test-tick="hotfire" aria-hidden="true"></span>
+            </button>
+            <button class="settings-btn" type="button" data-test="injector cold flow" role="menuitem">
+              <span>Injector Cold Flow</span><span class="settings-tick" data-test-tick="injector cold flow" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -911,11 +1020,9 @@
         document.head.appendChild(main);
       }
 
-      const backendBase = deriveBackendBaseUrl();
-      const candidates = [
-        `${backendBase}/socket.io/socket.io.js`,
-        'https://cdn.socket.io/4.7.5/socket.io.min.js',
-      ];
+    // Flask-SocketIO does not serve the browser Socket.IO client at
+    // /socket.io/socket.io.js in this project setup. Always load from CDN.
+    const candidates = ['https://cdn.socket.io/4.7.5/socket.io.min.js'];
 
       (function tryLoad(i) {
         if (i >= candidates.length) {
@@ -934,25 +1041,42 @@
     })();
   </script>
   <script>
-    const pidCanvas = document.getElementById('pidCanvasEthanol');
-    const pidStage = document.getElementById('pidStageEthanol');
+    const pidStages = {
+      ethanol: {
+        stage: document.getElementById('pidStageEthanol'),
+        canvas: document.getElementById('pidCanvasEthanol'),
+      },
+      nitrous: {
+        stage: document.getElementById('pidStageNitrous'),
+        canvas: document.getElementById('pidCanvasNitrous'),
+      },
+    };
 
-    let scale = 1;
+    // Fit target dimensions (used by the existing Ethanol layout).
+    const PID_FIT_W = 1700;
+    const PID_FIT_H = 664;
 
-    function applyScale() {
-      pidCanvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    let activeTab = 'ethanol';
+
+    function applyScaleFor(tabName, scale) {
+      const entry = pidStages[tabName];
+      if (!entry || !entry.canvas) return;
+      entry.canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
 
     function fitCanvasToPanel() {
-      if (!pidStage || pidStage.classList.contains('hidden')) return;
-      const stageWidth = pidStage.clientWidth - 24;
-      const stageHeight = pidStage.clientHeight - 24;
-      const fitScale = Math.min(stageWidth / 1700, stageHeight / 664);
-      scale = Math.min(fitScale, 1);
-      applyScale();
+      const entry = pidStages[activeTab];
+      if (!entry || !entry.stage || !entry.canvas) return;
+      if (entry.stage.classList.contains('hidden')) return;
+      const stageWidth = entry.stage.clientWidth - 24;
+      const stageHeight = entry.stage.clientHeight - 24;
+      const fitScale = Math.min(stageWidth / PID_FIT_W, stageHeight / PID_FIT_H);
+      const scale = Math.min(fitScale, 1);
+      applyScaleFor(activeTab, scale);
     }
 
     function setActiveTab(tabName) {
+      activeTab = tabName;
       document.querySelectorAll('.tab[data-tab]').forEach((t) => {
         t.classList.toggle('active', t.dataset.tab === tabName);
       });

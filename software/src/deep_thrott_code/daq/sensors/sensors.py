@@ -691,7 +691,7 @@ class FlowMeterSensor(Sensor):
         raise NotImplementedError("FlowMeterSensor is not implemented yet")
 
 
-def build_sensors(*, simulation: bool = True) -> list[Sensor]:
+def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> list[Sensor]:
     """Create and return the list of sensor objects.
 
     - simulation=True: returns simulated sensors (runs without hardware).
@@ -773,7 +773,42 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
 
             adc_by_id[adc_id] = adc
 
-        sensors_cfg = hardware_cfg.get("sensors")
+        def _norm_test_key(s: str) -> str:
+            return " ".join(str(s).strip().lower().split())
+
+        def _select_sensors_cfg(cfg: Any, group: str | None) -> Any:  # noqa: ANN401
+            """Select a nested sensors group if present.
+
+            Supports either:
+            - legacy flat schema: sensors: {pressure_transducers: ...}
+            - grouped schema: sensors: {hotfire: {...}, "injector cold flow": {...}}
+            """
+
+            if not isinstance(cfg, dict):
+                return None
+
+            # Legacy schema: looks like a direct sensor-category dict.
+            if any(k in cfg for k in ("pressure_transducers", "rtds", "resistive temperature detectors", "load_cells", "flow meters")):
+                return cfg
+
+            # Grouped schema: choose requested group (default to hotfire).
+            want = _norm_test_key(group or "hotfire")
+            for key, val in cfg.items():
+                if not isinstance(key, str):
+                    continue
+                if _norm_test_key(key) == want:
+                    return val
+
+            # Fallback: try hotfire if explicit group missing.
+            for key, val in cfg.items():
+                if isinstance(key, str) and _norm_test_key(key) == "hotfire":
+                    return val
+
+            return None
+
+        sensors_cfg_root = hardware_cfg.get("sensors")
+        sensors_cfg = _select_sensors_cfg(sensors_cfg_root, test_name)
+
         pt_cfg = sensors_cfg.get("pressure_transducers") if isinstance(sensors_cfg, dict) else None
         rtd_cfg = (
             (sensors_cfg.get("rtds") or sensors_cfg.get("resistive temperature detectors"))
@@ -821,12 +856,6 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
             except Exception:
                 return default
 
-        alias_by_sensor_id = {
-            # Keep these names matching the GUI defaults/bindings.
-            "CC-PT": "chamber_pressure",
-            "FI-PT": "injector_pressure",
-        }
-
         sensors: list[Sensor] = []
         for sensor_id, cfg in pt_cfg.items():
             if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
@@ -842,7 +871,7 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
                 raise RuntimeError(f"Pressure transducer {sensor_id} is enabled but has no 'ain' set")
 
             v_min, v_max, p_min, p_max = _pt_calibration(sensor_id)
-            name = alias_by_sensor_id.get(sensor_id, sensor_id)
+            name = sensor_id
 
             sensors.append(
                 PressureTransducerSensor(
@@ -921,14 +950,14 @@ def build_sensors(*, simulation: bool = True) -> list[Sensor]:
 
     return [
         SimulatedPressureSensor(
-            name="chamber_pressure",
+            name="CC-PT",
             offset=200.0,
             amplitude=20.0,
             frequency_hz=0.2,
             seed=0,
         ),
         SimulatedPressureSensor(
-            name="injector_pressure",
+            name="FI-PT",
             offset=300.0,
             amplitude=10.0,
             frequency_hz=0.1,

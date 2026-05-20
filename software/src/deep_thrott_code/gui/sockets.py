@@ -44,6 +44,27 @@ def _sample_to_json(sample: Any) -> dict[str, Any]:  # noqa: ANN401
 	simpler mock objects in simulation/tests.
 	"""
 
+	v1 = getattr(sample, "V_diff_1", None)
+	v2 = getattr(sample, "V_diff_2", None)
+	try:
+		v1f = float(v1) if v1 is not None else None
+	except Exception:
+		v1f = None
+	try:
+		v2f = float(v2) if v2 is not None else None
+	except Exception:
+		v2f = None
+
+	# Convenience scalar voltage:
+	# - single-ended sensors: voltage_v == V_diff_1
+	# - differential sensors: voltage_v == |V1 - V2|
+	if v1f is not None and v2f is not None:
+		voltage_v = abs(v1f - v2f)
+	elif v1f is not None:
+		voltage_v = v1f
+	else:
+		voltage_v = None
+
 	return {
 		"sensor_name": getattr(sample, "sensor_name", ""),
 		"sensor_kind": getattr(sample, "sensor_kind", ""),
@@ -51,6 +72,9 @@ def _sample_to_json(sample: Any) -> dict[str, Any]:  # noqa: ANN401
 		"t_wall": float(getattr(sample, "t_wall", 0.0) or 0.0),
 		"value": getattr(sample, "value", None),
 		"units": getattr(sample, "units", ""),
+		"V_diff_1": v1f,
+		"V_diff_2": v2f,
+		"voltage_v": voltage_v,
 		"status": getattr(sample, "status", ""),
 		"message": getattr(sample, "message", ""),
 	}
@@ -82,6 +106,7 @@ def register_socket_handlers(
 	- Validate
 	- Emit reject or enqueue to command_queue and emit accept
 	"""
+
 
 	# latest_states is a "latest value" cache used to build `daq_packet`.
 	# We keep this lock small/fast so the 10 Hz loop stays stable.
@@ -284,17 +309,17 @@ def register_socket_handlers(
 		if not isinstance(name, str) or not name:
 			socketio.emit("command_reject", {"ok": False, "reason": "missing_name"})
 			return
-
 		# Commands intended for the sequencer/controller loop.
 		if name in {"fill", "fire"}:
 			if command_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
 				return
 			try:
-				command_queue.put(name, timeout=0.1)
+				command_queue.put({"type": name}, timeout=0.1)
 			except Exception:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return
+			pass
 		elif name in {"reset_sequences", "clear_test"}:
 			# Used by the GUI to clear sequence state/history so fill/fire can be rerun.
 			# Always put it on the command_queue so the controller can clear its

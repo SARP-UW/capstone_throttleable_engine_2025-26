@@ -59,7 +59,17 @@ class DaqRuntime:
 		self._producer_cpu = int(producer_cpu)
 		self._consumer_cpu = int(consumer_cpu)
 
-		self._log_path = str(log_path)
+		from datetime import datetime
+		from pathlib import Path
+
+		now = datetime.now()
+		folder_date = now.strftime("%Y/%m/%d") 
+		file_timestamp = now.strftime("%H-%M-%S_data.csv")
+		base_dir = Path("logs")
+		full_path = base_dir / folder_date / file_timestamp
+		full_path.parent.mkdir(parents=True, exist_ok=True)
+
+		self._log_path = str(full_path)
 
 		self._lock = threading.Lock()
 		self._running = False
@@ -73,7 +83,7 @@ class DaqRuntime:
 		with self._lock:
 			return bool(self._running)
 
-	def start(self, simulation: bool) -> None:
+	def start(self, simulation: bool, test_name: str | None = None) -> None:
 		"""Start DAQ threads and begin emitting samples to `gui_queue`."""
 
 		from deep_thrott_code.daq.services.loop import consumer_loop, producer_loop  # noqa: PLC0415
@@ -87,7 +97,7 @@ class DaqRuntime:
 				return
 
 		try:
-			sensors = build_sensors(simulation=bool(simulation))
+			sensors = build_sensors(simulation=bool(simulation), test_name=test_name)
 		except Exception as e:
 			self._emit_system(str(e))
 			return
@@ -102,7 +112,7 @@ class DaqRuntime:
 
 		def producer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._producer_cpu)
-			producer_loop(sensors, self._sample_queue, stop_event, 50.0)
+			producer_loop(sensors, self._sample_queue, stop_event, 100.0)
 
 		def consumer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._consumer_cpu)

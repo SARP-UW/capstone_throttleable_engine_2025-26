@@ -12,6 +12,7 @@
 	let socketRef = null;
 	let telemetryFrozen = false;
 	let simulationEnabled = true;
+	let selectedTest = 'hotfire';
 	let sequenceDefs = null;
 	let systemSnapshot = null;
 	let pendingSequenceCommand = null; // 'fill' | 'fire' | null
@@ -177,6 +178,27 @@
 		return true;
 	}
 
+	function getSavedSelectedTest() {
+		const raw = String(localStorage.getItem('selectedTest') || '').trim();
+		if (raw === 'hotfire' || raw === 'injector cold flow') return raw;
+		return 'hotfire';
+	}
+
+	function setSelectedTest(testName) {
+		const normalized = testName === 'injector cold flow' ? 'injector cold flow' : 'hotfire';
+		selectedTest = normalized;
+		localStorage.setItem('selectedTest', selectedTest);
+		updateTestTicks(selectedTest);
+		emitGuiCommand({ name: 'set_test', test: selectedTest });
+	}
+
+	function updateTestTicks(testName) {
+		document.querySelectorAll('[data-test-tick]').forEach((el) => {
+			const key = el.getAttribute('data-test-tick');
+			el.textContent = key === testName ? '✓' : '';
+		});
+	}
+
 	function setSimulationEnabled(enabled) {
 		simulationEnabled = !!enabled;
 		localStorage.setItem('simulationEnabled', simulationEnabled ? 'true' : 'false');
@@ -194,34 +216,39 @@
 
 	const MAX_POINTS = 300;
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
+	const latestVoltageBySensor = new Map(); // sensorName -> { v: number|null, v1: number|null, v2: number|null }
 	let knownSensorNames = [];
 
 	const plotWidgets = [
 		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'thrust' },
 		{ canvasId: 'daqPlot2', selectId: 'daqSelect2', defaultSensor: 'tank_temp' },
-		{ canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'injector_pressure' },
-		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'chamber_pressure' },
+		{ canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'FI-PT' },
+		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'CC-PT' },
 		{ canvasId: 'daqPlot5', selectId: 'daqSelect5', defaultSensor: '' },
 		{ canvasId: 'daqPlot6', selectId: 'daqSelect6', defaultSensor: '' },
 	];
 
 	const bindings = [
-		// Keep these two tied to the simulated snapshot keys.
-		{ sensorName: 'chamber_pressure', elementId: 'sensor-CC-PT' },
-		{ sensorName: 'injector_pressure', elementId: 'sensor-FI-PT' },
-
 		// Untied PTs: expect distinct sensor names from the DAQ state store.
+		{ sensorName: 'CC-PT', elementId: 'sensor-CC-PT' },
+		{ sensorName: 'FI-PT', elementId: 'sensor-FI-PT' },
 		{ sensorName: 'LF-PT', elementId: 'sensor-LF-PT' },
 		{ sensorName: 'FT-PT', elementId: 'sensor-FT-PT' },
 		{ sensorName: 'FM-PT', elementId: 'sensor-FM-PT' },
 		{ sensorName: 'WM-PT', elementId: 'sensor-WM-PT' },
+		// Nitrous panel PTs (names match config/hardware.yml)
+		{ sensorName: 'XF-PT', elementId: 'sensor-XF-PT' },
+		{ sensorName: 'OT-PT', elementId: 'sensor-OT-PT' },
+		{ sensorName: 'OF-PT', elementId: 'sensor-OF-PT' },
+		{ sensorName: 'OM-PT', elementId: 'sensor-OM-PT' },
+		{ sensorName: 'OI-PT', elementId: 'sensor-OI-PT' },
 	];
 
 	const valveStateByName = new Map(); // valveName -> 'open' | 'closed'
 	const prevPressureBySensor = new Map(); // sensorName -> { t: number, v: number }
 
 	function resetAllSensorBoxes() {
-		document.querySelectorAll('.sensor-box').forEach((el) => {
+		document.querySelectorAll('.sensor-box[id^="sensor-"]').forEach((el) => {
 			el.classList.remove('good');
 			el.classList.add('is-placeholder');
 			el.innerHTML = '<div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div>';
@@ -391,6 +418,15 @@
 		for (const name of sensorNames) {
 			const state = states[name];
 			if (!state || typeof state !== 'object') continue;
+
+			// Cache latest voltage for display.
+			const v = typeof state.voltage_v === 'number' && Number.isFinite(state.voltage_v) ? state.voltage_v : null;
+			const v1 = typeof state.V_diff_1 === 'number' && Number.isFinite(state.V_diff_1) ? state.V_diff_1 : null;
+			const v2 = typeof state.V_diff_2 === 'number' && Number.isFinite(state.V_diff_2) ? state.V_diff_2 : null;
+			if (v !== null || v1 !== null || v2 !== null) {
+				latestVoltageBySensor.set(name, { v, v1, v2 });
+			}
+
 			const value = state.value;
 			if (typeof value !== 'number') continue;
 			const units = typeof state.units === 'string' ? state.units : '';
@@ -490,9 +526,25 @@
 		// Title / latest value
 		const latestV = rec.v[rec.v.length - 1];
 		const units = rec.units ? ` ${rec.units}` : '';
+		const vrec = latestVoltageBySensor.get(sensorName);
+		let vText = '';
+		if (vrec && typeof vrec === 'object') {
+			if (typeof vrec.v === 'number' && Number.isFinite(vrec.v)) {
+				vText = `  V=${vrec.v.toFixed(3)}V`;
+			} else if (
+				typeof vrec.v1 === 'number' &&
+				Number.isFinite(vrec.v1) &&
+				typeof vrec.v2 === 'number' &&
+				Number.isFinite(vrec.v2)
+			) {
+				vText = `  ΔV=${Math.abs(vrec.v1 - vrec.v2).toFixed(3)}V`;
+			} else if (typeof vrec.v1 === 'number' && Number.isFinite(vrec.v1)) {
+				vText = `  V=${vrec.v1.toFixed(3)}V`;
+			}
+		}
 		ctx.fillStyle = '#111111';
 		ctx.font = `${Math.max(12, Math.floor(h * 0.08))}px Arial`;
-		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}`, left, Math.max(top - 6, Math.floor(h * 0.12)));
+		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}`, left, Math.max(top - 6, Math.floor(h * 0.12)));
 	}
 
 	function renderAllPlots() {
@@ -602,6 +654,7 @@
 			setSystemMessage('System message: Connected to DAQ stream.');
 
 			emitGuiCommand({ name: 'set_simulation', enabled: simulationEnabled });
+			emitGuiCommand({ name: 'set_test', test: selectedTest });
 		});
 		socket.on('disconnect', () => {
 			setSystemMessage('System message: Disconnected from DAQ stream.');
@@ -755,6 +808,7 @@
 		const menu = document.getElementById('settingsMenu');
 		const themeSubmenu = document.getElementById('themeSubmenu');
 		const simSubmenu = document.getElementById('simulationSubmenu');
+		const testSubmenu = document.getElementById('testSubmenu');
 		if (!toggle || !menu) return;
 
 		function closeMenu() {
@@ -762,6 +816,7 @@
 			toggle.setAttribute('aria-expanded', 'false');
 			if (themeSubmenu) themeSubmenu.classList.add('hidden');
 			if (simSubmenu) simSubmenu.classList.add('hidden');
+			if (testSubmenu) testSubmenu.classList.add('hidden');
 		}
 
 		function openMenu() {
@@ -777,6 +832,7 @@
 		function showSubmenu(which) {
 			if (themeSubmenu) themeSubmenu.classList.toggle('hidden', which !== 'theme');
 			if (simSubmenu) simSubmenu.classList.toggle('hidden', which !== 'simulation');
+			if (testSubmenu) testSubmenu.classList.toggle('hidden', which !== 'test');
 		}
 
 		toggle.addEventListener('click', (e) => {
@@ -807,6 +863,13 @@
 			});
 		});
 
+		document.querySelectorAll('[data-test]').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				setSelectedTest(btn.getAttribute('data-test'));
+			});
+		});
+
 		document.addEventListener('click', closeMenu);
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') closeMenu();
@@ -815,8 +878,10 @@
 
 	window.addEventListener('load', () => {
 		simulationEnabled = getSavedSimulationEnabled();
+		selectedTest = getSavedSelectedTest();
 		applyTheme(getSavedTheme());
 		updateSimulationTicks(simulationEnabled);
+		updateTestTicks(selectedTest);
 		resetAllSensorBoxes();
 		initSettingsMenu();
 		initDaqControls();

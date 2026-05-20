@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import queue
 import threading
@@ -35,6 +36,23 @@ CPU_CORE_1_OS_AND_GUI = 0
 CPU_CORE_2_THROTTLE = 1
 CPU_CORE_3_DAQ_PRODUCER = 2
 CPU_CORE_4_DAQ_CONSUMER_AND_F3 = 3
+
+
+class _WerkzeugRequestNoiseFilter(logging.Filter):
+	"""Filter out per-request access logs but keep startup banner lines."""
+
+	def filter(self, record: logging.LogRecord) -> bool:  # noqa: A003
+		try:
+			msg = record.getMessage()
+		except Exception:
+			return True
+		# Typical access log lines look like:
+		# 127.0.0.1 - - [..] "GET /socket.io/?..." 200 -
+		if '"GET ' in msg or '"POST ' in msg or '"PUT ' in msg or '"DELETE ' in msg:
+			return False
+		if msg.startswith('127.0.0.1 ') or msg.startswith('::1 '):
+			return False
+		return True
 
 
 def pin_current_thread_to_cpu(cpu_index: int) -> None:
@@ -157,7 +175,23 @@ def main() -> None:
 		daq.start(cfg.simulation)
 
 	print(f"Backend listening on http://{cfg.host}:{cfg.port} (Socket.IO)")
-	socketio.run(app, host=cfg.host, port=cfg.port, debug=cfg.debug, use_reloader=False)
+
+	# Keep terminal output readable: filter out per-request logs (polling spam)
+	# while keeping the startup banner ("Running on http://...") visible.
+	werk = logging.getLogger("werkzeug")
+	werk.setLevel(logging.INFO)
+	werk.addFilter(_WerkzeugRequestNoiseFilter())
+	logging.getLogger("engineio").setLevel(logging.ERROR)
+	logging.getLogger("socketio").setLevel(logging.ERROR)
+
+	socketio.run(
+		app,
+		host=cfg.host,
+		port=cfg.port,
+		debug=cfg.debug,
+		use_reloader=False,
+		log_output=True,
+	)
 
 if __name__ == "__main__":
 	main()

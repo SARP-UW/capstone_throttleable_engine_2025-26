@@ -1,0 +1,1 @@
+sensor_name,sensor_kind,t_monotonic,t_wall,raw_value,value,units,status,message,filtered_value,sequence,source
