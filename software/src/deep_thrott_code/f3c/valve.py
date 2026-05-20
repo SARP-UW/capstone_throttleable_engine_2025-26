@@ -100,20 +100,27 @@ class ThrottleValve(Valve):
     """
     Class which represents a throttleable valve, inherits from Valve.
     """
-    # def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, ser: serial.Serial):
-    #     super().__init__(valve_id, None, normally_closed)
-    #     self.uart_id = uart_id
-    #     self.ser = ser
-    #     self.load_motor()
+    # TODO: add command numbers/lengths from hiwonder datasheet to get rid of magic numbers
+    TX_ENABLE_PIN = 18
+    TX_PIN = 14
+    RX_PIN = 15
+    BAUD = 115200
+
+    def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, serial_handle):
+        super().__init__(valve_id, None, normally_closed)
+        self.uart_id = uart_id
+        self.serial_handle = serial_handle
+        self.load_motor()
+
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):
         if self.state != new_state:
             self.state = new_state
             if new_state == ValveState.OPEN:
-                self.throttle(90.0)
+                self.throttle(90.0, 0.5)
             else:
-                self.throttle(0.0)
+                self.throttle(0.0, 0.5)
 
     def throttle(self, angle_deg: float, time_s):
         """
@@ -149,7 +156,7 @@ class ThrottleValve(Valve):
             angle_deg = 0
         return angle_deg
 
-    #uart helper functions
+    # uart helper functions
     def load_motor(self):
         """
         Enable torque output - must be called before servo will move
@@ -167,32 +174,48 @@ class ThrottleValve(Valve):
         return bytes([0x55, 0x55, self.uart_id, length, cmd] + params + [chk])
 
     def send_packet(self, packet):
-        # pull low to say "i'm bouta transmit"
-        pi.write(TX_ENABLE_PIN, 0)
-        self.ser.write(packet)
-        self.ser.flush()
+        bits_total = len(packet) * 10  # 1 Start bit + 8 Data bits + 1 Stop bit = 10 bits per byte
+        duration_us = int((bits_total * 1_000_000) / self.BAUD)  # time in microseconds to send all bytes
+        margin_us = 20  # margin to prevent clipping the stop bit
+        total_wave_time = margin_us + duration_us + margin_us  # total time TX_ENABLE stays low (transmission time with margin before and after)
 
-        # wait for all bits to clock out of the shift register at 115200 baud
-        # (len(packet) bytes * 8 bits/byte) / 115200 + margin
-        time.sleep(len(packet) * 10 / 115200 + 0.0002)
+        pi.wave_clear()  # clears last waveform before sending a new one
+        pi.wave_add_serial(self.TX_PIN, self.BAUD, packet, offset=margin_us)  # adds waveform from packet to staging area
 
-        # pull high to say "i'm done transmitting yo"
-        pi.write(TX_ENABLE_PIN, 1)
+        enable_pulses = [
+            # Set TX_ENABLE low, hold for total_wave_time microseconds
+            pigpio.pulse(0, 1 << self.TX_ENABLE_PIN, total_wave_time),
+            # Set TX_ENABLE high, hold for 0 microseconds (end of wave)
+            pigpio.pulse(1 << self.TX_ENABLE_PIN, 0, 0)
+        ]
+        pi.wave_add_generic(enable_pulses)  # adds TX_ENABLE pulses to staging area
+
+        # Create wave id from waveforms in staging area and send
+        wave_id = pi.wave_create()
+        pi.wave_send_once(wave_id)
+
+        # Polls until DMA is done
+        while pi.wave_tx_busy():
+            time.sleep(0.001)
+
+        # Frees up memory
+        pi.wave_delete(wave_id)
+
         return len(packet)
 
     def read_response(self, packet_length, expected_length):
 
-        # get rid of echo with a shorter timeout
-        old_timeout = self.ser.timeout
-        self.ser.timeout = 0.02
-        echo = self.ser.read(packet_length)
+        # drain the echo
+        time.sleep(0.02)
+        count, echo = pi.serial_read(self.serial_handle, packet_length)
         print(f"Echo bytes: {list(echo)}")
-        self.ser.timeout = old_timeout
 
-        # get actual response
-        serial_response = self.ser.read(expected_length)
+        # read the response
+        time.sleep(0.02)
+        count, serial_response = pi.serial_read(self.serial_handle, expected_length)
         print(f"Response bytes: {list(serial_response)}")
-        if len(serial_response) == 0:
+
+        if count == 0:
             print("Timed out - no response received.")
             return None
         return serial_response
