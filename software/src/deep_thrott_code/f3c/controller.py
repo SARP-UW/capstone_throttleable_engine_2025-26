@@ -24,7 +24,7 @@ class State(Enum):
 
 class TransitionAction(Enum):
     """
-    Define the valid actions that can be taken. GUI can provide these in the form of strings.
+    Define the valid actions that can be taken.
     """
     END = "end"                  # when hitting the end of a sequence
     ABORT = "abort"              # when the user aborts a sequence
@@ -81,6 +81,7 @@ class Controller:
         # building stuff from config files
         print(f"Building transitions...")
         self.transitions = self._build_transitions()
+        print(self.transitions)
         print(f"Building sequences from {self.sequence_config_file}...")
         self.sequences = self._build_sequences(self.sequence_config_file)
         print(f"Building actuator list from {self.hardware_config_file}...")
@@ -226,12 +227,15 @@ class Controller:
     def start(self):
         print("Controller.start() loop entered")
         while not self._stop_event.is_set():
-            print("Controller.start() waiting for command...")
+            # print("Controller.start() waiting for command...")
             gui_input = self._command_queue.get() # waits for an item in the queue with an interrupt
+<<<<<<< Updated upstream
 
             # Debug breadcrumb: confirms the queue item actually reached the controller.
             print(f"Controller.start() got command: {gui_input}")
 
+=======
+>>>>>>> Stashed changes
             # shutdown functionality
             if gui_input is None:
                 break
@@ -341,9 +345,11 @@ class Controller:
         # if desired action is a valid, defined transition from current state
         with self._lock:
             current_state = self.state
+            # print("Current state: ", current_state.value)
         transition_key = (current_state, TransitionAction(sequence_name))
+        # print("Transition key: ", transition_key)
         if transition_key in self.transitions:
-
+            # print("Transition is valid!")
             # update system state to reflect command
             sequence_state = self.transitions.get(transition_key)
             if sequence_state.value == "fill" and not self.fill_executed or sequence_state.value == "fire" and not self.fire_executed:
@@ -353,6 +359,8 @@ class Controller:
                     self.current_step_index = None
                     self.current_step = None
                     self.waiting_manual = None
+
+                print("New system state:", self.state.value)
 
                 # loop through each step in sequence
                 # TODO: add checks that see if next step is valid based on condition valve and state
@@ -369,6 +377,8 @@ class Controller:
                         action_seq = step.get("action")
                         valve_key = str(valve_id).lower()
                         current_valve = self.actuator_list.get(valve_key)
+
+                        print("Current valve: ", valve_id)
 
                         # update current step information
                         with self._lock:
@@ -411,7 +421,23 @@ class Controller:
                             else:
                                 # TODO: error handling for unknown action, skip or default to CLOSED
                                 continue
+                            print("Valve goal state:", valve_goal_state)
 
+<<<<<<< Updated upstream
+=======
+                            # actuates valve if current valve state is different from goal state
+                            print("Current valve state: ", current_valve.get_state())
+                            if current_valve.get_state() != valve_goal_state:
+                                current_valve.set_state(valve_goal_state)
+                            # if not, set step status back to ready and move on to next step
+                            else:
+                                with self._lock:
+                                    self.step_status = StepStatus.READY
+                                continue
+
+                            # wait for delay specified in step (can be 0.0)
+                            time.sleep(step.get("time_delay", 0.0))
+>>>>>>> Stashed changes
                             if bool(step.get("user_input")):
                                 with self._lock:
                                     self.step_status = StepStatus.WAITING_USER
@@ -431,16 +457,18 @@ class Controller:
                                         timeout=0.1,
                                     )
                                 else:
-                                    user_input = input("Manual step required. Perform the required checks, then click Enter to continue.")
+                                    input("Manual step required. Perform the required checks, then click Enter to continue.")
 
                                 # Block until matching acknowledgement arrives
-                                while True:
-                                    ack = self._ack_queue.get()
-                                    try:
-                                        if isinstance(ack, dict) and ack.get("type") == "reset_sequences":
-                                            self.reset_sequences()
-                                            return
+                                if not computer_sim:
+                                    while True:
+                                        ack = self._ack_queue.get()
+                                        try:
+                                            if isinstance(ack, dict) and ack.get("type") == "reset_sequences":
+                                                self.reset_sequences()
+                                                return
 
+<<<<<<< Updated upstream
                                         if isinstance(ack, dict) and ack.get("type") == "manual_step_execute":
                                             seq = ack.get("sequence")
                                             step_index = ack.get("step_index")
@@ -464,10 +492,22 @@ class Controller:
                             # wait for delay specified in step (can be 0.0)
                             time.sleep(step.get("time_delay", 0.0))    
                             
+=======
+                                            if isinstance(ack, dict) and ack.get("type") == "manual_step_execute":
+                                                seq = ack.get("sequence")
+                                                step_index = ack.get("step_index")
+                                                ack_idx = int(step_index)
+                                                # what happens if this isn't true?
+                                                if seq == str(sequence_state.value) and ack_idx == int(idx):
+                                                    break
+                                        finally:
+                                            self._ack_queue.task_done()
+>>>>>>> Stashed changes
                             with self._lock:
                                 self.step_list.append(self.current_step)
                                 self.step_status = StepStatus.READY
 
+<<<<<<< Updated upstream
                 # sequence finished: mark as executed and return to IDLE
                 with self._lock:
                     if str(sequence_name) == State.FILL.value:
@@ -480,6 +520,16 @@ class Controller:
                     self.current_step = None
                     self.waiting_manual = None
                     self.step_status = StepStatus.READY
+=======
+                    # set fill_executed or fire_executed to True if the sequence is finished
+                    if current_sequence == "fill":
+                        fill_executed = True
+                    else:
+                        fire_executed = True
+            else:
+                # TODO: send to gui "already executed fill/fire sequence"
+                pass
+>>>>>>> Stashed changes
         else:
             # TODO: send to gui "invalid state transition"
             pass
@@ -544,8 +594,15 @@ class Controller:
             actuator_info_list = (hardware_config.get("actuators") or {}).get("valves") or {}
             actuator_list: dict[str, Any] = {}
             for valve_id, actuator_info in actuator_info_list.items():
+<<<<<<< Updated upstream
                 pin_raw = actuator_info.get("pin")
                 pin = int(pin_raw) if pin_raw is not None else None
                 normally_closed = bool(actuator_info.get("normally_closed", True))
                 actuator_list[str(valve_id)] = Valve(str(valve_id), pin, normally_closed)
+=======
+                if actuator_info.get("mode") == "on_off":
+                    actuator_list[str(valve_id)] = Valve(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("normally_closed")))
+                else:
+                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), bool(actuator_info.get("normally_closed")), int(actuator_info.get("uart_id")), self.ser)
+>>>>>>> Stashed changes
         return actuator_list
