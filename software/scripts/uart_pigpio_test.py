@@ -19,7 +19,7 @@ pi.set_mode(TX_ENABLE, pigpio.OUTPUT)
 # GPIO.setmode(GPIO.BCM)
 # GPIO.setup(TX_ENABLE, GPIO.OUT, initial=GPIO.HIGH)
 
-
+# WOMP
 
 # Start with TX_ENABLE HIGH (Buffer disabled / listening mode)
 # print("High")
