@@ -140,13 +140,15 @@ valve_id = 1
 # initialize test throttle valve
 test_valve = ThrottleValve("test_valve", True, valve_id, serial_handle)
 
-# test open and close servo to 60 deg
-test_valve.throttle(60, 2)
-time.sleep(2)
-print("Valve angle:", test_valve.read_pos())
-time.sleep(3)
-test_valve.throttle(0, 2)
-print("Valve angle:", test_valve.read_pos())
+while True:
+    # test open and close servo to 90 deg
+    test_valve.throttle(90, 2)
+    time.sleep(2)
+    # print("Valve angle:", test_valve.read_pos())
+    time.sleep(3)
+    test_valve.throttle(0, 2)
+    # print("Valve angle:", test_valve.read_pos())
+    time.sleep(5)
 
 pi.serial_close(serial_handle)
 pi.stop()
