@@ -102,12 +102,12 @@ def send_packet(packet):
 
 def read_response(packet_length, expected_length):
     # drain the echo
-    # time.sleep(0.02)
+    time.sleep(0.02)
     count, echo = pi.serial_read(serial_handle, packet_length)
     print(f"Echo bytes: {list(echo)}")
 
     # read the response
-    time.sleep(0.002)
+    time.sleep(0.02)
     count, serial_response = pi.serial_read(serial_handle, expected_length)
     print(f"Response bytes: {list(serial_response)}")
 
