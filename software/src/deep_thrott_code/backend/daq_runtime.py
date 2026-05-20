@@ -59,7 +59,17 @@ class DaqRuntime:
 		self._producer_cpu = int(producer_cpu)
 		self._consumer_cpu = int(consumer_cpu)
 
-		self._log_path = str(log_path)
+		from datetime import datetime
+		from pathlib import Path
+
+		now = datetime.now()
+		folder_date = now.strftime("%Y/%m/%d") 
+		file_timestamp = now.strftime("%H-%M-%S_data.csv")
+		base_dir = Path("logs")
+		full_path = base_dir / folder_date / file_timestamp
+		full_path.parent.mkdir(parents=True, exist_ok=True)
+
+		self._log_path = str(full_path)
 
 		self._lock = threading.Lock()
 		self._running = False
