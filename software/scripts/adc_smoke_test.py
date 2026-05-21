@@ -134,7 +134,11 @@ def _check_drdy_pin(adc_id: str, adc) -> None:
         print("Interpretation: DRDY is LOW, meaning data-ready or line is held low.")
 
 
-def _check_one(adc_id: str, cfg: dict, ain: int) -> int:
+def _check_one(adc_id: str, cfg: dict, ain: int, *, ignore_drdy: bool = False) -> int:
+    if ignore_drdy and isinstance(cfg, dict):
+        cfg = dict(cfg)
+        cfg["drdy_gpio"] = None
+
     adc = _build_adc(adc_id, cfg)
 
     try:
@@ -214,6 +218,11 @@ def main() -> int:
     ap.add_argument("--adc", default=None, help="ADC id, e.g. ADC1/ADC2/ADC3")
     ap.add_argument("--ain", type=int, default=0, help="AIN index to read")
     ap.add_argument("--all", action="store_true", help="Check all configured ADCs")
+    ap.add_argument(
+        "--ignore-drdy",
+        action="store_true",
+        help="Ignore DRDY pin (treat as unconfigured) to isolate DRDY wiring/config issues.",
+    )
 
     args = ap.parse_args()
 
@@ -234,7 +243,7 @@ def main() -> int:
             if not isinstance(cfg, dict):
                 continue
 
-            rc |= _check_one(adc_id, cfg, args.ain)
+            rc |= _check_one(adc_id, cfg, args.ain, ignore_drdy=bool(args.ignore_drdy))
 
         return rc
 
@@ -248,7 +257,7 @@ def main() -> int:
         print(f"Unknown ADC id: {args.adc}")
         return 2
 
-    return _check_one(args.adc, cfg, args.ain)
+    return _check_one(args.adc, cfg, args.ain, ignore_drdy=bool(args.ignore_drdy))
 
 
 if __name__ == "__main__":
