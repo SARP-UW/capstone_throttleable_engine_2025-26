@@ -144,11 +144,12 @@ while True:
     # test open and close servo to 90 deg
     test_valve.throttle(90, 2)
     time.sleep(2)
-    # print("Valve angle:", test_valve.read_pos())
+    print("Valve angle:", test_valve.read_pos())
     time.sleep(3)
     test_valve.throttle(0, 2)
-    # print("Valve angle:", test_valve.read_pos())
-    time.sleep(5)
+    time.sleep(2)
+    print("Valve angle:", test_valve.read_pos())
+    time.sleep(3)
 
 pi.serial_close(serial_handle)
 pi.stop()
