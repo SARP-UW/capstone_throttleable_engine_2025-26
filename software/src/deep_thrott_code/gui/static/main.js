@@ -60,6 +60,10 @@
 			host.innerHTML = '<div class="sequence-placeholder">Loading sequences...</div>';
 			return;
 		}
+		if (sequenceDefs.length === 0) {
+			host.innerHTML = '<div class="sequence-placeholder">No sequences loaded (sequencer disabled or backend failed to start). If you started the backend with <code>--no-sequencer</code>, remove that flag.</div>';
+			return;
+		}
 
 		const snap = systemSnapshot && typeof systemSnapshot === 'object' ? systemSnapshot : {};
 		const activeKey = typeof snap.active_sequence === 'string' ? snap.active_sequence : 'idle';

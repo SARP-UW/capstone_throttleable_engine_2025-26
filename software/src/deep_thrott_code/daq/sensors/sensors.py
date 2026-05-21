@@ -63,6 +63,7 @@ class SimulatedPressureSensor(Sensor):
         self,
         name: str,
         *,
+        sampling_rate_hz: float | None = None,
         offset: float = 200.0,
         amplitude: float = 20.0,
         frequency_hz: float = 0.2,
@@ -80,6 +81,8 @@ class SimulatedPressureSensor(Sensor):
     ):
         self.name = str(name)
         self.channel = int(channel)
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
         self.offset = float(offset)
         self.amplitude = float(amplitude)
@@ -176,6 +179,7 @@ class SimulatedLoadCellSensor(Sensor):
         self,
         name: str,
         *,
+        sampling_rate_hz: float | None = None,
         max_load_n: float = 1000.0,
         offset_n: float = 0.0,
         amplitude_n: float = 200.0,
@@ -192,6 +196,8 @@ class SimulatedLoadCellSensor(Sensor):
     ):
         self.name = str(name)
         self.channel = int(channel)
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
         self.max_load_n = float(max_load_n)
         self.offset_n = float(offset_n)
@@ -302,6 +308,7 @@ class SimulatedRTDSensor(Sensor):
         self,
         name: str,
         *,
+        sampling_rate_hz: float | None = None,
         offset_c: float = 20.0,
         amplitude_c: float = 5.0,
         frequency_hz: float = 0.05,
@@ -319,6 +326,8 @@ class SimulatedRTDSensor(Sensor):
         self.name = str(name)
         self.channel = int(channel)
         self.unit = unit
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
         self.offset_c = float(offset_c)
         self.amplitude_c = float(amplitude_c)
@@ -1221,6 +1230,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
     return [
         SimulatedPressureSensor(
             name="CC-PT",
+            sampling_rate_hz=100.0,
             offset=200.0,
             amplitude=20.0,
             frequency_hz=0.2,
@@ -1228,6 +1238,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         ),
         SimulatedPressureSensor(
             name="FI-PT",
+            sampling_rate_hz=100.0,
             offset=300.0,
             amplitude=10.0,
             frequency_hz=0.1,
@@ -1235,6 +1246,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         ),
         SimulatedLoadCellSensor(
             name="thrust",
+            sampling_rate_hz=100.0,
             max_load_n=1000.0,
             amplitude_n=200.0,
             frequency_hz=0.5,
@@ -1242,6 +1254,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         ),
         SimulatedRTDSensor(
             name="tank_temp",
+            sampling_rate_hz=10.0,
             offset_c=20.0,
             amplitude_c=2.0,
             frequency_hz=0.02,

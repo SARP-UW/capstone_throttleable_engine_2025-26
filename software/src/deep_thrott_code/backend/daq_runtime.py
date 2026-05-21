@@ -81,7 +81,7 @@ class DaqRuntime:
 		self._lock = threading.Lock()
 		self._running = False
 		self._stop_event: threading.Event | None = None
-		self._producer_thread: threading.Thread | None = None
+		self._producer_threads: list[threading.Thread] = []
 		self._consumer_thread: threading.Thread | None = None
 		self._logger = None
 		self._state_store = None
@@ -213,14 +213,44 @@ class DaqRuntime:
 			pass
 
 		def producer_entrypoint() -> None:
-			self._pin_thread_to_cpu(self._producer_cpu)
-			producer_loop(sensors, self._sample_queue, stop_event, producer_loop_hz, stats=producer_stats)
+			# Parallelize by ADC so separate ADS124S08 chips can convert concurrently.
+			# Without this, a single thread serializes DRDY waits across ADC1/2/3 and
+			# total throughput collapses (looks like ~"100 Hz total" instead of 100 Hz/sensor).
+			groups: dict[object, list] = {}
+			for s in sensors:
+				adc = getattr(s, "adc", None)
+				key = adc if adc is not None else "__no_adc__"
+				groups.setdefault(key, []).append(s)
+
+			def _group_loop(sensor_group, group_loop_hz: float) -> None:
+				try:
+					self._pin_thread_to_cpu(self._producer_cpu)
+				except Exception:
+					pass
+				producer_loop(sensor_group, self._sample_queue, stop_event, group_loop_hz, stats=producer_stats)
+
+			threads: list[threading.Thread] = []
+			for _key, sensor_group in groups.items():
+				group_loop_hz = _compute_producer_loop_hz(sensor_group)
+				thr = threading.Thread(
+					target=_group_loop,
+					args=(sensor_group, group_loop_hz),
+					daemon=True,
+					name="producer",
+				)
+				threads.append(thr)
+
+			with self._lock:
+				self._producer_threads = threads
+
+			for thr in threads:
+				thr.start()
 
 		def consumer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._consumer_cpu)
 			consumer_loop(self._sample_queue, self._gui_queue, state_store, logger, stop_event, sensor_map)
 
-		producer_thread = threading.Thread(target=producer_entrypoint, daemon=True, name="producer")
+		producer_thread = threading.Thread(target=producer_entrypoint, daemon=True, name="producer_dispatch")
 		consumer_thread = threading.Thread(target=consumer_entrypoint, daemon=True, name="consumer")
 
 		# Optional DAQ rate monitor thread. Delete after testing 
@@ -261,7 +291,7 @@ class DaqRuntime:
 		with self._lock:
 			self._running = True
 			self._stop_event = stop_event
-			self._producer_thread = producer_thread
+			# producer threads are populated by producer_entrypoint once it groups sensors.
 			self._consumer_thread = consumer_thread
 			self._logger = logger
 			self._state_store = state_store
@@ -277,21 +307,24 @@ class DaqRuntime:
 				return
 
 			stop_event = self._stop_event
-			producer_thread = self._producer_thread
+			producer_threads = list(self._producer_threads)
 			consumer_thread = self._consumer_thread
 			logger = self._logger
 
 			self._running = False
 			self._stop_event = None
-			self._producer_thread = None
+			self._producer_threads = []
 			self._consumer_thread = None
 			self._logger = None
 			self._state_store = None
 
 		if stop_event is not None:
 			stop_event.set()
-		if producer_thread is not None:
-			producer_thread.join(timeout=1.0)
+		for thr in producer_threads:
+			try:
+				thr.join(timeout=1.0)
+			except Exception:
+				pass
 		if consumer_thread is not None:
 			consumer_thread.join(timeout=1.0)
 
