@@ -719,6 +719,7 @@ class FlowMeterSensor(Sensor):
         raise NotImplementedError("FlowMeterSensor is not implemented yet")
 
 
+# please clean this up
 def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> list[Sensor]:
     """Create and return the list of sensor objects.
 
@@ -861,7 +862,17 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 return None
 
             # Legacy schema: looks like a direct sensor-category dict.
-            if any(k in cfg for k in ("pressure_transducers", "rtds", "resistive temperature detectors", "load_cells", "flow meters")):
+            if any(
+                k in cfg
+                for k in (
+                    "pressure_transducers",
+                    "rtds",
+                    "resistive temperature detectors",
+                    "load_cells",
+                    "load cells",
+                    "flow meters",
+                )
+            ):
                 return cfg
 
             # Grouped schema: choose requested group (default to hotfire).
@@ -888,7 +899,11 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             if isinstance(sensors_cfg, dict)
             else None
         )
-        lc_cfg = sensors_cfg.get("load_cells") if isinstance(sensors_cfg, dict) else None
+        lc_cfg = (
+            (sensors_cfg.get("load_cells") or sensors_cfg.get("load cells"))
+            if isinstance(sensors_cfg, dict)
+            else None
+        )
 
         if not isinstance(pt_cfg, dict) or not pt_cfg:
             raise RuntimeError(f"No pressure transducers configured in {hardware_path}")
