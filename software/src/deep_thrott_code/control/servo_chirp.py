@@ -100,11 +100,13 @@ def send_packet(packet):
     return len(packet)
 
 
-def read_response(packet_length, expected_length):
+def read_response(packet_checksum, expected_length):
+    checksum_found = False
     # drain the echo
-    time.sleep(0.02)
-    count, echo = pi.serial_read(serial_handle, packet_length)
-    print(f"Echo bytes: {list(echo)}")
+    while not checksum_found:
+        count, echo_byte = pi.serial_read(serial_handle, 1)
+        if echo_byte == packet_checksum:
+            checksum_found = True
 
     # read the response
     time.sleep(0.02)
@@ -135,11 +137,15 @@ def read_response(packet_length, expected_length):
 # valve_id = response[5]
 # print(f"Valve ID: {valve_id}")
 
-send_packet(build_packet(13, [2]))
+valve_id_assignment_packet = build_packet(13, [2])
+send_packet(valve_id_assignment_packet)
+
+response = read_response(valve_id_assignment_packet[-1], 7)
+print(f"Response: {response}")
 
 # # initialize test throttle valve
-# test_valve1 = ThrottleValve("test_valve", 1, serial_handle)
-# test_valve2 = ThrottleValve("test_valve2", 2, serial_handle)
+# test_valve_naked = ThrottleValve("test_valve", 1, serial_handle)
+# test_valve_decent = ThrottleValve("test_valve2", 2, serial_handle)
 #
 # while True:
 #     # test open and close servo to 90 deg
