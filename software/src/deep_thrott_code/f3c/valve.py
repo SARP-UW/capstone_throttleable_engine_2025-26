@@ -234,12 +234,12 @@ class ThrottleValve():
         return len(packet)
 
     def read_response(self, packet_checksum, expected_length):
-        self.checksum_found = False
-        # drain the echo
-        while not self.checksum_found:
+        checksum_found = False
+        # drain the echos
+        while not checksum_found:
             count, echo_byte = pi.serial_read(self.serial_handle, 1)
             if echo_byte == packet_checksum:
-                self.checksum_found = True
+                checksum_found = True
 
         # read the response
         time.sleep(0.02)
