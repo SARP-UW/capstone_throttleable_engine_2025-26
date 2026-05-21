@@ -108,7 +108,19 @@ class DaqRuntime:
 		sensor_map = build_sensor_map(sensors)
 		stop_event = threading.Event()
 		state_store = StateStore()
-		logger = CsvLogger(self._log_path, flush_every=25, fsync_every_flush=False)
+		header = [
+            "sensor_name",
+            "sensor_kind",
+            "t_monotonic",
+            "t_wall",
+            "Voltage 1",
+            "Voltage 2",
+            "value",
+            "units",
+            "filtered_value",
+            "source",
+		]
+		logger = CsvLogger(self._log_path, header, flush_every=25, fsync_every_flush=False)
 		producer_stats = ProducerStats()
 
 		self._drain_queue(self._sample_queue)
@@ -154,7 +166,7 @@ class DaqRuntime:
 
 			monitor_thread = threading.Thread(target=monitor_entrypoint, daemon=True, name="producer_monitor")
 		# Delete until here
-		
+
 		producer_thread.start()
 		consumer_thread.start()
 		if monitor_thread is not None:

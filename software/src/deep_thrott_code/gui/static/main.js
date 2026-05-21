@@ -308,6 +308,15 @@
 
 			const openBtn = overlay.querySelector('[data-valve-action="open"]');
 			const closeBtn = overlay.querySelector('[data-valve-action="close"]');
+			const controlsHost = overlay.querySelector('.valve-controls');
+
+			if (controlsHost && !controlsHost.querySelector('.valve-actions')) {
+				const row = document.createElement('div');
+				row.className = 'valve-actions';
+				if (openBtn) row.appendChild(openBtn);
+				if (closeBtn) row.appendChild(closeBtn);
+				controlsHost.prepend(row);
+			}
 			if (openBtn) {
 				openBtn.addEventListener('click', (e) => {
 					e.preventDefault();
@@ -319,6 +328,41 @@
 					e.preventDefault();
 					emitGuiCommand({ name: 'set_valve', valve_id: valveName, state: 'closed' });
 				});
+			}
+
+			// Add pulse controls (dt input + button) under OPEN/CLOSE.
+			if (controlsHost && !overlay.querySelector('.pulse-controls')) {
+				const pulseControls = document.createElement('div');
+				pulseControls.className = 'pulse-controls';
+
+				const dtInput = document.createElement('input');
+				dtInput.className = 'pulse-dt';
+				dtInput.type = 'number';
+				dtInput.min = '0';
+				dtInput.step = '0.01';
+				dtInput.inputMode = 'decimal';
+				dtInput.value = '0.10';
+				dtInput.setAttribute('aria-label', `Pulse duration for ${valveName} (seconds)`);
+				dtInput.title = 'Pulse dt (seconds)';
+
+				const pulseBtn = document.createElement('button');
+				pulseBtn.className = 'mini-btn pulse-btn';
+				pulseBtn.type = 'button';
+				pulseBtn.textContent = 'PULSE';
+				pulseBtn.addEventListener('click', (e) => {
+					e.preventDefault();
+					const dtRaw = dtInput.value;
+					const dt = Number(dtRaw);
+					if (!Number.isFinite(dt) || !(dt > 0)) {
+						setSystemMessage('System message: Invalid pulse dt (enter a positive number of seconds).');
+						return;
+					}
+					emitGuiCommand({ name: 'pulse_valve', valve_id: valveName, dt });
+				});
+
+				pulseControls.appendChild(dtInput);
+				pulseControls.appendChild(pulseBtn);
+				controlsHost.appendChild(pulseControls);
 			}
 
 			setValveUiState(valveName, valveStateByName.get(valveName));

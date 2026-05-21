@@ -4,22 +4,6 @@ from pathlib import Path
 
 # change logger to argument
 class CsvLogger:
-    # TODO: Elyse pass this as an argument where you initialize DAQ logger
-    # header = [
-    #     "sensor_name",
-    #     "sensor_kind",
-    #     "t_monotonic",
-    #     "t_wall",
-    #     "raw_value",
-    #     "value",
-    #     "units",
-    #     "status",
-    #     "message",
-    #     "filtered_value",
-    #     "sequence",
-    #     "source",
-    # ]
-
     def __init__(self, filepath: str, header, flush_every: int = 25, fsync_every_flush: bool = True):
         self.filepath = Path(filepath)
         self.flush_every = flush_every
@@ -42,13 +26,11 @@ class CsvLogger:
             sample.sensor_kind,
             sample.t_monotonic,
             sample.t_wall,
-            sample.raw_value,
+            sample.V_diff_1,
+            sample.V_diff_2,
             sample.value,
             sample.units,
-            sample.status,
-            sample.message,
             sample.filtered_value,
-            sample.sequence,
             sample.source,
         ]
 
