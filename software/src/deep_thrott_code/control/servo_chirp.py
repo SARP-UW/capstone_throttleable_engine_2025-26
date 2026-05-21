@@ -135,7 +135,7 @@ def read_response(packet_length, expected_length):
 # valve_id = response[5]
 # print(f"Valve ID: {valve_id}")
 
-valve_id = 1
+valve_id = 254
 
 # initialize test throttle valve
 test_valve = ThrottleValve("test_valve", valve_id, serial_handle)
