@@ -108,7 +108,8 @@ def read_response(packet_checksum, expected_length):
     #     if echo_byte == packet_checksum:
     #         checksum_found = True
 
-    pi.serial_read(serial_handle, 7)
+    count, echo = pi.serial_read(serial_handle, 5)
+    print(f"Echo bytes: {list(echo)}")
 
     # read the response
     time.sleep(0.02)
