@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from enum import Enum
 import time
+
+from scipy.stats import false_discovery_control
+
 # import serial
 
 try:
@@ -96,22 +99,36 @@ class Valve:
             # TO DO: send error that valve must be closed to pulse it
             pass
 
-class ThrottleValve(Valve):
+class ThrottleValve():
     """
-    Class which represents a throttleable valve, inherits from Valve.
+    Class which represents a throttleable valve.
     """
     # TODO: add command numbers/lengths from hiwonder datasheet to get rid of magic numbers
+    # variables for pin setup for uart
     TX_ENABLE_PIN = 18
     TX_PIN = 14
     RX_PIN = 15
     BAUD = 115200
 
-    def __init__(self, valve_id: str, normally_closed: bool, uart_id: int, serial_handle):
-        super().__init__(valve_id, None, normally_closed)
+    # variables from Hiwonder servo bus communication protocol datasheet
+    SERVO_MOVE_TIME_WRITE_CMD = 1
+    SERVO_MOVE_TIME_WRITE_LEN = 7
+    SERVO_POS_READ_CMD = 28
+    SERVO_POS_READ_LEN = 3
+    SERVO_LOAD_OR_UNLOAD_WRITE_CMD = 31
+    SERVO_LOAD_OR_UNLOAD_WRITE_LEN = 4
+    SERVO_LOAD_OR_UNLOAD_WRITE_PARAM = 1
+
+    # servo units -> angle conversion values
+    SERVO_ANGLE_DEG = 240
+    SERVO_ANGLE_PARAM = 1000
+
+    def __init__(self, valve_id: str, uart_id: int, serial_handle):
+        self.valve_id = valve_id
         self.uart_id = uart_id
         self.serial_handle = serial_handle
         self.load_motor()
-
+        self.checksum_found = False
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):
@@ -129,29 +146,42 @@ class ThrottleValve(Valve):
             Implementation of SERVO_MOVE_TIME_WRITE
             """
         time_ms = int(time_s * 1000)
-        angle_param = int(angle_deg * 1000.0 / 240.0)
+        angle_param = int(angle_deg * self.SERVO_ANGLE_PARAM / self.SERVO_ANGLE_DEG)
         angle_param = max(0, min(1000, angle_param))
         time_ms = max(0, min(30000, time_ms))
         params = [
             angle_param & 0xFF, (angle_param >> 8) & 0xFF,
             time_ms & 0xFF, (time_ms >> 8) & 0xFF
         ]
-        self.send_packet(self.build_packet(1, params))
+        self.send_packet(self.build_packet(self.SERVO_MOVE_TIME_WRITE_CMD, params))
 
     def read_pos(self):
-        packet_length = self.send_packet(self.build_packet(28))
-        response = self.read_response(packet_length, 8)
+        # build packet to request angle encoder data
+        read_pos_packet = self.build_packet(self.SERVO_POS_READ_CMD)
 
+        # get checksum from packet sent
+        packet_checksum = read_pos_packet[-1]
+
+        # send packet to request angle encoder data
+        self.send_packet(read_pos_packet)
+
+        # get response from servo
+        response = self.read_response(packet_checksum, self.SERVO_POS_READ_LEN + 3)
+
+        # if statement validates response is of the correct structure
         if len(response) >= 7 and response[0] == 0x55 and response[1] == 0x55:
+            # reassembles the two position bytes into a 16-bit integer
             low = response[5]   # 6th byte is the lower 8 bits
             high = response[6]  # 7th byte is the higher 8 bits
 
             raw = (high << 8) | low
 
+            # conversion to get correct signed value
             if raw > 32767:
                 raw -= 65536
 
-            angle_deg = raw * 240 / 1000
+            # converts from servo internal units to degrees
+            angle_deg = raw * self.SERVO_ANGLE_DEG / self.SERVO_ANGLE_PARAM
         else:
             angle_deg = 0
         return angle_deg
@@ -161,8 +191,8 @@ class ThrottleValve(Valve):
         """
         Enable torque output - must be called before servo will move
         """
-        params = [1]
-        self.send_packet(self.build_packet(31, params))
+        params = [self.SERVO_LOAD_OR_UNLOAD_WRITE_PARAM]
+        self.send_packet(self.build_packet(self.SERVO_LOAD_OR_UNLOAD_WRITE_CMD, params))
 
     def _checksum(self, length, cmd, params):
         total = self.uart_id + length + cmd + sum(params)
@@ -203,12 +233,13 @@ class ThrottleValve(Valve):
 
         return len(packet)
 
-    def read_response(self, packet_length, expected_length):
-
+    def read_response(self, packet_checksum, expected_length):
+        self.checksum_found = False
         # drain the echo
-        time.sleep(0.02)
-        count, echo = pi.serial_read(self.serial_handle, packet_length)
-        print(f"Echo bytes: {list(echo)}")
+        while not self.checksum_found:
+            count, echo_byte = pi.serial_read(self.serial_handle, 1)
+            if echo_byte == packet_checksum:
+                self.checksum_found = True
 
         # read the response
         time.sleep(0.02)

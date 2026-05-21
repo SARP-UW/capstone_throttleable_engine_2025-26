@@ -261,12 +261,11 @@ sensors:
 
 actuators:
   valves:
-    # wmv:
-    #   enabled: true
-    #   mode: throttle
-    #   pin: null
-    #   active_high: true
-    #   notes: "Water main valve"
+    wmv:
+       enabled: true
+       mode: throttle
+       uart_id: null
+       notes: "Water main valve"
 
     ftvv:
       enabled: true
@@ -282,12 +281,11 @@ actuators:
       normally_closed: true
       notes: "Fuel main valve"
 
-    # fmctv:
-    #   enabled: true
-    #   mode: throttle
-    #   pin: null
-    #   active_high: true
-    #   notes: "Fuel main control/throttle valve"
+    fmctv:
+       enabled: true
+       mode: throttle
+       uart_id: null
+       notes: "Fuel main control/throttle valve"
 
     fifv:
       enabled: true
@@ -331,12 +329,11 @@ actuators:
       normally_closed: true
       notes: "Oxidizer main valve"
 
-    # omctv:
-    #   enabled: true
-    #   mode: throttle
-    #   pin: null
-    #   normally_closed: true
-    #   notes: "Oxidizer main control/throttle valve"
+    omctv:
+       enabled: true
+       mode: throttle
+       uart_id: null
+       notes: "Oxidizer main control/throttle valve"
 
     otvv:
       enabled: true
