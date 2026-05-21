@@ -772,6 +772,23 @@
 					if (fireBtn) fireBtn.disabled = false;
 				}
 			}
+
+			// Meta-box: show backend wall-clock time + active log path.
+			try {
+				const dtEl = document.getElementById('metaDateTime');
+				if (dtEl && typeof systemSnapshot.t_wall === 'number' && isFinite(systemSnapshot.t_wall)) {
+					dtEl.textContent = new Date(systemSnapshot.t_wall * 1000).toLocaleString();
+				}
+				const logEl = document.getElementById('metaLogPath');
+				const meta = systemSnapshot && typeof systemSnapshot.backend_meta === 'object' ? systemSnapshot.backend_meta : null;
+				if (logEl && meta) {
+					const logDir = (typeof meta.log_dir === 'string' && meta.log_dir) ? meta.log_dir : '';
+					const logPath = (typeof meta.log_path === 'string' && meta.log_path) ? meta.log_path : '';
+					if (logDir || logPath) logEl.textContent = logDir || logPath;
+				}
+			} catch (e) {
+				// ignore
+			}
 		});
 
 		socket.on('manual_step_required', (msg) => {

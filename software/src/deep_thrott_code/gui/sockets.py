@@ -93,6 +93,7 @@ def register_socket_handlers(
 	sequence_defs: list[dict[str, Any]] | None = None,
 	pin_thread_to_cpu: Callable[[int], None] | None = None,
 	cpu: int | None = None,
+	backend_meta_getter: Callable[[], dict[str, Any]] | None = None,
 ) -> None:
 	"""Register Socket.IO event handlers + start the 10Hz GUI loop.
 
@@ -176,6 +177,14 @@ def register_socket_handlers(
 			except Exception:
 				pass
 		snap.setdefault("t_wall", time.time())
+
+		# Backend/runtime metadata (log path, etc.)
+		try:
+			meta = backend_meta_getter() if callable(backend_meta_getter) else None
+			if isinstance(meta, dict):
+				snap["backend_meta"] = meta
+		except Exception:
+			pass
 		return snap
 
 	def drain_f3_to_gui_queue() -> None:
