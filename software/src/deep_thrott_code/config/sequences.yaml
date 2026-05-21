@@ -1,156 +1,130 @@
 sequences:
   - name: fill
     steps:
+      - valve_id: ftvv
+        action: closed
+        time_delay: 0.0
+        user_input: true
+        system_state: fill
+
+      - valve_id: otvv
+        action: closed
+        time_delay: 0.0
+        user_input: true
+        system_state: fill
+
       - valve_id: lffv
         action: open
         time_delay: 0.0
         user_input: true
-        condition_valve: null
-        condition_state: null
         system_state: fill
 
-      - valve_id: otvv
-        action: open
-        time_delay: 0.0
-        user_input: true
-        condition_valve: lffv
-        condition_state: open
-        system_state: fill
-
-      - valve_id: offv
-        action: open
-        time_delay: 0.0
-        user_input: true
-        condition_valve: lffv
-        condition_state: open
-        system_state: fill
-
-      - valve_id: offv
+      - valve_id: lffv
         action: closed
         time_delay: 0.0
         user_input: true
-        condition_valve: otvv
-        condition_state: open
         system_state: fill
 
       - valve_id: otvv
         action: open
         time_delay: 0.0
         user_input: true
-        condition_valve: offv
-        condition_state: close
         system_state: fill
 
-      - valve_id: xffv
+      - valve_id: offv
         action: open
         time_delay: 0.0
         user_input: true
-        condition_valve: otvv
-        condition_state: close
         system_state: fill
 
-      - valve_id: omv
+      - valve_id: offv
+        action: close
+        time_delay: 0.0
+        user_input: true
+        system_state: fill
+
+      - valve_id: otvv
+        action: close
+        time_delay: 0.0
+        user_input: true
+        system_state: fill
+
+      - valve_id: ftfv
         action: open
         time_delay: 0.0
         user_input: true
-        condition_valve: xffv
-        condition_state: open
         system_state: fill
 
-      - valve_id: fmv
+      - valve_id: otfv
         action: open
         time_delay: 0.0
         user_input: true
-        condition_valve: omv
-        condition_state: open
         system_state: fill
 
   - name: fire
     steps:
       - valve_id: wmv
-        action: open
+        angle: 90.0
         time_delay: 0.0
         user_input: false
-        condition_valve: fmv
-        condition_state: open
         system_state: fire
 
       - valve_id: igniter
         action: open
         time_delay: 0.0
         user_input: false
-        condition_valve: wmv
-        condition_state: open
         system_state: fire
 
       - valve_id: fifv
         action: open
         time_delay: 0.0
         user_input: false
-        condition_valve: wmv
-        condition_state: open
         system_state: fire
 
       - valve_id: oifv
         action: open
         time_delay: 2.0
         user_input: false
-        condition_valve: fifv
-        condition_state: open
         system_state: fire
 
       - valve_id: omctv
-        action: open
+        angle: 90.0
         time_delay: 0.0
         user_input: false
-        condition_valve: oifv
-        condition_state: open
         system_state: fire
 
       - valve_id: fmctv
-        action: open
+        angle: 90.0
         time_delay: 2.0
         user_input: false
-        condition_valve: omctv
-        condition_state: open
         system_state: throttle
 
       - valve_id: fifv
         action: closed
         time_delay: 0.0
         user_input: false
-        condition_valve: wmv
-        condition_state: open
         system_state: throttle
 
       - valve_id: oifv
         action: closed
         time_delay: 2.0
         user_input: false
-        condition_valve: fifv
-        condition_state: open
         system_state: throttle
 
       - valve_id: sparker
         action: closed
         time_delay: 4.0
         user_input: false
-        condition_valve: oifv
-        condition_state: close
         system_state: throttle
 
       - valve_id: lffv
         action: closed
         time_delay: 0.0
         user_input: false
-        condition_valve: igniter
-        condition_state: close
         system_state: fire
 
       - valve_id: xffv
         action: closed
         time_delay: 0.0
         user_input: true
-        condition_valve: lffv
-        condition_state: close
         system_state: fire
