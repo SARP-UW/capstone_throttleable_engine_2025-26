@@ -101,12 +101,14 @@ def send_packet(packet):
 
 
 def read_response(packet_checksum, expected_length):
-    checksum_found = False
-    # drain the echo
-    while not checksum_found:
-        count, echo_byte = pi.serial_read(serial_handle, 1)
-        if echo_byte == packet_checksum:
-            checksum_found = True
+    # checksum_found = False
+    # # drain the echo
+    # while not checksum_found:
+    #     count, echo_byte = pi.serial_read(serial_handle, 1)
+    #     if echo_byte == packet_checksum:
+    #         checksum_found = True
+
+    pi.serial_read(serial_handle, 7)
 
     # read the response
     time.sleep(0.02)
