@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any
 import yaml
 from .valve import Valve, ValveState, ThrottleValve
+from daq.services.logger import CsvLogger
 import os
 # import serial
 
@@ -15,6 +16,8 @@ computer_sim = True
 # TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
     import RPi.GPIO as GPIO
+    import pigpio
+    pi = pigpio.pi()
 
 class State(Enum):
     IDLE = "idle"
@@ -51,6 +54,7 @@ class Controller:
         sequence_config_file: str | None = None,
         command_queue: queue.Queue | None = None,
         ack_queue: queue.Queue | None = None,
+        logger: CsvLogger | None = None,
         *,
         # New-style kwargs used by deep_thrott_code.main
         hardware_config_path: str | None = None,
@@ -62,6 +66,20 @@ class Controller:
         if command_queue is None or ack_queue is None:
             raise TypeError("command_queue and ack_queue are required")
 
+        # pin values for talking to servos
+        self.tx_enable_pin = 18
+        self.tx_pin = 14
+        self.baud = 115200
+
+        # TX_ENABLE pin setup
+        pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
+        pi.set_mode(self.tx_pin, pigpio.OUTPUT)
+        pi.write(self.tx_enable_pin, 1)  # start in receive mode
+
+        # Open pigpio serial port for reading responses
+        serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
+
+        # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
 
         # getting config file directory
@@ -99,8 +117,12 @@ class Controller:
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
+        # set up to use for action identification in start()
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"
+
+        # set up logger
+        self.logger = logger
 
         # elyse added this
         self._lock = threading.RLock()
@@ -298,6 +320,7 @@ class Controller:
                 rec["dt"] = float(dt)
             self.history.append(rec)
 
+    # TODO: make sure there aren't lingering threads
     def _execute_action(self, action: str, valve_id: str | None =None, valve_state=None, dt: float | None = None):
         """
         Method for executing any type of action.
@@ -357,7 +380,6 @@ class Controller:
                 print("New system state:", self.state.value)
 
                 # loop through each step in sequence
-                # TODO: add checks that see if next step is valid based on condition valve and state
                 current_sequence = self.sequences.get(sequence_name)
                 for idx, step in enumerate(current_sequence.get("steps")):
 
@@ -389,14 +411,11 @@ class Controller:
                                 "system_state": self.state.value,
                             }
 
-                        # record this step
-                        self._record_history(sequence=str(sequence_state.value), step_index=idx, status="READY",
-                                             valve_id=str(valve_id), action=action_seq)
-
                         # if the valve for this step is a throttle valve
                         if isinstance(current_valve, ThrottleValve):
                             # TODO: throttling implementation
                             # TODO: need to have something that limits what OF you can have based on angles provided by
+                            # TODO: log throttle valve actuation
                             # throttle controller, absolute max of 1.2
                             pass
 
@@ -421,6 +440,14 @@ class Controller:
                             print("Current valve state: ", current_valve.get_state())
                             if current_valve.get_state() != valve_goal_state:
                                 current_valve.set_state(valve_goal_state)
+
+                                # record this step
+                                self._record_history(sequence=str(sequence_state.value), step_index=idx, status="READY",
+                                                     valve_id=str(valve_id), action=action_seq)
+
+                                # log valve actuation
+                                self.logger.write_valve_action([valve_id, valve_goal_state.value,])
+
                             # if not, set step status back to ready and move on to next step
                             else:
                                 with self._lock:
@@ -540,12 +567,21 @@ class Controller:
         """
 
         with open(hardware_config_path, "r") as f:
+            # load in hardware config file
             hardware_config = yaml.safe_load(f)
+
+            # get list of valves from hardware config
             actuator_info_list = (hardware_config.get("actuators") or {}).get("valves") or {}
+
+            # create empty dict to hold actuators
             actuator_list: dict[str, Any] = {}
+
+            # iterate through each valve and create a Valve object
             for valve_id, actuator_info in actuator_info_list.items():
                 if actuator_info.get("mode") == "on_off":
+                    # on/off valves
                     actuator_list[str(valve_id)] = Valve(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("normally_closed")))
                 else:
-                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), bool(actuator_info.get("normally_closed")), int(actuator_info.get("uart_id")), self.ser)
+                    # throttle valves
+                    actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle)
         return actuator_list
