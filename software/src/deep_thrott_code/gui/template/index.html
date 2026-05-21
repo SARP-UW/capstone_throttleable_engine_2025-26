@@ -451,6 +451,61 @@
       gap: 6px;
     }
 
+    #sequencesBlock {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sequenceTabs {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    #reelsEmbed {
+      display: none;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding-top: 6px;
+    }
+
+    .reels-popup {
+      border: 1px solid var(--border);
+      background: var(--muted);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .reels-popup-title {
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .reels-open {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    body.theme-baja #sequenceTabs,
+    body.theme-baja #sequencesTitle {
+      display: none;
+    }
+
+    body.theme-baja #reelsEmbed {
+      display: block;
+    }
+
     .sequence-tabs details {
       border: 1px solid var(--border);
       background: var(--muted);
@@ -910,10 +965,17 @@
       </div>
 
       <div class="side-panel">
-        <div>
-          <div class="side-title">SEQUENCES</div>
+        <div id="sequencesBlock">
+          <div class="side-title" id="sequencesTitle">SEQUENCES</div>
           <div class="sequence-tabs" id="sequenceTabs">
             <div class="sequence-placeholder">Loading sequences...</div>
+          </div>
+
+          <div id="reelsEmbed">
+            <div class="reels-popup">
+              <div class="reels-popup-title">Instagram Reels</div>
+              <button class="reels-open" id="openReelsPopup" type="button">Open Instagram Reels</button>
+            </div>
           </div>
         </div>
 
@@ -1052,6 +1114,34 @@
       },
     };
 
+    function openInstagramReelsPopup() {
+      const url = 'https://www.instagram.com/accounts/login/?next=%2Freels%2F';
+      const width = 420;
+      const height = 760;
+      const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+      const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+
+      const features = [
+        `popup=yes`,
+        `width=${width}`,
+        `height=${height}`,
+        `left=${left}`,
+        `top=${top}`,
+        'resizable=yes',
+        'scrollbars=yes',
+      ].join(',');
+
+      const w = window.open(url, 'instagram_reels', features);
+      if (w) {
+        try { w.opener = null; } catch (_) { /* ignore */ }
+        w.focus();
+        return;
+      }
+
+      // Popup blocked: fall back to a normal new tab.
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
     // Fit target dimensions (used by the existing Ethanol layout).
     const PID_FIT_W = 1700;
     const PID_FIT_H = 664;
@@ -1089,6 +1179,8 @@
     document.querySelectorAll('.tab[data-tab]').forEach((t) => {
       t.addEventListener('click', () => setActiveTab(t.dataset.tab));
     });
+
+    document.getElementById('openReelsPopup')?.addEventListener('click', openInstagramReelsPopup);
 
     window.addEventListener('resize', fitCanvasToPanel);
     window.addEventListener('load', fitCanvasToPanel);
