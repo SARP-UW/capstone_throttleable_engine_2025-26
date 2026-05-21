@@ -105,6 +105,8 @@ def read_response(packet_checksum, expected_length):
     # drain the echo
     while not checksum_found:
         count, echo_byte = pi.serial_read(serial_handle, 1)
+        print(f"Echo byte: {echo_byte}")
+        print(f"Count: {count}")
         if echo_byte == packet_checksum:
             checksum_found = True
 
