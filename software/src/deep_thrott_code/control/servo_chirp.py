@@ -118,8 +118,8 @@ def read_response(packet_checksum, expected_length):
         return None
     return serial_response
 
-valve_id_assignment_packet = build_packet(0xFE, 13, [2])
-send_packet(valve_id_assignment_packet)
+# valve_id_assignment_packet = build_packet(0xFE, 13, [2])
+# send_packet(valve_id_assignment_packet)
 
 # get valve id
 print("Sending valve id request...")
