@@ -161,7 +161,7 @@ class DaqRuntime:
 
 		def producer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._producer_cpu)
-			producer_loop(sensors, self._sample_queue, stop_event, 100.0, stats=producer_stats)
+			producer_loop(sensors, self._sample_queue, stop_event, 2000.0, stats=producer_stats)
 
 		def consumer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._consumer_cpu)
