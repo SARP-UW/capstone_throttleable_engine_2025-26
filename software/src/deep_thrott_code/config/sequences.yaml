@@ -75,11 +75,11 @@ sequences:
 
   - name: fire
     steps:
-      - valve_id: wmv
-        angle: 90.0
-        time_delay: 0.0
-        user_input: false
-        system_state: fire
+#      - valve_id: wmv
+#        action: open
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
 
       - valve_id: igniter
         action: open
