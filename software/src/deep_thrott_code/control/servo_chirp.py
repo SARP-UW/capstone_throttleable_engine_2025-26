@@ -118,30 +118,27 @@ def read_response(packet_checksum, expected_length):
         return None
     return serial_response
 
-# # get valve id
-# print("Sending valve id request...")
-# packet = build_packet(0xFE, 14)
-# print(f"Packet bytes: {list(packet)}")
-# send_packet(packet)
-# time.sleep(0.1)
-
-# response = read_response(len(packet), 7)
-# print(f"Response: {response}")
-
-# if response is None:
-#     print("No response received.")
-#     pi.serial_close(serial_handle)
-#     pi.stop()
-#     exit()
-#
-# valve_id = response[5]
-# print(f"Valve ID: {valve_id}")
-
 valve_id_assignment_packet = build_packet(0xFE, 13, [2])
 send_packet(valve_id_assignment_packet)
 
-response = read_response(valve_id_assignment_packet[-1], 7)
+# get valve id
+print("Sending valve id request...")
+packet = build_packet(0xFE, 14)
+print(f"Packet bytes: {list(packet)}")
+send_packet(packet)
+time.sleep(0.1)
+
+response = read_response(len(packet), 7)
 print(f"Response: {response}")
+
+if response is None:
+    print("No response received.")
+    pi.serial_close(serial_handle)
+    pi.stop()
+    exit()
+
+valve_id = response[5]
+print(f"Valve ID: {valve_id}")
 
 # # initialize test throttle valve
 # test_valve_naked = ThrottleValve("test_valve", 1, serial_handle)
