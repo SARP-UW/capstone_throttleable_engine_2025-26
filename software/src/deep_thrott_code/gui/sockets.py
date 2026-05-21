@@ -367,6 +367,28 @@ def register_socket_handlers(
 			except Exception:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
 				return
+		elif name == "pulse_valve":
+			if command_queue is None:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
+				return
+			valve_id = payload.get("valve_id")
+			dt = payload.get("dt")
+			if not isinstance(valve_id, str) or not valve_id:
+				socketio.emit("command_reject", {"ok": False, "reason": "missing_valve_id"})
+				return
+			try:
+				dt_s = float(dt)
+			except Exception:
+				socketio.emit("command_reject", {"ok": False, "reason": "bad_dt"})
+				return
+			if not (dt_s > 0):
+				socketio.emit("command_reject", {"ok": False, "reason": "bad_dt"})
+				return
+			try:
+				command_queue.put({"type": "pulse_valve", "valve_id": valve_id, "dt": dt_s}, timeout=0.1)
+			except Exception:
+				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_full"})
+				return
 		else:
 			# Backend runtime control commands: enqueue the full payload object.
 			# These are consumed by `GuiCommandHandler` (see backend/gui_command_handler.py).

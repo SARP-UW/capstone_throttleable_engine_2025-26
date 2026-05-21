@@ -401,7 +401,16 @@
 
     .valve-controls {
       display: flex;
+      flex-direction: column;
       gap: 6px;
+      align-items: center;
+    }
+
+    .valve-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
     }
 
     .mini-btn {
@@ -449,6 +458,30 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 6px;
+    }
+
+    .pulse-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pulse-dt {
+      width: 60px;
+      max-width: 60px;
+      min-width: 0;
+      padding: 2px 4px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    body.theme-dark .pulse-dt,
+    body.theme-baja .pulse-dt {
+      background: var(--muted);
     }
 
     #sequencesBlock {
