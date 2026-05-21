@@ -135,21 +135,22 @@ def read_response(packet_length, expected_length):
 # valve_id = response[5]
 # print(f"Valve ID: {valve_id}")
 
-valve_id = 254
+send_packet(build_packet(13, [2]))
 
-# initialize test throttle valve
-test_valve = ThrottleValve("test_valve", valve_id, serial_handle)
-
-while True:
-    # test open and close servo to 90 deg
-    test_valve.throttle(90, 2)
-    time.sleep(2)
-    print("Valve angle:", test_valve.read_pos())
-    time.sleep(3)
-    test_valve.throttle(0, 2)
-    time.sleep(2)
-    print("Valve angle:", test_valve.read_pos())
-    time.sleep(3)
+# # initialize test throttle valve
+# test_valve1 = ThrottleValve("test_valve", 1, serial_handle)
+# test_valve2 = ThrottleValve("test_valve2", 2, serial_handle)
+#
+# while True:
+#     # test open and close servo to 90 deg
+#     test_valve.throttle(90, 2)
+#     time.sleep(2)
+#     print("Valve angle:", test_valve.read_pos())
+#     time.sleep(3)
+#     test_valve.throttle(0, 2)
+#     time.sleep(2)
+#     print("Valve angle:", test_valve.read_pos())
+#     time.sleep(3)
 
 pi.serial_close(serial_handle)
 pi.stop()
