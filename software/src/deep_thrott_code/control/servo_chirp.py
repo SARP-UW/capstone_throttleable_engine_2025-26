@@ -109,6 +109,7 @@ def read_response(packet_checksum, expected_length):
         print(f"Count: {count}")
         if echo_byte == packet_checksum:
             checksum_found = True
+        time.sleep(0.5)
 
     # read the response
     time.sleep(0.02)
