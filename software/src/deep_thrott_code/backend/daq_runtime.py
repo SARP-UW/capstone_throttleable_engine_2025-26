@@ -156,12 +156,65 @@ class DaqRuntime:
 		logger = CsvLogger(log_path, header, flush_every=25, fsync_every_flush=False)
 		producer_stats = ProducerStats()
 
+		def _compute_producer_loop_hz(sensor_list) -> float:
+			# Prefer an explicit override if present.
+			override = getattr(daq_config, "DAQ_PRODUCER_LOOP_HZ", None)
+			if override is not None:
+				try:
+					v = float(override)
+					return v if v > 0 else 0.0
+				except Exception:
+					pass
+
+			max_sensor_hz = 0.0
+			for sensor in sensor_list:
+				hz = getattr(sensor, "sampling_rate_hz", None)
+				if hz is None:
+					continue
+				try:
+					hzf = float(hz)
+				except Exception:
+					continue
+				if hzf > max_sensor_hz:
+					max_sensor_hz = hzf
+
+			# If nothing specifies sampling_rate_hz, fall back to the historical default.
+			if max_sensor_hz <= 0:
+				max_sensor_hz = 100.0
+
+			mult = getattr(daq_config, "DAQ_PRODUCER_SCHED_MULT", 10.0)
+			try:
+				mult_f = float(mult)
+			except Exception:
+				mult_f = 10.0
+			if mult_f <= 0:
+				mult_f = 10.0
+
+			max_hz = getattr(daq_config, "DAQ_PRODUCER_LOOP_HZ_MAX", 2000.0)
+			try:
+				max_hz_f = float(max_hz)
+			except Exception:
+				max_hz_f = 2000.0
+			if max_hz_f <= 0:
+				max_hz_f = 2000.0
+
+			loop_hz = max_sensor_hz * mult_f
+			if loop_hz > max_hz_f:
+				loop_hz = max_hz_f
+			return loop_hz
+
 		self._drain_queue(self._sample_queue)
 		self._drain_queue(self._gui_queue)
 
+		producer_loop_hz = _compute_producer_loop_hz(sensors)
+		try:
+			self._emit_system(f"Producer loop_hz={producer_loop_hz:.1f} (max sensor rate drives this; see sampling_rate_hz in hardware.yml)")
+		except Exception:
+			pass
+
 		def producer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._producer_cpu)
-			producer_loop(sensors, self._sample_queue, stop_event, 2000.0, stats=producer_stats)
+			producer_loop(sensors, self._sample_queue, stop_event, producer_loop_hz, stats=producer_stats)
 
 		def consumer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._consumer_cpu)
