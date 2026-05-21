@@ -138,7 +138,7 @@ def read_response(packet_length, expected_length):
 valve_id = 1
 
 # initialize test throttle valve
-test_valve = ThrottleValve("test_valve", True, valve_id, serial_handle)
+test_valve = ThrottleValve("test_valve", valve_id, serial_handle)
 
 while True:
     # test open and close servo to 90 deg
