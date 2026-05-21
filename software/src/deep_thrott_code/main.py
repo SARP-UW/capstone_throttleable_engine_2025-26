@@ -155,6 +155,7 @@ def main() -> None:
 		gui_to_f3_queue=sequencer_ack_queue,
 		get_system_snapshot=get_system_snapshot,
 		sequence_defs=sequence_defs_for_gui,
+		backend_meta_getter=daq.snapshot_meta,
 		pin_thread_to_cpu = pin_current_thread_to_cpu,
 		cpu=CPU_CORE_1_OS_AND_GUI,
 	)

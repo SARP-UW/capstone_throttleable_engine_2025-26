@@ -280,16 +280,9 @@ class Controller:
                     valve_id = gui_input.get("valve_id")
                     dt = gui_input.get("dt")
                     if isinstance(valve_id, str):
-                        try:
-                            dt_s = float(dt)
-                        except Exception:
-                            dt_s = 0.0
-                        if dt_s > 0:
-                            valve_key = valve_id.strip().lower()
-                            self._execute_action(self.pulse, valve_key, dt=dt_s)
-                        else:
-                            print(f"Ignoring pulse_valve for {valve_id}: invalid dt={dt!r}")
-
+                        dt_s = float(dt)
+                        valve_key = valve_id.strip().lower()
+                        self._execute_action(self.pulse, valve_key, dt=dt_s)
                 # reset sequences for gui test
                 elif cmd_type == "reset_sequences":
                     self.reset_sequences()
@@ -360,14 +353,7 @@ class Controller:
 
             # if pulse valve
             elif action == self.pulse:
-                try:
-                    dt_s = float(dt) if dt is not None else 0.0
-                except Exception:
-                    dt_s = 0.0
-                if not (dt_s > 0):
-                    print(f"Ignoring pulse request for {getattr(current_valve, 'valve_id', valve_id)}: invalid dt={dt!r}")
-                    return
-
+                dt_s = float(dt) 
                 # run helper method in its own thread
                 threading.Thread(target=self._execute_pulse, args=(current_valve, dt_s)).start()
                             

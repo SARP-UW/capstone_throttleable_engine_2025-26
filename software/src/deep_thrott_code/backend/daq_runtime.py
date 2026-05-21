@@ -7,6 +7,22 @@ import threading
 from collections.abc import Callable
 
 
+def _build_log_path() -> str:
+	from datetime import datetime
+	from pathlib import Path
+
+	now = datetime.now()
+	folder_date = now.strftime("%Y/%m/%d")
+	file_timestamp = now.strftime("%H-%M-%S_data.csv")
+	base_dir = Path("logs")
+	full_path = base_dir / folder_date / file_timestamp
+	full_path.parent.mkdir(parents=True, exist_ok=True)
+	try:
+		return str(full_path.resolve())
+	except Exception:
+		return str(full_path)
+
+
 def drain_queue(q: queue.Queue) -> None:
 	"""Best-effort queue drain used to drop stale samples on restarts."""
 
@@ -59,17 +75,8 @@ class DaqRuntime:
 		self._producer_cpu = int(producer_cpu)
 		self._consumer_cpu = int(consumer_cpu)
 
-		from datetime import datetime
-		from pathlib import Path
-
-		now = datetime.now()
-		folder_date = now.strftime("%Y/%m/%d") 
-		file_timestamp = now.strftime("%H-%M-%S_data.csv")
-		base_dir = Path("logs")
-		full_path = base_dir / folder_date / file_timestamp
-		full_path.parent.mkdir(parents=True, exist_ok=True)
-
-		self._log_path = str(full_path)
+		self._log_path = _build_log_path()
+		self._log_started_at_wall: float | None = None
 
 		self._lock = threading.Lock()
 		self._running = False
@@ -78,6 +85,24 @@ class DaqRuntime:
 		self._consumer_thread: threading.Thread | None = None
 		self._logger = None
 		self._state_store = None
+
+	def snapshot_meta(self) -> dict[str, object]:
+		"""Return backend/runtime metadata for the GUI."""
+
+		from pathlib import Path
+
+		with self._lock:
+			log_path = str(self._log_path)
+			try:
+				log_dir = str(Path(log_path).parent)
+			except Exception:
+				log_dir = ""
+			return {
+				"is_logging": bool(self._running),
+				"log_path": log_path,
+				"log_dir": log_dir,
+				"log_started_at_wall": float(self._log_started_at_wall) if self._log_started_at_wall else None,
+			}
 
 	def is_running(self) -> bool:
 		with self._lock:
@@ -98,6 +123,14 @@ class DaqRuntime:
 			if self._running:
 				self._emit_system("Log already running.")
 				return
+
+		# Allocate a fresh log path per start, so the GUI can display
+		# the actual active file.
+		log_path = _build_log_path()
+		start_wall = time.time()
+		with self._lock:
+			self._log_path = log_path
+			self._log_started_at_wall = start_wall
 
 		try:
 			sensors = build_sensors(simulation=bool(simulation), test_name=test_name)
@@ -120,7 +153,7 @@ class DaqRuntime:
             "filtered_value",
             "source",
 		]
-		logger = CsvLogger(self._log_path, header, flush_every=25, fsync_every_flush=False)
+		logger = CsvLogger(log_path, header, flush_every=25, fsync_every_flush=False)
 		producer_stats = ProducerStats()
 
 		self._drain_queue(self._sample_queue)
