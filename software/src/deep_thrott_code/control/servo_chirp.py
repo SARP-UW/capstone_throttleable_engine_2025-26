@@ -137,7 +137,7 @@ def read_response(packet_checksum, expected_length):
 # valve_id = response[5]
 # print(f"Valve ID: {valve_id}")
 
-valve_id_assignment_packet = build_packet(13, [2])
+valve_id_assignment_packet = build_packet(0xFE, 13, [2])
 send_packet(valve_id_assignment_packet)
 
 response = read_response(valve_id_assignment_packet[-1], 7)
