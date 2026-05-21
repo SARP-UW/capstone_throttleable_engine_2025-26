@@ -62,6 +62,10 @@ def producer_loop(
 ):
     dt = (1.0 / loop_hz) if pace and loop_hz > 0 else 0.0
 
+    # Optional per-sensor sampling schedule.
+    # If a sensor instance defines `sampling_rate_hz`, we only read it when due.
+    next_due_t: dict[str, float] = {}
+
     # Rate-limit timeout logs per sensor name so we don't spam.
     last_timeout_log_t: dict[str, float] = {}
     timeout_log_period_s = 5.0
@@ -69,22 +73,58 @@ def producer_loop(
     while not stop_event.is_set():
         t_start = time.perf_counter()
 
+        now = t_start
+
         enqueued = 0
 
         for sensor in sensor_list:
+            name = getattr(sensor, "name", None)
+            sensor_name = str(name) if name else sensor.__class__.__name__
+
+            sampling_rate_hz = getattr(sensor, "sampling_rate_hz", None)
+            if sampling_rate_hz is not None:
+                try:
+                    hz = float(sampling_rate_hz)
+                except Exception:
+                    hz = 0.0
+
+                if hz > 0:
+                    period_s = 1.0 / hz
+                    due = next_due_t.get(sensor_name)
+                    if due is None:
+                        next_due_t[sensor_name] = now
+                    elif now < due:
+                        continue
+
             try:
                 sample = sensor.read_raw_sample()
             except TimeoutError:
                 # Treat ADC DRDY timeouts as a dropped sample for this cycle.
                 # Keep the producer loop alive so other channels can continue.
                 now = time.monotonic()
-                name = getattr(sensor, "name", None)
-                sensor_name = str(name) if name else sensor.__class__.__name__
                 last = last_timeout_log_t.get(sensor_name, 0.0)
                 if (now - last) >= timeout_log_period_s:
                     _log.warning("DAQ read timeout (dropping sample): %s", sensor_name)
                     last_timeout_log_t[sensor_name] = now
+
+                # Back off until next period (if configured) so we don't hammer a failing channel.
+                if sampling_rate_hz is not None:
+                    try:
+                        hz = float(sampling_rate_hz)
+                    except Exception:
+                        hz = 0.0
+                    if hz > 0:
+                        next_due_t[sensor_name] = time.perf_counter() + (1.0 / hz)
                 continue
+
+            if sampling_rate_hz is not None:
+                try:
+                    hz = float(sampling_rate_hz)
+                except Exception:
+                    hz = 0.0
+                if hz > 0:
+                    # Schedule from *now* to avoid backlog catch-up storms.
+                    next_due_t[sensor_name] = time.perf_counter() + (1.0 / hz)
 
             sample_queue.put(sample)
             enqueued += 1

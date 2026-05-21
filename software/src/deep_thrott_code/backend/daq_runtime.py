@@ -86,7 +86,10 @@ class DaqRuntime:
 	def start(self, simulation: bool, test_name: str | None = None) -> None:
 		"""Start DAQ threads and begin emitting samples to `gui_queue`."""
 
-		from deep_thrott_code.daq.services.loop import consumer_loop, producer_loop  # noqa: PLC0415
+		import time
+
+		from deep_thrott_code.daq import config as daq_config  # noqa: PLC0415
+		from deep_thrott_code.daq.services.loop import ProducerStats, consumer_loop, producer_loop  # noqa: PLC0415
 		from deep_thrott_code.daq.services.logger import CsvLogger  # noqa: PLC0415
 		from deep_thrott_code.daq.services.state_store import StateStore  # noqa: PLC0415
 		from deep_thrott_code.daq.sensors.sensors import build_sensor_map, build_sensors  # noqa: PLC0415
@@ -106,13 +109,14 @@ class DaqRuntime:
 		stop_event = threading.Event()
 		state_store = StateStore()
 		logger = CsvLogger(self._log_path, flush_every=25, fsync_every_flush=False)
+		producer_stats = ProducerStats()
 
 		self._drain_queue(self._sample_queue)
 		self._drain_queue(self._gui_queue)
 
 		def producer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._producer_cpu)
-			producer_loop(sensors, self._sample_queue, stop_event, 100.0)
+			producer_loop(sensors, self._sample_queue, stop_event, 100.0, stats=producer_stats)
 
 		def consumer_entrypoint() -> None:
 			self._pin_thread_to_cpu(self._consumer_cpu)
@@ -120,8 +124,41 @@ class DaqRuntime:
 
 		producer_thread = threading.Thread(target=producer_entrypoint, daemon=True, name="producer")
 		consumer_thread = threading.Thread(target=consumer_entrypoint, daemon=True, name="consumer")
+
+		# Optional DAQ rate monitor thread. Delete after testing 
+		monitor_thread: threading.Thread | None = None
+		if bool(getattr(daq_config, "DAQ_EMIT_RATE_STATS", False)):
+			period_s = float(getattr(daq_config, "DAQ_RATE_STATS_PERIOD_S", 5.0) or 5.0)
+
+			def monitor_entrypoint() -> None:
+				last = producer_stats.snapshot()
+				last_t = time.perf_counter()
+				while not stop_event.is_set():
+					time.sleep(period_s)
+					now = time.perf_counter()
+					snap = producer_stats.snapshot()
+					dt = now - last_t
+					if dt <= 0:
+						last = snap
+						last_t = now
+						continue
+					cycles = snap["cycles"] - last["cycles"]
+					samples = snap["samples_enqueued"] - last["samples_enqueued"]
+					overruns = snap["overruns"] - last["overruns"]
+					busy = snap["busy_s"] - last["busy_s"]
+					self._emit_system(
+						f"DAQ rate: {cycles / dt:.1f} cycles/s, {samples / dt:.1f} samples/s, busy={busy / dt:.0%}, overruns={int(overruns)}"
+					)
+					last = snap
+					last_t = now
+
+			monitor_thread = threading.Thread(target=monitor_entrypoint, daemon=True, name="producer_monitor")
+		# Delete until here
+		
 		producer_thread.start()
 		consumer_thread.start()
+		if monitor_thread is not None:
+			monitor_thread.start()
 
 		with self._lock:
 			self._running = True
