@@ -61,6 +61,18 @@ sequences:
         user_input: true
         system_state: fill
 
+      - valve_id: omctv
+        action: open
+        time_delay: 0.0
+        user_input: true
+        system_state: fill
+
+      - valve_id: fmctv
+        action: open
+        time_delay: 0.0
+        user_input: true
+        system_state: fill
+
   - name: fire
     steps:
       - valve_id: wmv
@@ -86,18 +98,6 @@ sequences:
         time_delay: 2.0
         user_input: false
         system_state: fire
-
-      - valve_id: omctv
-        angle: 90.0
-        time_delay: 0.0
-        user_input: false
-        system_state: fire
-
-      - valve_id: fmctv
-        angle: 90.0
-        time_delay: 2.0
-        user_input: false
-        system_state: throttle
 
       - valve_id: fifv
         action: closed

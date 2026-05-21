@@ -414,11 +414,25 @@ class Controller:
 
                         # if the valve for this step is a throttle valve
                         if isinstance(current_valve, ThrottleValve):
-                            # TODO: throttling implementation
+                            # implementation for f3c checkout test/open loop test
+                            current_valve.set_state()
+                            # TODO: actual throttling implementation
                             # TODO: need to have something that limits what OF you can have based on angles provided by
                             # TODO: log throttle valve actuation
+                            # self.logger.write_valve_action([valve_id, angle])
                             # throttle controller, absolute max of 1.2
-                            pass
+                            # gets valve action
+                            act = str(step.get("action") or "").lower()
+                            if act == "open":
+                                valve_goal_state = ValveState.OPEN
+                            elif act in ("closed", "close"):
+                                valve_goal_state = ValveState.CLOSED
+                            else:
+                                # TODO: error handling for unknown action, skip or default to CLOSED
+                                continue
+                            print("Valve goal state:", valve_goal_state)
+
+                            current_valve.set_state(valve_goal_state)
 
                         # if the valve for this step is an on/off valve
                         else:
