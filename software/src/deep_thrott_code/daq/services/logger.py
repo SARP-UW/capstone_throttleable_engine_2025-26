@@ -4,22 +4,23 @@ from pathlib import Path
 
 # change logger to argument
 class CsvLogger:
-    HEADER = [
-        "sensor_name",
-        "sensor_kind",
-        "t_monotonic",
-        "t_wall",
-        "raw_value",
-        "value",
-        "units",
-        "status",
-        "message",
-        "filtered_value",
-        "sequence",
-        "source",
-    ]
+    # TODO: Elyse pass this as an argument where you initialize DAQ logger
+    # header = [
+    #     "sensor_name",
+    #     "sensor_kind",
+    #     "t_monotonic",
+    #     "t_wall",
+    #     "raw_value",
+    #     "value",
+    #     "units",
+    #     "status",
+    #     "message",
+    #     "filtered_value",
+    #     "sequence",
+    #     "source",
+    # ]
 
-    def __init__(self, filepath: str, flush_every: int = 25, fsync_every_flush: bool = True):
+    def __init__(self, filepath: str, header, flush_every: int = 25, fsync_every_flush: bool = True):
         self.filepath = Path(filepath)
         self.flush_every = flush_every
         self.fsync_every_flush = fsync_every_flush
@@ -27,7 +28,8 @@ class CsvLogger:
         self.file = self.filepath.open("w", newline="")
         self.writer = csv.writer(self.file)
 
-        self.writer.writerow(self.HEADER)
+        self.header = header
+        self.writer.writerow(self.header)
         self.file.flush()
         if self.fsync_every_flush:
             os.fsync(self.file.fileno())
@@ -49,11 +51,17 @@ class CsvLogger:
             sample.sequence,
             sample.source,
         ]
-    
-    # make f3 + throttle loop write to row method
 
+    # writing daq samples
     def write(self, sample) -> None:
         self._buffer.append(self._sample_to_row(sample))
+
+        if len(self._buffer) >= self.flush_every:
+            self.flush()
+
+    # writing valve actions
+    def write_valve_action(self, valve_action) -> None:
+        self._buffer.append(valve_action)
 
         if len(self._buffer) >= self.flush_every:
             self.flush()
