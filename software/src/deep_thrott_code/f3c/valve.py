@@ -132,12 +132,13 @@ class ThrottleValve():
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):
+        actuation_time = 0.5
         if self.state != new_state:
             self.state = new_state
             if new_state == ValveState.OPEN:
-                self.throttle(90.0, 0.5)
+                self.throttle(90.0, actuation_time)
             else:
-                self.throttle(0.0, 0.5)
+                self.throttle(0.0, actuation_time)
 
     def throttle(self, angle_deg: float, time_s):
         """
