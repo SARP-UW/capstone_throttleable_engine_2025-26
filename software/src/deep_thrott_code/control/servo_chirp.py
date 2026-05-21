@@ -100,11 +100,16 @@ def send_packet(packet):
     return len(packet)
 
 
-def read_response(packet_length, expected_length):
+def read_response(packet_checksum, expected_length):
+    checksum_found = False
     # drain the echo
-    time.sleep(0.02)
-    count, echo = pi.serial_read(serial_handle, packet_length)
-    print(f"Echo bytes: {list(echo)}")
+    while not checksum_found:
+        count, echo_byte = pi.serial_read(serial_handle, 7)
+        print(f"Echo byte: {echo_byte}")
+        print(f"Count: {count}")
+        if echo_byte == packet_checksum:
+            checksum_found = True
+        time.sleep(1)
 
     # read the response
     time.sleep(0.02)
@@ -116,40 +121,42 @@ def read_response(packet_length, expected_length):
         return None
     return serial_response
 
-# # get valve id
-# print("Sending valve id request...")
-# packet = build_packet(0xFE, 14)
-# print(f"Packet bytes: {list(packet)}")
-# send_packet(packet)
-# time.sleep(0.1)
+# valve_id_assignment_packet = build_packet(0xFE, 13, [2])
+# send_packet(valve_id_assignment_packet)
 
-# response = read_response(len(packet), 7)
-# print(f"Response: {response}")
+# get valve id
+print("Sending valve id request...")
+packet = build_packet(0xFE, 14)
+print(f"Packet bytes: {list(packet)}")
+send_packet(packet)
+time.sleep(0.1)
 
-# if response is None:
-#     print("No response received.")
-#     pi.serial_close(serial_handle)
-#     pi.stop()
-#     exit()
+response = read_response(len(packet), 7)
+print(f"Response: {response}")
+
+if response is None:
+    print("No response received.")
+    pi.serial_close(serial_handle)
+    pi.stop()
+    exit()
+
+valve_id = response[5]
+print(f"Valve ID: {valve_id}")
+
+# # initialize test throttle valve
+# test_valve_naked = ThrottleValve("test_valve", 1, serial_handle)
+# test_valve_decent = ThrottleValve("test_valve2", 2, serial_handle)
 #
-# valve_id = response[5]
-# print(f"Valve ID: {valve_id}")
-
-valve_id = 254
-
-# initialize test throttle valve
-test_valve = ThrottleValve("test_valve", valve_id, serial_handle)
-
-while True:
-    # test open and close servo to 90 deg
-    test_valve.throttle(90, 2)
-    time.sleep(2)
-    print("Valve angle:", test_valve.read_pos())
-    time.sleep(3)
-    test_valve.throttle(0, 2)
-    time.sleep(2)
-    print("Valve angle:", test_valve.read_pos())
-    time.sleep(3)
+# while True:
+#     # test open and close servo to 90 deg
+#     test_valve.throttle(90, 2)
+#     time.sleep(2)
+#     print("Valve angle:", test_valve.read_pos())
+#     time.sleep(3)
+#     test_valve.throttle(0, 2)
+#     time.sleep(2)
+#     print("Valve angle:", test_valve.read_pos())
+#     time.sleep(3)
 
 pi.serial_close(serial_handle)
 pi.stop()
