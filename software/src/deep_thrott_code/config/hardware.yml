@@ -14,7 +14,7 @@ adcs:
     # datarate_sps: 2000
     # datarate_dr: 12
     cs_gpio: null
-    drdy_gpio: 19
+    drdy_gpio: 25
     start_sync_gpio: 13
     notes: "ADC #1"
 
