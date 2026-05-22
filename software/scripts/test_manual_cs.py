@@ -12,8 +12,8 @@ SPI_SPEED_HZ = 500_000
 SPI_MODE = 1            # ADS124S0x usually uses SPI mode 1
 
 ADC_CS_PINS = {
-    "ADC1": 5,           # BCM GPIO5
-    "ADC2": 6,           # BCM GPIO6
+    "ADC1": 8,           # BCM GPIO8
+    "ADC2": 7,           # BCM GPIO7
     "ADC3": 13,          # change this to your ADC3 CS GPIO
 }
 
