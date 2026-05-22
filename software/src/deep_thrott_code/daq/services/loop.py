@@ -114,13 +114,13 @@ def producer_loop(
 
             try:
                 sample = sensor.read_raw_sample()
-            except TimeoutError:
+            except TimeoutError as exc:
                 # Treat ADC DRDY timeouts as a dropped sample for this cycle.
                 # Keep the producer loop alive so other channels can continue.
                 now = time.monotonic()
                 last = last_timeout_log_t.get(sensor_name, 0.0)
                 if (now - last) >= timeout_log_period_s:
-                    _log.warning("DAQ read timeout (dropping sample): %s", sensor_name)
+                    _log.warning("DAQ read timeout (dropping sample): %s | %s", sensor_name, exc)
                     last_timeout_log_t[sensor_name] = now
 
                 # Back off until next period (if configured) so we don't hammer a failing channel.
