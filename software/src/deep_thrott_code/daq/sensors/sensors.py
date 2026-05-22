@@ -22,6 +22,7 @@ from typing import Any
 
 from .. import config
 from ..services.sample import RawSample, Sample
+import RPi.GPIO as GPIO  # type: ignore
 
 
 _log = logging.getLogger(__name__)
@@ -806,6 +807,105 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         adcs_cfg = hardware_cfg.get("adcs")
         if not isinstance(adcs_cfg, dict) or not adcs_cfg:
             raise RuntimeError(f"No 'adcs' configured in {hardware_path}")
+
+        shared_spi_by_node: dict[tuple[int, int], spidev.SpiDev] = {}
+        spi_lock_by_node: dict[tuple[int, int], threading.Lock] = {}
+
+        # one global/manual-CS registry
+        manual_cs_pins: list[int] = []
+
+        for adc_id, cfg in adcs_cfg.items():
+            cs_gpio = cfg.get("cs_gpio")
+            if cs_gpio is None:
+                raise RuntimeError(f"{adc_id}: cs_gpio must be set for manual CS mode")
+
+            manual_cs_pins.append(int(cs_gpio))
+
+        # initialize all CS GPIOs high before opening/using SPI
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+
+        for cs in manual_cs_pins:
+            GPIO.setup(cs, GPIO.OUT, initial=GPIO.HIGH)
+
+        for adc_id, cfg in adcs_cfg.items():
+            if not isinstance(adc_id, str) or not isinstance(cfg, dict):
+                continue
+
+            if str(cfg.get("transport", "")).lower() != "spi":
+                continue
+
+            if str(cfg.get("model", "")).upper() not in {"ADS124S08IRHBT", "ADS124S08"}:
+                continue
+
+            spi_bus = cfg.get("spi_bus")
+            spi_dev = cfg.get("spi_device")
+
+            if spi_bus is None or spi_dev is None:
+                continue
+
+            spi_bus_i = int(spi_bus)
+            spi_dev_i = int(spi_dev)
+
+            spi_node = (spi_bus_i, spi_dev_i)
+
+            cs_gpio = cfg.get("cs_gpio")
+
+            if cs_gpio is None:
+                raise RuntimeError(
+                    f"{adc_id}: cs_gpio must be specified."
+                )
+
+            reset_gpio = cfg.get("reset_gpio")
+            drdy_gpio = cfg.get("drdy_gpio")
+            start_gpio = cfg.get("start_sync_gpio")
+
+            spi_max_speed_hz = cfg.get("spi_max_speed_hz")
+
+            try:
+                spi_max_speed_hz_i = (
+                    int(spi_max_speed_hz)
+                    if spi_max_speed_hz is not None
+                    else 500_000
+                )
+            except Exception:
+                spi_max_speed_hz_i = 500_000
+
+            if spi_node not in shared_spi_by_node:
+                spi = spidev.SpiDev()
+                spi.open(spi_bus_i, spi_dev_i)
+
+                spi.mode = 0b01
+                spi.max_speed_hz = spi_max_speed_hz_i
+                spi.bits_per_word = 8
+                spi.no_cs = True
+
+                shared_spi_by_node[spi_node] = spi
+                spi_lock_by_node[spi_node] = threading.Lock()
+
+            adc = ADS124S08(
+                id=adc_id,
+                spi=shared_spi_by_node[spi_node],
+                spi_lock=spi_lock_by_node[spi_node],
+                cs_pin=int(cs_gpio),
+                all_cs_pins=manual_cs_pins,
+                reset_pin=int(reset_gpio) if reset_gpio is not None else None,
+                drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
+                start_pin=int(start_gpio) if start_gpio is not None else None,
+            )
+
+            try:
+                adc.hardware_reset()
+                adc.configure_basic(
+                    use_internal_ref=False,
+                    gain=1,
+                )
+                adc.start()
+
+            except Exception as exc:
+                print(f"WARNING: failed to initialize {adc_id}: {exc}")
+
+            adc_by_id[adc_id] = adc
 
         # If multiple ADCs point at the same /dev/spidev<bus>.<dev>, only one of them
         # may use the hardware CE line (cs_gpio null). Any additional ADCs on the same

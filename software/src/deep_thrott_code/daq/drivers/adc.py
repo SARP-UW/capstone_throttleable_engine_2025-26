@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
-import os
+
 import time
 import threading
-import spidev  # type: ignore
-import gpiod  # type: ignore
-from gpiod.line import Direction, Value  # type: ignore
-
-try:
-    from gpiozero import OutputDevice  # type: ignore
-except ModuleNotFoundError:  # pragma: no cover - only relevant on Pi hardware.
-    OutputDevice = None
+import RPi.GPIO as GPIO  # type: ignore
 
 
 class ADS124S08:
-    """Low-level ADS124S08 driver for Raspberry Pi + libgpiod v2."""
+    """ADS124S08 driver using caller-managed shared SPI + manual GPIO chip select."""
 
     REG_INPMUX = 0x02
     REG_PGA = 0x03
@@ -48,163 +41,76 @@ class ADS124S08:
     def __init__(
         self,
         id,
-        spi_bus,
-        spi_dev,
-        spi=None,
-        spi_lock=None,
-        cs_pin=None,
-        gpiochip="/dev/gpiochip0",
+        spi,
+        spi_lock,
+        cs_pin,
+        all_cs_pins,
         reset_pin=None,
         drdy_pin=None,
         start_pin=None,
-        max_speed_hz=10_000,
-        spi_mode=0b01,
     ):
-        self._manage_spi = spi is None
-        if self._manage_spi:
-            devpath = f"/dev/spidev{spi_bus}.{spi_dev}"
-            if not os.path.exists(devpath):
-                raise RuntimeError(f"{devpath} not found. Enable SPI and/or correct bus/dev.")
-
         self.id = id
-        self.spi_bus = spi_bus
-        self.spi_dev = spi_dev
-        self.cs_pin = cs_pin
-        self.reset_pin = reset_pin
-        self.start_pin = start_pin
-        self.drdy_pin = drdy_pin
-        self._cs_output = None
-
+        self.spi = spi
         self._spi_lock = spi_lock or threading.Lock()
 
-        if spi is None:
-            self.spi = spidev.SpiDev()
-            self.spi.open(spi_bus, spi_dev)
-        else:
-            # Caller-managed SPI device (often shared across multiple ADC instances).
-            self.spi = spi
+        self.cs_pin = int(cs_pin)
+        self.all_cs_pins = [int(p) for p in all_cs_pins]
 
-        # These are per-file-descriptor settings on Linux spidev.
-        # If you share one SpiDev instance across multiple ADCs, these must match.
-        self.spi.mode = spi_mode
-        self.spi.max_speed_hz = max_speed_hz
-        self.spi.bits_per_word = 8
+        self.reset_pin = int(reset_pin) if reset_pin is not None else None
+        self.drdy_pin = int(drdy_pin) if drdy_pin is not None else None
+        self.start_pin = int(start_pin) if start_pin is not None else None
 
-        if cs_pin is not None:
-            try:
-                self.spi.no_cs = True
-            except Exception as exc:
-                raise RuntimeError(
-                    f"Manual chip-select ADC {id} requires spidev no_cs=True on "
-                    f"/dev/spidev{spi_bus}.{spi_dev}, but enabling it failed."
-                ) from exc
+        GPIO.setup(self.cs_pin, GPIO.OUT, initial=GPIO.HIGH)
 
-            try:
-                no_cs_enabled = bool(self.spi.no_cs)
-            except Exception as exc:
-                raise RuntimeError(
-                    f"Manual chip-select ADC {id} requires spidev no_cs=True on "
-                    f"/dev/spidev{spi_bus}.{spi_dev}, but the setting could not be verified."
-                ) from exc
+        if self.reset_pin is not None:
+            GPIO.setup(self.reset_pin, GPIO.OUT, initial=GPIO.HIGH)
 
-            if not no_cs_enabled:
-                raise RuntimeError(
-                    f"Manual chip-select ADC {id} requires spidev no_cs=True on "
-                    f"/dev/spidev{spi_bus}.{spi_dev}, but the kernel driver left hardware CS enabled."
-                )
+        if self.start_pin is not None:
+            GPIO.setup(self.start_pin, GPIO.OUT, initial=GPIO.HIGH)
 
-        self.chip = gpiod.Chip(gpiochip)
-
-        self._req_out = None
-        out_cfg = {}
-
-        if cs_pin is not None:
-            if OutputDevice is None:
-                raise RuntimeError(
-                    "gpiozero is required for manual chip-select ADCs. "
-                    "Install `gpiozero` on the Raspberry Pi environment."
-                )
-
-            # Use gpiozero for active-low manual CS to match the standalone
-            # third-device bring-up script more closely.
-            self._cs_output = OutputDevice(
-                cs_pin,
-                active_high=False,
-                initial_value=False,
-            )
-
-        if reset_pin is not None:
-            out_cfg[reset_pin] = gpiod.LineSettings(
-                direction=Direction.OUTPUT,
-                output_value=Value.ACTIVE,
-            )
-
-        if start_pin is not None:
-            # START/SYNC is active-high for normal operation on ADS124S08.
-            # Default to driving it high if the caller provides the pin.
-            out_cfg[start_pin] = gpiod.LineSettings(
-                direction=Direction.OUTPUT,
-                output_value=Value.ACTIVE,
-            )
-
-        if out_cfg:
-            self._req_out = self.chip.request_lines(
-                config=out_cfg,
-                consumer="ads124_out",
-            )
-
-        self._req_in = None
-        if drdy_pin is not None:
-            self._req_in = self.chip.request_lines(
-                config={
-                    drdy_pin: gpiod.LineSettings(
-                        direction=Direction.INPUT,
-                    )
-                },
-                consumer="ads124_in",
-            )
+        if self.drdy_pin is not None:
+            GPIO.setup(self.drdy_pin, GPIO.IN, pull_up_down=GPIO.PUD_OFF)
 
         self._ref_reg_backup = None
         self._idac_enabled = False
 
+        self._deselect_all()
         time.sleep(0.01)
+
+    def _deselect_all(self):
+        for pin in self.all_cs_pins:
+            GPIO.output(pin, GPIO.HIGH)
 
     def _chip_select_asserted(self):
         class _CS:
             def __init__(self, outer: "ADS124S08"):
-                self._outer = outer
+                self.o = outer
 
             def __enter__(self):
-                o = self._outer
-                if o._spi_lock is not None:
-                    o._spi_lock.acquire()
-                if o._cs_output is not None:
-                    o._cs_output.on()
-                    # Match the manual-CS bring-up pattern used elsewhere: give
-                    # CS a brief setup time before clocking the SPI transaction.
-                    time.sleep(0.000001)
+                self.o._spi_lock.acquire()
+
+                self.o._deselect_all()
+                time.sleep(5e-6)
+
+                GPIO.output(self.o.cs_pin, GPIO.LOW)
+                time.sleep(5e-6)
+
                 return self
 
             def __exit__(self, exc_type, exc, tb):
-                o = self._outer
-                if o._cs_output is not None:
-                    o._cs_output.off()
-                if o._spi_lock is not None:
-                    o._spi_lock.release()
+                time.sleep(5e-6)
+                GPIO.output(self.o.cs_pin, GPIO.HIGH)
+                time.sleep(5e-6)
+
+                self.o._spi_lock.release()
                 return False
 
         return _CS(self)
 
     def get_drdy_level(self):
-        if self._req_in is None or self.drdy_pin is None:
+        if self.drdy_pin is None:
             return None
-
-        val = self._req_in.get_value(self.drdy_pin)
-
-        if val == Value.ACTIVE:
-            return "HIGH"
-
-        return "LOW"
+        return "HIGH" if GPIO.input(self.drdy_pin) else "LOW"
 
     def _send_cmd(self, cmd: int) -> None:
         with self._chip_select_asserted():
@@ -213,18 +119,18 @@ class ADS124S08:
     def wreg(self, addr: int, data_bytes: list[int]) -> None:
         n = len(data_bytes)
         with self._chip_select_asserted():
-            self.spi.xfer2([0x40 | (addr & 0x1F), (n - 1)] + list(data_bytes))
+            self.spi.xfer2([0x40 | (addr & 0x1F), n - 1] + list(data_bytes))
 
     def rreg(self, addr: int, n: int) -> list[int]:
         with self._chip_select_asserted():
-            rx = self.spi.xfer2([0x20 | (addr & 0x1F), (n - 1)] + [0x00] * n)
+            rx = self.spi.xfer2([0x20 | (addr & 0x1F), n - 1] + [0x00] * n)
         return rx[2:]
 
     def hardware_reset(self) -> None:
-        if self._req_out is not None and self.reset_pin is not None:
-            self._req_out.set_value(self.reset_pin, Value.INACTIVE)
+        if self.reset_pin is not None:
+            GPIO.output(self.reset_pin, GPIO.LOW)
             time.sleep(0.005)
-            self._req_out.set_value(self.reset_pin, Value.ACTIVE)
+            GPIO.output(self.reset_pin, GPIO.HIGH)
         else:
             self._send_cmd(self.CMD_RESET)
 
@@ -237,14 +143,14 @@ class ADS124S08:
         self._send_cmd(self.CMD_STOP)
 
     def wait_drdy(self, timeout_s: float = 0.5) -> bool:
-        if self._req_in is None or self.drdy_pin is None:
+        if self.drdy_pin is None:
             time.sleep(timeout_s)
             return True
 
         t0 = time.perf_counter()
 
         while (time.perf_counter() - t0) < timeout_s:
-            if self._req_in.get_value(self.drdy_pin) == Value.INACTIVE:
+            if GPIO.input(self.drdy_pin) == GPIO.LOW:
                 return True
 
             time.sleep(0.0005)
@@ -368,7 +274,6 @@ class ADS124S08:
             raise ValueError("ainp must be 0..11")
 
         val = ((ainp & 0x0F) << 4) | (self.AINCOM_CODE & 0x0F)
-
         self.wreg(self.REG_INPMUX, [val])
 
     def set_inpmux_diff(self, ainp: int, ainn: int) -> None:
@@ -379,7 +284,6 @@ class ADS124S08:
             raise ValueError("ainn must be 0..11")
 
         val = ((ainp & 0x0F) << 4) | (ainn & 0x0F)
-
         self.wreg(self.REG_INPMUX, [val])
 
     def read_raw_single(
@@ -388,17 +292,16 @@ class ADS124S08:
         settle_discard: bool = True,
     ) -> int:
         self.set_inpmux_single(ainp)
-
         self.start()
 
         if not self.wait_drdy(0.5):
-            raise TimeoutError("DRDY timeout after MUX change")
+            raise TimeoutError(f"{self.id}: DRDY timeout after MUX change")
 
         _ = self.read_raw_sample()
 
         if settle_discard:
             if not self.wait_drdy(0.5):
-                raise TimeoutError("DRDY timeout after settle discard")
+                raise TimeoutError(f"{self.id}: DRDY timeout after settle discard")
 
         return self.read_raw_sample()
 
@@ -409,48 +312,21 @@ class ADS124S08:
         settle_discard: bool = True,
     ) -> int:
         self.set_inpmux_diff(ainp, ainn)
-
         self.start()
 
         if not self.wait_drdy(0.5):
-            raise TimeoutError("DRDY timeout after MUX change")
+            raise TimeoutError(f"{self.id}: DRDY timeout after MUX change")
 
         _ = self.read_raw_sample()
 
         if settle_discard:
             if not self.wait_drdy(0.5):
-                raise TimeoutError("DRDY timeout after settle discard")
+                raise TimeoutError(f"{self.id}: DRDY timeout after settle discard")
 
         return self.read_raw_sample()
 
     def close(self) -> None:
-        # Release GPIO line requests first.
         try:
-            if self._req_in is not None:
-                self._req_in.release()
+            GPIO.output(self.cs_pin, GPIO.HIGH)
         except Exception:
             pass
-
-        try:
-            if self._req_out is not None:
-                self._req_out.release()
-        except Exception:
-            pass
-
-        try:
-            if self._cs_output is not None:
-                self._cs_output.close()
-        except Exception:
-            pass
-
-        try:
-            if getattr(self, "chip", None) is not None:
-                self.chip.close()
-        except Exception:
-            pass
-
-        if self._manage_spi:
-            try:
-                self.spi.close()
-            except Exception:
-                pass

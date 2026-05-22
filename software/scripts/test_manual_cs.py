@@ -27,7 +27,6 @@ CMD_WREG  = 0x40
 
 N_REGS_TO_READ = 18     # read first 18 registers for sanity check
 
-
 # =========================
 # GPIO / SPI SETUP
 # =========================
