@@ -177,7 +177,15 @@ def _check_drdy_pin(adc_id: str, adc) -> None:
         print("Interpretation: DRDY is LOW, meaning data-ready or line is held low.")
 
 
-def _check_one(adc_id: str, cfg: dict, ain: int, *, ignore_drdy: bool = False) -> int:
+def _check_one(
+    adc_id: str,
+    cfg: dict,
+    ain: int,
+    *,
+    gain: int = 1,
+    diff: tuple[int, int] | None = None,
+    ignore_drdy: bool = False,
+) -> int:
     if ignore_drdy and isinstance(cfg, dict):
         cfg = dict(cfg)
         cfg["drdy_gpio"] = None
@@ -201,8 +209,12 @@ def _check_one(adc_id: str, cfg: dict, ain: int, *, ignore_drdy: bool = False) -
 
         _print_register_dump(adc, "--- REGISTER DUMP AFTER WRITE/READBACK TESTS ---")
 
+        gain_i = int(gain)
+        if gain_i not in {1, 2, 4, 8, 16, 32, 64, 128}:
+            raise ValueError("gain must be one of 1,2,4,8,16,32,64,128")
+
         print(f"\n[{adc_id}] Configuring ADC...")
-        adc.configure_basic(use_internal_ref=False, gain=1)
+        adc.configure_basic(use_internal_ref=False, gain=gain_i)
 
         print(f"\n[{adc_id}] Sending START command...")
         adc.start()
@@ -226,18 +238,25 @@ def _check_one(adc_id: str, cfg: dict, ain: int, *, ignore_drdy: bool = False) -
             print("  - ADC not actually receiving START command")
             return 1
 
-        print(f"\n[{adc_id}] Attempting sample reads...")
+        if diff is None:
+            print(f"\n[{adc_id}] Attempting single-ended sample reads...")
+        else:
+            ainp, ainn = int(diff[0]), int(diff[1])
+            print(f"\n[{adc_id}] Attempting differential sample reads (AIN{ainp}-AIN{ainn})...")
 
         for i in range(3):
             try:
                 print(f"\n[{adc_id}] Read attempt {i}")
 
-                code = adc.read_raw_single(
-                    int(ain),
-                    settle_discard=True,
-                )
-
-                print(f"[{adc_id}] AIN{ain} raw code = {code}")
+                if diff is None:
+                    code = adc.read_raw_single(int(ain), settle_discard=True)
+                    volts = _adc_code_to_voltage(int(code), vref=5.0, gain=float(gain_i))
+                    print(f"[{adc_id}] AIN{ain} raw code = {code}  V={volts: .6f}")
+                else:
+                    code = adc.read_raw_diff(int(diff[0]), int(diff[1]), settle_discard=True)
+                    volts = _adc_code_to_voltage(int(code), vref=5.0, gain=float(gain_i))
+                    print(
+                        f"[{adc_id}] AIN{int(diff[0])}-AIN{int(diff[1])} raw code = {code}  Vdiff={volts: .6f}")
 
             except TimeoutError as e:
                 print(f"[{adc_id}] TIMEOUT: {e}")
@@ -259,6 +278,8 @@ def _stream_one(
     ain: int,
     *,
     minutes: float,
+    gain: int = 1,
+    diff: tuple[int, int] | None = None,
     ignore_drdy: bool = False,
 ) -> int:
     if ignore_drdy and isinstance(cfg, dict):
@@ -275,13 +296,25 @@ def _stream_one(
         adc._send_cmd(adc.CMD_SDATAC)
         time.sleep(0.01)
 
+        gain_i = int(gain)
+        if gain_i not in {1, 2, 4, 8, 16, 32, 64, 128}:
+            raise ValueError("gain must be one of 1,2,4,8,16,32,64,128")
+
         print(f"\n[{adc_id}] Configuring ADC...")
-        adc.configure_basic(use_internal_ref=False, gain=1)
+        adc.configure_basic(use_internal_ref=False, gain=gain_i)
 
-        print(f"\n[{adc_id}] Streaming AIN{ain} for {minutes:.2f} minutes...")
-        print("  Conversion assumes vref=5.0 V, gain=1")
+        if diff is None:
+            print(f"\n[{adc_id}] Streaming single-ended AIN{ain} for {minutes:.2f} minutes...")
+        else:
+            ainp, ainn = int(diff[0]), int(diff[1])
+            print(f"\n[{adc_id}] Streaming differential AIN{ainp}-AIN{ainn} for {minutes:.2f} minutes...")
 
-        adc.set_inpmux_single(int(ain))
+        print(f"  Conversion assumes vref=5.0 V, gain={gain_i}")
+
+        if diff is None:
+            adc.set_inpmux_single(int(ain))
+        else:
+            adc.set_inpmux_diff(int(diff[0]), int(diff[1]))
         adc.start()
 
         # Discard first conversion after a MUX change for settling.
@@ -305,7 +338,7 @@ def _stream_one(
 
                 code = adc.read_raw_sample()
                 t_samp = time.perf_counter()
-                volts = _adc_code_to_voltage(int(code), vref=5.0, gain=1.0)
+                volts = _adc_code_to_voltage(int(code), vref=5.0, gain=float(gain_i))
 
                 # Print monotonically increasing elapsed time for easy plotting.
                 print(
@@ -335,6 +368,20 @@ def main() -> int:
 
     ap.add_argument("--adc", default=None, help="ADC id, e.g. ADC1/ADC2/ADC3")
     ap.add_argument("--ain", type=int, default=0, help="AIN index to read")
+    ap.add_argument(
+        "--diff",
+        nargs=2,
+        type=int,
+        default=None,
+        metavar=("AINP", "AINN"),
+        help="Differential read AINP-AINN (useful for load cells).",
+    )
+    ap.add_argument(
+        "--gain",
+        type=int,
+        default=1,
+        help="ADS124S08 PGA gain (1,2,4,8,16,32,64,128).",
+    )
     ap.add_argument("--all", action="store_true", help="Check all configured ADCs")
     ap.add_argument(
         "--ignore-drdy",
@@ -378,6 +425,8 @@ def main() -> int:
             cfg,
             args.ain,
             minutes=float(args.stream_minutes),
+            gain=int(args.gain),
+            diff=tuple(args.diff) if args.diff is not None else None,
             ignore_drdy=bool(args.ignore_drdy),
         )
 
@@ -391,7 +440,14 @@ def main() -> int:
             if not isinstance(cfg, dict):
                 continue
 
-            rc |= _check_one(adc_id, cfg, args.ain, ignore_drdy=bool(args.ignore_drdy))
+            rc |= _check_one(
+                adc_id,
+                cfg,
+                args.ain,
+                gain=int(args.gain),
+                diff=tuple(args.diff) if args.diff is not None else None,
+                ignore_drdy=bool(args.ignore_drdy),
+            )
 
         return rc
 
@@ -405,7 +461,14 @@ def main() -> int:
         print(f"Unknown ADC id: {args.adc}")
         return 2
 
-    return _check_one(args.adc, cfg, args.ain, ignore_drdy=bool(args.ignore_drdy))
+    return _check_one(
+        args.adc,
+        cfg,
+        args.ain,
+        gain=int(args.gain),
+        diff=tuple(args.diff) if args.diff is not None else None,
+        ignore_drdy=bool(args.ignore_drdy),
+    )
 
 
 if __name__ == "__main__":
