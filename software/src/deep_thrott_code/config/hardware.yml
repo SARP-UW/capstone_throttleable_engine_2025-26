@@ -5,7 +5,7 @@ adcs:
     model: ADS124S08IRHBT
     transport: spi
     spi_bus: 0
-    spi_device: 1
+    spi_device: 0
     # Optional (tuning): SPI clock for this ADC (Hz)
     # spi_max_speed_hz: 500000
     # Optional (tuning): force ADS124S08 data rate (choose one)
@@ -13,8 +13,9 @@ adcs:
     # - datarate_dr: raw DR[3:0] register code (0..15)
     # datarate_sps: 2000
     # datarate_dr: 12
-    # Use hardware CE0 (GPIO8) via spi_device: 0
-    cs_gpio: null
+    # Manual CS (any free GPIO). If set, the driver uses `spi.no_cs = True` and toggles this GPIO.
+    # NOTE: this only works if ADC1's CS pin is physically wired to this GPIO (not CE0).
+    cs_gpio: 19
     drdy_gpio: 25
     start_sync_gpio: 13
     notes: "ADC #1"
@@ -23,7 +24,7 @@ adcs:
     model: ADS124S08IRHBT
     transport: spi
     spi_bus: 0
-    spi_device: 0
+    spi_device: 1
     # spi_max_speed_hz: 500000
     # datarate_sps: 2000
     # datarate_dr: 12
