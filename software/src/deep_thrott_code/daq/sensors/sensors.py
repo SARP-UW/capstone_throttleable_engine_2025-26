@@ -808,6 +808,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         if not isinstance(adcs_cfg, dict) or not adcs_cfg:
             raise RuntimeError(f"No 'adcs' configured in {hardware_path}")
 
+        adc_by_id: dict[str, Any] = {}
         shared_spi_by_node: dict[tuple[int, int], spidev.SpiDev] = {}
         spi_lock_by_node: dict[tuple[int, int], threading.Lock] = {}
 
@@ -904,103 +905,6 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
             except Exception as exc:
                 print(f"WARNING: failed to initialize {adc_id}: {exc}")
-
-            adc_by_id[adc_id] = adc
-
-        # If multiple ADCs point at the same /dev/spidev<bus>.<dev>, only one of them
-        # may use the hardware CE line (cs_gpio null). Any additional ADCs on the same
-        # spidev node must use manual GPIO chip-select (cs_gpio set).
-        by_spidev: dict[tuple[int, int], list[tuple[str, bool]]] = {}
-        for _adc_id, _cfg in adcs_cfg.items():
-            if not isinstance(_adc_id, str) or not isinstance(_cfg, dict):
-                continue
-            if str(_cfg.get("transport", "")).lower() != "spi":
-                continue
-            if str(_cfg.get("model", "")).upper() not in {"ADS124S08IRHBT", "ADS124S08"}:
-                continue
-
-            _bus = _cfg.get("spi_bus")
-            _dev = _cfg.get("spi_device")
-            if _bus is None or _dev is None:
-                continue
-
-            _cs_gpio = _cfg.get("cs_gpio")
-            _uses_manual_cs = _cs_gpio is not None
-            by_spidev.setdefault((int(_bus), int(_dev)), []).append((_adc_id, _uses_manual_cs))
-
-        for (bus, dev), entries in by_spidev.items():
-            if len(entries) <= 1:
-                continue
-            hardware_cs = [adc_id for adc_id, uses_manual in entries if not uses_manual]
-            if len(hardware_cs) > 1:
-                raise RuntimeError(
-                    "Invalid ADC SPI config: multiple ADCs are configured for the same "
-                    f"/dev/spidev{bus}.{dev} using the hardware CE line (cs_gpio: null): {hardware_cs}. "
-                    "Fix by setting a unique cs_gpio for all but one of them (manual GPIO chip-select), "
-                    "or by moving one ADC to a different spi_device."
-                )
-
-        adc_by_id: dict[str, Any] = {}
-
-        # One lock per SPI bus to prevent interleaved transfers across devices/FDs.
-        spi_lock_by_bus: dict[int, threading.Lock] = {}
-
-        for adc_id, cfg in adcs_cfg.items():
-            if not isinstance(adc_id, str) or not isinstance(cfg, dict):
-                continue
-
-            if str(cfg.get("transport", "")).lower() != "spi":
-                continue
-            if str(cfg.get("model", "")).upper() not in {"ADS124S08IRHBT", "ADS124S08"}:
-                continue
-
-            spi_bus = cfg.get("spi_bus")
-            spi_dev = cfg.get("spi_device")
-            if spi_bus is None or spi_dev is None:
-                continue
-
-            spi_bus_i = int(spi_bus)
-            spi_dev_i = int(spi_dev)
-
-            cs_gpio = cfg.get("cs_gpio")
-            reset_gpio = cfg.get("reset_gpio")
-            drdy_gpio = cfg.get("drdy_gpio")
-            start_gpio = cfg.get("start_sync_gpio")
-
-            cs_pin = int(cs_gpio) if cs_gpio is not None else None
-            # Convention:
-            # - cs_gpio set  -> use GPIO-controlled chip select (for "extra" CS lines)
-            # - cs_gpio null -> use hardware CE line selected by spi_device
-
-            # NOTE: The ADS124S08 driver defaulted to a very low SPI clock (10 kHz),
-            # which is fine for smoke-testing but will cap DAQ throughput once you
-            # raise the ADC output data rate. Default to a more realistic value here
-            # for the DAQ runner; allow per-ADC override in hardware.yml.
-            spi_max_speed_hz = cfg.get("spi_max_speed_hz")
-            try:
-                spi_max_speed_hz_i = int(spi_max_speed_hz) if spi_max_speed_hz is not None else 500_000
-            except Exception:
-                spi_max_speed_hz_i = 500_000
-
-            spi_lock = spi_lock_by_bus.setdefault(spi_bus_i, threading.Lock())
-
-            adc = ADS124S08(
-                id=adc_id,
-                spi_bus=spi_bus_i,
-                spi_dev=spi_dev_i,
-                spi_lock=spi_lock,
-                cs_pin=cs_pin,
-                reset_pin=int(reset_gpio) if reset_gpio is not None else None,
-                drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
-                start_pin=int(start_gpio) if start_gpio is not None else None,
-                max_speed_hz=spi_max_speed_hz_i,
-            )
-            try:
-                adc.hardware_reset()
-                adc.configure_basic(use_internal_ref=False, gain=1)
-                adc.start()
-            except Exception:
-                pass
 
             adc_by_id[adc_id] = adc
 
