@@ -14,7 +14,7 @@ import RPi.GPIO as GPIO  # type: ignore
 
 
 _SHARED_SPI_BY_NODE: dict[tuple[int, int], spidev.SpiDev] = {}
-_SPI_LOCK_BY_NODE: dict[tuple[int, int], threading.Lock] = {}
+_SPI_LOCK_BY_BUS: dict[int, threading.Lock] = {}
 _MANUAL_CS_PINS: list[int] = []
 
 
@@ -96,13 +96,13 @@ def _get_shared_spi(spi_bus: int, spi_dev: int, max_speed_hz: int):
         spi.no_cs = True
 
         _SHARED_SPI_BY_NODE[spi_node] = spi
-        _SPI_LOCK_BY_NODE[spi_node] = threading.Lock()
     else:
         spi = _SHARED_SPI_BY_NODE[spi_node]
         spi.max_speed_hz = int(max_speed_hz)
         spi.no_cs = True
 
-    return _SHARED_SPI_BY_NODE[spi_node], _SPI_LOCK_BY_NODE[spi_node]
+    spi_lock = _SPI_LOCK_BY_BUS.setdefault(spi_bus, threading.Lock())
+    return _SHARED_SPI_BY_NODE[spi_node], spi_lock
 
 
 def _build_adc(adc_id: str, cfg: dict):
