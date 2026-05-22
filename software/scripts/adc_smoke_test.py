@@ -18,6 +18,17 @@ _SHARED_SPI_BY_BUS_DEV: dict[tuple[int, int], object] = {}
 _SPI_LOCK_BY_BUS: dict[int, threading.Lock] = {}
 
 
+def _adc_code_to_voltage(code: int, *, vref: float = 5.0, gain: float = 1.0) -> float:
+    """Convert a 24-bit signed ADS124S08 code to volts.
+
+    Assumes the simple full-scale model used elsewhere in this repo.
+    """
+
+    fs_code = (1 << 23) - 1
+    full_scale = float(vref) / float(gain) if gain else float(vref)
+    return (float(code) / fs_code) * full_scale
+
+
 def _repo_src_on_path() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     src = repo_root / "software" / "src"
@@ -242,6 +253,81 @@ def _check_one(adc_id: str, cfg: dict, ain: int, *, ignore_drdy: bool = False) -
         adc.close()
 
 
+def _stream_one(
+    adc_id: str,
+    cfg: dict,
+    ain: int,
+    *,
+    minutes: float,
+    ignore_drdy: bool = False,
+) -> int:
+    if ignore_drdy and isinstance(cfg, dict):
+        cfg = dict(cfg)
+        cfg["drdy_gpio"] = None
+
+    if minutes <= 0:
+        raise ValueError("minutes must be > 0")
+
+    adc = _build_adc(adc_id, cfg)
+
+    try:
+        adc.stop()
+        adc._send_cmd(adc.CMD_SDATAC)
+        time.sleep(0.01)
+
+        print(f"\n[{adc_id}] Configuring ADC...")
+        adc.configure_basic(use_internal_ref=False, gain=1)
+
+        print(f"\n[{adc_id}] Streaming AIN{ain} for {minutes:.2f} minutes...")
+        print("  Conversion assumes vref=5.0 V, gain=1")
+
+        adc.set_inpmux_single(int(ain))
+        adc.start()
+
+        # Discard first conversion after a MUX change for settling.
+        if not adc.wait_drdy(1.0):
+            print(f"[{adc_id}] DRDY TIMEOUT (initial)")
+            return 1
+        _ = adc.read_raw_sample()
+
+        t0 = time.perf_counter()
+        t_end = t0 + (float(minutes) * 60.0)
+        n = 0
+
+        try:
+            while True:
+                if time.perf_counter() >= t_end:
+                    break
+
+                if not adc.wait_drdy(1.0):
+                    print(f"[{adc_id}] DRDY TIMEOUT")
+                    return 1
+
+                code = adc.read_raw_sample()
+                t_samp = time.perf_counter()
+                volts = _adc_code_to_voltage(int(code), vref=5.0, gain=1.0)
+
+                # Print monotonically increasing elapsed time for easy plotting.
+                print(
+                    f"t={t_samp - t0:9.3f}s  code={int(code):8d}  V={volts: .6f}",
+                    flush=True,
+                )
+                n += 1
+        except KeyboardInterrupt:
+            print(f"\n[{adc_id}] Stopped by user.")
+
+        dt = time.perf_counter() - t0
+        if dt > 0:
+            print(f"\n[{adc_id}] Done. {n} samples in {dt:.1f}s (~{n / dt:.1f} Hz).")
+        else:
+            print(f"\n[{adc_id}] Done. {n} samples.")
+
+        return 0
+
+    finally:
+        adc.close()
+
+
 def main() -> int:
     _repo_src_on_path()
 
@@ -256,6 +342,15 @@ def main() -> int:
         help="Ignore DRDY pin (treat as unconfigured) to isolate DRDY wiring/config issues.",
     )
 
+    ap.add_argument(
+        "--stream-minutes",
+        nargs="?",
+        const=15.0,
+        default=None,
+        type=float,
+        help="Continuously read AIN and print raw code + volts for N minutes (default: 15).",
+    )
+
     args = ap.parse_args()
 
     hw = _load_hardware_cfg()
@@ -264,6 +359,27 @@ def main() -> int:
     if not isinstance(adcs, dict) or not adcs:
         print("No 'adcs' section found in hardware.yml")
         return 2
+
+    if args.stream_minutes is not None:
+        if args.all:
+            print("--stream-minutes cannot be combined with --all")
+            return 2
+        if not args.adc:
+            print("Provide --adc ADC1, or use --all")
+            return 2
+
+        cfg = adcs.get(args.adc)
+        if not isinstance(cfg, dict):
+            print(f"Unknown ADC id: {args.adc}")
+            return 2
+
+        return _stream_one(
+            args.adc,
+            cfg,
+            args.ain,
+            minutes=float(args.stream_minutes),
+            ignore_drdy=bool(args.ignore_drdy),
+        )
 
     if args.all:
         rc = 0
