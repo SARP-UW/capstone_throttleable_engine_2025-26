@@ -476,8 +476,6 @@ class LoadCellSensor(Sensor):
             pass
 
         settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
-        sig_plus_raw = self.adc.read_raw_single(self.sig_plus_ain, settle_discard=settle_discard)
-        sig_minus_raw = self.adc.read_raw_single(self.sig_minus_ain, settle_discard=settle_discard)
         raw_diff = self.adc.read_raw_diff(self.sig_plus_ain, self.sig_minus_ain, settle_discard=settle_discard)
 
         return RawSample(
@@ -488,16 +486,19 @@ class LoadCellSensor(Sensor):
             t_monotonic=t_mono,
             t_wall=t_wall,
             raw_count=int(raw_diff),
-            raw_diff_1=int(sig_plus_raw),
-            raw_diff_2=int(sig_minus_raw),
         )
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
-        code_plus = raw_sample.raw_diff_1
-        code_minus = raw_sample.raw_diff_2
-        v_plus = _adc_code_to_voltage(int(code_plus), vref=self.adc_vref, gain=self.adc_gain) if code_plus is not None else 0.0
-        v_minus = _adc_code_to_voltage(int(code_minus), vref=self.adc_vref, gain=self.adc_gain) if code_minus is not None else 0.0
-        v_diff = abs(v_plus - v_minus)
+        # Load cells are read as a true differential pair. Under higher PGA gain,
+        # the bridge common-mode can saturate single-ended measurements even when
+        # the differential signal is still valid, so convert from the diff code.
+        v_diff = abs(
+            _adc_code_to_voltage(
+                int(raw_sample.raw_count),
+                vref=self.adc_vref,
+                gain=self.adc_gain,
+            )
+        )
 
         if self.excitation_voltage == 0 or self.sensitivity_v_per_v == 0:
             force_n = 0.0
@@ -514,8 +515,7 @@ class LoadCellSensor(Sensor):
             raw_value=raw_sample.raw_count,
             value=float(force_n),
             units="N",
-            V_diff_1=v_plus,
-            V_diff_2=v_minus,
+            V_diff_1=v_diff,
             source="hardware",
         )
 
