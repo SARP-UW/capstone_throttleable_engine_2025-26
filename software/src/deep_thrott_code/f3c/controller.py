@@ -11,7 +11,7 @@ from daq.services.logger import CsvLogger
 import os
 # import serial
 
-computer_sim = True
+computer_sim = False
 
 # TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
@@ -433,6 +433,51 @@ class Controller:
                             print("Valve goal state:", valve_goal_state)
 
                             current_valve.set_state(valve_goal_state)
+
+                            # wait for delay specified in step (can be 0.0)
+                            time.sleep(step.get("time_delay", 0.0))
+                            if bool(step.get("user_input")):
+                                with self._lock:
+                                    self.step_status = StepStatus.WAITING_USER
+                                    self.waiting_manual = {"sequence": str(sequence_state.value),
+                                                           "step_index": int(idx)}
+                                self._record_history(sequence=str(sequence_state.value), step_index=idx,
+                                                     status="WAITING_USER",
+                                                     valve_id=str(valve_id), action=action_seq)
+
+                                # send message to gui that manual step is required with step details
+                                if self._f3c_to_gui_queue is not None:
+                                    self._f3c_to_gui_queue.put(
+                                        {
+                                            "type": "manual_step_required",
+                                            "sequence": str(sequence_state.value),
+                                            "step_index": int(idx),
+                                            "message": "Manual step required. Perform the required checks, then click Execute.",
+                                        },
+                                        timeout=0.1,
+                                    )
+                                else:
+                                    input(
+                                        "Manual step required. Perform the required checks, then click Enter to continue.")
+
+                                # Block until matching acknowledgement arrives
+                                if not computer_sim:
+                                    while True:
+                                        ack = self._ack_queue.get()
+                                        try:
+                                            if isinstance(ack, dict) and ack.get("type") == "reset_sequences":
+                                                self.reset_sequences()
+                                                return
+
+                                            if isinstance(ack, dict) and ack.get("type") == "manual_step_execute":
+                                                seq = ack.get("sequence")
+                                                step_index = ack.get("step_index")
+                                                ack_idx = int(step_index)
+                                                # what happens if this isn't true?
+                                                if seq == str(sequence_state.value) and ack_idx == int(idx):
+                                                    break
+                                        finally:
+                                            self._ack_queue.task_done()
 
                         # if the valve for this step is an on/off valve
                         else:
