@@ -20,7 +20,9 @@ def main() -> None:
     from deep_thrott_code.gui import create_gui_app  # noqa: PLC0415
 
     parser = argparse.ArgumentParser(description="Deep Thrott Code GUI (frontend-only)")
-    parser.add_argument("--host", default="0.0.0.0", help="Bind host for serving the GUI")
+    # Bind address for the server.
+    # Note: 0.0.0.0 is valid for *binding* (all interfaces) but is not a URL you can browse to.
+    parser.add_argument("--host", default="127.0.0.1", help="Bind host for serving the GUI")
     parser.add_argument("--port", type=int, default=5000, help="Bind port for serving the GUI")
     parser.add_argument(
         "--backend",
@@ -40,7 +42,14 @@ def main() -> None:
     )
 
     # Keep terminal output readable (suppress per-request logs).
+    # We print our own startup URL below so users still know what to open.
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
+    browser_host = str(args.host)
+    if browser_host == "0.0.0.0":
+        # 0.0.0.0 means "bind all interfaces"; for local browsing, use localhost.
+        browser_host = "127.0.0.1"
+    print(f"GUI running. Open: http://{browser_host}:{int(args.port)}/")
 
     app.run(host=str(args.host), port=int(args.port), debug=bool(args.debug), use_reloader=False)
 
