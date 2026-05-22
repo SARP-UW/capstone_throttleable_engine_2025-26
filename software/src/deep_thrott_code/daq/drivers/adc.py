@@ -6,6 +6,11 @@ import spidev  # type: ignore
 import gpiod  # type: ignore
 from gpiod.line import Direction, Value  # type: ignore
 
+try:
+    from gpiozero import OutputDevice  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - only relevant on Pi hardware.
+    OutputDevice = None
+
 
 class ADS124S08:
     """Low-level ADS124S08 driver for Raspberry Pi + libgpiod v2."""
@@ -68,6 +73,7 @@ class ADS124S08:
         self.reset_pin = reset_pin
         self.start_pin = start_pin
         self.drdy_pin = drdy_pin
+        self._cs_output = None
 
         self._spi_lock = spi_lock or threading.Lock()
 
@@ -87,8 +93,25 @@ class ADS124S08:
         if cs_pin is not None:
             try:
                 self.spi.no_cs = True
-            except Exception:
-                pass
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Manual chip-select ADC {id} requires spidev no_cs=True on "
+                    f"/dev/spidev{spi_bus}.{spi_dev}, but enabling it failed."
+                ) from exc
+
+            try:
+                no_cs_enabled = bool(self.spi.no_cs)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Manual chip-select ADC {id} requires spidev no_cs=True on "
+                    f"/dev/spidev{spi_bus}.{spi_dev}, but the setting could not be verified."
+                ) from exc
+
+            if not no_cs_enabled:
+                raise RuntimeError(
+                    f"Manual chip-select ADC {id} requires spidev no_cs=True on "
+                    f"/dev/spidev{spi_bus}.{spi_dev}, but the kernel driver left hardware CS enabled."
+                )
 
         self.chip = gpiod.Chip(gpiochip)
 
@@ -96,10 +119,18 @@ class ADS124S08:
         out_cfg = {}
 
         if cs_pin is not None:
-            out_cfg[cs_pin] = gpiod.LineSettings(
-                direction=Direction.OUTPUT,
-                active_low=True,
-                output_value=Value.INACTIVE,
+            if OutputDevice is None:
+                raise RuntimeError(
+                    "gpiozero is required for manual chip-select ADCs. "
+                    "Install `gpiozero` on the Raspberry Pi environment."
+                )
+
+            # Use gpiozero for active-low manual CS to match the standalone
+            # third-device bring-up script more closely.
+            self._cs_output = OutputDevice(
+                cs_pin,
+                active_high=False,
+                initial_value=False,
             )
 
         if reset_pin is not None:
@@ -147,8 +178,8 @@ class ADS124S08:
                 o = self._outer
                 if o._spi_lock is not None:
                     o._spi_lock.acquire()
-                if o._req_out is not None and o.cs_pin is not None:
-                    o._req_out.set_value(o.cs_pin, Value.ACTIVE)
+                if o._cs_output is not None:
+                    o._cs_output.on()
                     # Match the manual-CS bring-up pattern used elsewhere: give
                     # CS a brief setup time before clocking the SPI transaction.
                     time.sleep(0.000001)
@@ -156,8 +187,8 @@ class ADS124S08:
 
             def __exit__(self, exc_type, exc, tb):
                 o = self._outer
-                if o._req_out is not None and o.cs_pin is not None:
-                    o._req_out.set_value(o.cs_pin, Value.INACTIVE)
+                if o._cs_output is not None:
+                    o._cs_output.off()
                 if o._spi_lock is not None:
                     o._spi_lock.release()
                 return False
@@ -403,6 +434,12 @@ class ADS124S08:
         try:
             if self._req_out is not None:
                 self._req_out.release()
+        except Exception:
+            pass
+
+        try:
+            if self._cs_output is not None:
+                self._cs_output.close()
         except Exception:
             pass
 
