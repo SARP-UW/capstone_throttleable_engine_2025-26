@@ -231,9 +231,7 @@ def _check_one(
     adc = _build_adc(adc_id, cfg)
 
     try:
-        adc.stop()
-        adc._send_cmd(adc.CMD_SDATAC)
-        time.sleep(0.01)
+        adc.enter_command_mode()
 
         print(f"\n[{adc_id}] Initial register read:")
         print(adc.rreg(0x00, 8))
@@ -324,9 +322,7 @@ def _stream_one(
     adc = _build_adc(adc_id, cfg)
 
     try:
-        adc.stop()
-        adc._send_cmd(adc.CMD_SDATAC)
-        time.sleep(0.01)
+        adc.enter_command_mode()
 
         gain_i = int(gain)
         if gain_i not in {1, 2, 4, 8, 16, 32, 64, 128}:

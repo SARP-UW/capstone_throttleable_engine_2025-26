@@ -897,6 +897,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
             try:
                 adc.hardware_reset()
+                adc.enter_command_mode()
                 adc.configure_basic(
                     use_internal_ref=False,
                     gain=1,

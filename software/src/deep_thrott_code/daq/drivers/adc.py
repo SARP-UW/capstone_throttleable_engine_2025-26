@@ -142,6 +142,11 @@ class ADS124S08:
     def stop(self) -> None:
         self._send_cmd(self.CMD_STOP)
 
+    def enter_command_mode(self) -> None:
+        self.stop()
+        self._send_cmd(self.CMD_SDATAC)
+        time.sleep(0.01)
+
     def wait_drdy(self, timeout_s: float = 0.5) -> bool:
         if self.drdy_pin is None:
             time.sleep(timeout_s)
