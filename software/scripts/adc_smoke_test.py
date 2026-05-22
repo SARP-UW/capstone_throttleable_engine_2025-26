@@ -10,10 +10,6 @@ import time
 from pathlib import Path
 
 
-# Shared SPI objects for manual-CS ADCs (cs_gpio set in hardware.yml).
-# Keyed by (spi_bus, spi_device).
-_SHARED_SPI_BY_BUS_DEV: dict[tuple[int, int], object] = {}
-
 # One lock per SPI bus to prevent interleaved transfers.
 _SPI_LOCK_BY_BUS: dict[int, threading.Lock] = {}
 
@@ -55,9 +51,6 @@ def _load_hardware_cfg() -> dict:
 def _build_adc(adc_id: str, cfg: dict):
     from deep_thrott_code.daq.drivers.adc import ADS124S08
 
-    # Pi-only dependency.
-    import spidev  # type: ignore
-
     spi_bus = int(cfg["spi_bus"])
     spi_dev = int(cfg["spi_device"])
 
@@ -77,27 +70,10 @@ def _build_adc(adc_id: str, cfg: dict):
 
     spi_lock = _SPI_LOCK_BY_BUS.setdefault(spi_bus, threading.Lock())
 
-    # If cs_pin is provided, use manual chip-select and a shared spidev FD.
-    # This avoids opening /dev/spidevX.Y multiple times and ensures `no_cs=True`.
-    shared_spi = None
-    if cs_pin is not None:
-        key = (spi_bus, spi_dev)
-        shared_spi = _SHARED_SPI_BY_BUS_DEV.get(key)
-        if shared_spi is None:
-            spi = spidev.SpiDev()
-            spi.open(spi_bus, spi_dev)
-            try:
-                spi.no_cs = True
-            except Exception:
-                pass
-            _SHARED_SPI_BY_BUS_DEV[key] = spi
-            shared_spi = spi
-
     adc = ADS124S08(
         id=adc_id,
         spi_bus=spi_bus,
         spi_dev=spi_dev,
-        spi=shared_spi,
         spi_lock=spi_lock,
         cs_pin=cs_pin,
         drdy_pin=drdy_pin,

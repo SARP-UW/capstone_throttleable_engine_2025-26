@@ -845,9 +845,6 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         # One lock per SPI bus to prevent interleaved transfers across devices/FDs.
         spi_lock_by_bus: dict[int, threading.Lock] = {}
 
-        # Optional shared spidev objects (only safe when using manual CS).
-        shared_spi_by_bus_dev: dict[tuple[int, int], spidev.SpiDev] = {}
-
         for adc_id, cfg in adcs_cfg.items():
             if not isinstance(adc_id, str) or not isinstance(cfg, dict):
                 continue
@@ -887,27 +884,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
             spi_lock = spi_lock_by_bus.setdefault(spi_bus_i, threading.Lock())
 
-            # When cs_pin is provided, we can safely share one spidev FD among all
-            # ADCs on the same bus/dev because CS is handled manually in GPIO.
-            shared_spi = None
-            if cs_pin is not None:
-                key = (spi_bus_i, spi_dev_i)
-                shared_spi = shared_spi_by_bus_dev.get(key)
-                if shared_spi is None:
-                    shared_spi = spidev.SpiDev()
-                    shared_spi.open(spi_bus_i, spi_dev_i)
-                    # We'll be driving CS manually.
-                    try:
-                        shared_spi.no_cs = True
-                    except Exception:
-                        pass
-                    shared_spi_by_bus_dev[key] = shared_spi
-
             adc = ADS124S08(
                 id=adc_id,
                 spi_bus=spi_bus_i,
                 spi_dev=spi_dev_i,
-                spi=shared_spi,
                 spi_lock=spi_lock,
                 cs_pin=cs_pin,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,

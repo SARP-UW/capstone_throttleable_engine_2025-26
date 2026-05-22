@@ -149,6 +149,9 @@ class ADS124S08:
                     o._spi_lock.acquire()
                 if o._req_out is not None and o.cs_pin is not None:
                     o._req_out.set_value(o.cs_pin, Value.ACTIVE)
+                    # Match the manual-CS bring-up pattern used elsewhere: give
+                    # CS a brief setup time before clocking the SPI transaction.
+                    time.sleep(0.000001)
                 return self
 
             def __exit__(self, exc_type, exc, tb):
