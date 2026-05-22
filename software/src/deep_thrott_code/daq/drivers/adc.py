@@ -390,6 +390,25 @@ class ADS124S08:
         return self.read_raw_sample()
 
     def close(self) -> None:
+        # Release GPIO line requests first.
+        try:
+            if self._req_in is not None:
+                self._req_in.release()
+        except Exception:
+            pass
+
+        try:
+            if self._req_out is not None:
+                self._req_out.release()
+        except Exception:
+            pass
+
+        try:
+            if getattr(self, "chip", None) is not None:
+                self.chip.close()
+        except Exception:
+            pass
+
         if self._manage_spi:
             try:
                 self.spi.close()
