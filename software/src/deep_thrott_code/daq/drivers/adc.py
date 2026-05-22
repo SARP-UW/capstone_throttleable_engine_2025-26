@@ -334,6 +334,11 @@ class ADS124S08:
 
     def close(self) -> None:
         try:
+            self._deselect_all()
+        except Exception:
+            pass
+
+        try:
             GPIO.output(self.cs_pin, GPIO.HIGH)
         except Exception:
             pass
