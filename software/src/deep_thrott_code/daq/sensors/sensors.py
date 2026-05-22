@@ -1032,6 +1032,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
             try:
                 force_max = bool(getattr(config, "ADC_FORCE_MAX_DATARATE", False))
+                datarate_headroom = float(getattr(config, "ADC_DATARATE_HEADROOM", 1.5) or 1.5)
+                if datarate_headroom < 1.0:
+                    datarate_headroom = 1.0
+                target_convs_per_sec = float(convs_per_sec) * datarate_headroom
 
                 if override_dr is not None:
                     dr_code = int(override_dr) & 0x0F
@@ -1044,7 +1048,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     dr_code = 0x0D
                     chosen_sps = 4000.0
                 else:
-                    dr_code, chosen_sps = _pick_ads124s08_dr_code(float(convs_per_sec))
+                    dr_code, chosen_sps = _pick_ads124s08_dr_code(target_convs_per_sec)
 
                 _set_ads124s08_datarate_dr_bits(adc_by_id[adc_id], dr_code)
                 if override_dr is not None:
@@ -1054,7 +1058,14 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 elif force_max:
                     _log.info("[%s] ADS124S08 DATARATE forced to max (%.1f SPS)", adc_id, chosen_sps)
                 else:
-                    _log.info("[%s] ADS124S08 DATARATE set for ~%.1f conv/s (chose %.1f SPS)", adc_id, convs_per_sec, chosen_sps)
+                    _log.info(
+                        "[%s] ADS124S08 DATARATE set for ~%.1f conv/s with %.2fx headroom (target %.1f SPS, chose %.1f SPS)",
+                        adc_id,
+                        convs_per_sec,
+                        datarate_headroom,
+                        target_convs_per_sec,
+                        chosen_sps,
+                    )
             except Exception as e:
                 _log.warning("[%s] Failed to configure ADS124S08 DATARATE: %s", adc_id, e)
 
