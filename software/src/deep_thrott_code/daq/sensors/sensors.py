@@ -810,7 +810,8 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         adc_by_id: dict[str, Any] = {}
         shared_spi_by_node: dict[tuple[int, int], spidev.SpiDev] = {}
-        spi_lock_by_node: dict[tuple[int, int], threading.Lock] = {}
+        # One lock per physical SPI bus; devices on the same bus share wires.
+        spi_lock_by_bus: dict[int, threading.Lock] = {}
 
         # one global/manual-CS registry
         manual_cs_pins: list[int] = []
@@ -882,12 +883,13 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 spi.no_cs = True
 
                 shared_spi_by_node[spi_node] = spi
-                spi_lock_by_node[spi_node] = threading.Lock()
+
+            spi_lock = spi_lock_by_bus.setdefault(spi_bus_i, threading.Lock())
 
             adc = ADS124S08(
                 id=adc_id,
                 spi=shared_spi_by_node[spi_node],
-                spi_lock=spi_lock_by_node[spi_node],
+                spi_lock=spi_lock,
                 cs_pin=int(cs_gpio),
                 all_cs_pins=manual_cs_pins,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
