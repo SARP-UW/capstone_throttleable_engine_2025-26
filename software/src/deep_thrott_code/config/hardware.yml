@@ -15,7 +15,7 @@ adcs:
     # datarate_dr: 12
     # Manual CS (any free GPIO). If set, the driver uses `spi.no_cs = True` and toggles this GPIO.
     # NOTE: this only works if ADC1's CS pin is physically wired to this GPIO (not CE0).
-    cs_gpio: null
+    cs_gpio: 8
     drdy_gpio: 25
     # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
     start_sync_gpio: null
@@ -30,7 +30,7 @@ adcs:
     # datarate_sps: 2000
     # datarate_dr: 12
     # Use hardware CE1 (GPIO7) via spi_device: 1
-    cs_gpio: null
+    cs_gpio: 7
     drdy_gpio: 5
     # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
     start_sync_gpio: null
