@@ -31,9 +31,9 @@ calibration_profiles:
     generic_bridge_vdiff_to_force_1000N:
       units: N
       type: vdiff_to_force
-      max_load_n: 1000.0
+      max_load_n: 890.0
       excitation_voltage: 5.0
-      sensitivity_v_per_v: 0.0020
+      sensitivity_v_per_v: 0.003
       offset_n: 0.0
 
 
