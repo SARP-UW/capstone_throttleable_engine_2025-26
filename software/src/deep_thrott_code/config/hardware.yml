@@ -13,7 +13,8 @@ adcs:
     # - datarate_dr: raw DR[3:0] register code (0..15)
     # datarate_sps: 2000
     # datarate_dr: 12
-    cs_gpio: null
+    # Manual CS (GPIO) so all ADCs can share one SPI device (spi.no_cs = True)
+    cs_gpio: 8
     drdy_gpio: 25
     start_sync_gpio: 13
     notes: "ADC #1"
@@ -22,11 +23,12 @@ adcs:
     model: ADS124S08IRHBT
     transport: spi
     spi_bus: 0
-    spi_device: 1
+    spi_device: 0
     # spi_max_speed_hz: 500000
     # datarate_sps: 2000
     # datarate_dr: 12
-    cs_gpio: null
+    # Manual CS (GPIO) so all ADCs can share one SPI device (spi.no_cs = True)
+    cs_gpio: 7
     drdy_gpio: 5
     start_sync_gpio: 26
     notes: "ADC #2"

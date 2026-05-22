@@ -752,6 +752,9 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         from deep_thrott_code.daq.drivers.adc import ADS124S08  # noqa: PLC0415
 
+        import threading  # noqa: PLC0415
+        import spidev  # type: ignore  # noqa: PLC0415
+
         # ADS124S08 DATARATE.DR[3:0] mapping (Table 30 in SBAS660).
         # Register reset value is 0x14 -> FILTER=1 (low-latency), DR=0x4 (20 SPS).
         _ADS124S08_ALLOWED_ODR: list[tuple[float, int]] = [
@@ -804,7 +807,47 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         if not isinstance(adcs_cfg, dict) or not adcs_cfg:
             raise RuntimeError(f"No 'adcs' configured in {hardware_path}")
 
+        # If multiple ADCs point at the same /dev/spidev<bus>.<dev>, only one of them
+        # may use the hardware CE line (cs_gpio null). Any additional ADCs on the same
+        # spidev node must use manual GPIO chip-select (cs_gpio set).
+        by_spidev: dict[tuple[int, int], list[tuple[str, bool]]] = {}
+        for _adc_id, _cfg in adcs_cfg.items():
+            if not isinstance(_adc_id, str) or not isinstance(_cfg, dict):
+                continue
+            if str(_cfg.get("transport", "")).lower() != "spi":
+                continue
+            if str(_cfg.get("model", "")).upper() not in {"ADS124S08IRHBT", "ADS124S08"}:
+                continue
+
+            _bus = _cfg.get("spi_bus")
+            _dev = _cfg.get("spi_device")
+            if _bus is None or _dev is None:
+                continue
+
+            _cs_gpio = _cfg.get("cs_gpio")
+            _uses_manual_cs = _cs_gpio is not None
+            by_spidev.setdefault((int(_bus), int(_dev)), []).append((_adc_id, _uses_manual_cs))
+
+        for (bus, dev), entries in by_spidev.items():
+            if len(entries) <= 1:
+                continue
+            hardware_cs = [adc_id for adc_id, uses_manual in entries if not uses_manual]
+            if len(hardware_cs) > 1:
+                raise RuntimeError(
+                    "Invalid ADC SPI config: multiple ADCs are configured for the same "
+                    f"/dev/spidev{bus}.{dev} using the hardware CE line (cs_gpio: null): {hardware_cs}. "
+                    "Fix by setting a unique cs_gpio for all but one of them (manual GPIO chip-select), "
+                    "or by moving one ADC to a different spi_device."
+                )
+
         adc_by_id: dict[str, Any] = {}
+
+        # One lock per SPI bus to prevent interleaved transfers across devices/FDs.
+        spi_lock_by_bus: dict[int, threading.Lock] = {}
+
+        # Optional shared spidev objects (only safe when using manual CS).
+        shared_spi_by_bus_dev: dict[tuple[int, int], spidev.SpiDev] = {}
+
         for adc_id, cfg in adcs_cfg.items():
             if not isinstance(adc_id, str) or not isinstance(cfg, dict):
                 continue
@@ -819,9 +862,13 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             if spi_bus is None or spi_dev is None:
                 continue
 
+            spi_bus_i = int(spi_bus)
+            spi_dev_i = int(spi_dev)
+
             cs_gpio = cfg.get("cs_gpio")
             reset_gpio = cfg.get("reset_gpio")
             drdy_gpio = cfg.get("drdy_gpio")
+            start_gpio = cfg.get("start_sync_gpio")
 
             cs_pin = int(cs_gpio) if cs_gpio is not None else None
             # Convention:
@@ -838,13 +885,34 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 spi_max_speed_hz_i = 500_000
 
+            spi_lock = spi_lock_by_bus.setdefault(spi_bus_i, threading.Lock())
+
+            # When cs_pin is provided, we can safely share one spidev FD among all
+            # ADCs on the same bus/dev because CS is handled manually in GPIO.
+            shared_spi = None
+            if cs_pin is not None:
+                key = (spi_bus_i, spi_dev_i)
+                shared_spi = shared_spi_by_bus_dev.get(key)
+                if shared_spi is None:
+                    shared_spi = spidev.SpiDev()
+                    shared_spi.open(spi_bus_i, spi_dev_i)
+                    # We'll be driving CS manually.
+                    try:
+                        shared_spi.no_cs = True
+                    except Exception:
+                        pass
+                    shared_spi_by_bus_dev[key] = shared_spi
+
             adc = ADS124S08(
                 id=adc_id,
-                spi_bus=int(spi_bus),
-                spi_dev=int(spi_dev),
+                spi_bus=spi_bus_i,
+                spi_dev=spi_dev_i,
+                spi=shared_spi,
+                spi_lock=spi_lock,
                 cs_pin=cs_pin,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
                 drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
+                start_pin=int(start_gpio) if start_gpio is not None else None,
                 max_speed_hz=spi_max_speed_hz_i,
             )
             try:

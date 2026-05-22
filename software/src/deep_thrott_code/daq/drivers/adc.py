@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
 import time
-import spidev
-import gpiod
-from gpiod.line import Direction, Value
+import threading
+import spidev  # type: ignore
+import gpiod  # type: ignore
+from gpiod.line import Direction, Value  # type: ignore
 
 
 class ADS124S08:
@@ -44,6 +45,8 @@ class ADS124S08:
         id,
         spi_bus,
         spi_dev,
+        spi=None,
+        spi_lock=None,
         cs_pin=None,
         gpiochip="/dev/gpiochip0",
         reset_pin=None,
@@ -52,20 +55,31 @@ class ADS124S08:
         max_speed_hz=10_000,
         spi_mode=0b01,
     ):
-        devpath = f"/dev/spidev{spi_bus}.{spi_dev}"
-        if not os.path.exists(devpath):
-            raise RuntimeError(f"{devpath} not found. Enable SPI and/or correct bus/dev.")
+        self._manage_spi = spi is None
+        if self._manage_spi:
+            devpath = f"/dev/spidev{spi_bus}.{spi_dev}"
+            if not os.path.exists(devpath):
+                raise RuntimeError(f"{devpath} not found. Enable SPI and/or correct bus/dev.")
 
         self.id = id
         self.spi_bus = spi_bus
         self.spi_dev = spi_dev
         self.cs_pin = cs_pin
         self.reset_pin = reset_pin
-        self.start_pin = None
+        self.start_pin = start_pin
         self.drdy_pin = drdy_pin
 
-        self.spi = spidev.SpiDev()
-        self.spi.open(spi_bus, spi_dev)
+        self._spi_lock = spi_lock or threading.Lock()
+
+        if spi is None:
+            self.spi = spidev.SpiDev()
+            self.spi.open(spi_bus, spi_dev)
+        else:
+            # Caller-managed SPI device (often shared across multiple ADC instances).
+            self.spi = spi
+
+        # These are per-file-descriptor settings on Linux spidev.
+        # If you share one SpiDev instance across multiple ADCs, these must match.
         self.spi.mode = spi_mode
         self.spi.max_speed_hz = max_speed_hz
         self.spi.bits_per_word = 8
@@ -90,6 +104,14 @@ class ADS124S08:
 
         if reset_pin is not None:
             out_cfg[reset_pin] = gpiod.LineSettings(
+                direction=Direction.OUTPUT,
+                output_value=Value.ACTIVE,
+            )
+
+        if start_pin is not None:
+            # START/SYNC is active-high for normal operation on ADS124S08.
+            # Default to driving it high if the caller provides the pin.
+            out_cfg[start_pin] = gpiod.LineSettings(
                 direction=Direction.OUTPUT,
                 output_value=Value.ACTIVE,
             )
@@ -123,6 +145,8 @@ class ADS124S08:
 
             def __enter__(self):
                 o = self._outer
+                if o._spi_lock is not None:
+                    o._spi_lock.acquire()
                 if o._req_out is not None and o.cs_pin is not None:
                     o._req_out.set_value(o.cs_pin, Value.ACTIVE)
                 return self
@@ -131,6 +155,8 @@ class ADS124S08:
                 o = self._outer
                 if o._req_out is not None and o.cs_pin is not None:
                     o._req_out.set_value(o.cs_pin, Value.INACTIVE)
+                if o._spi_lock is not None:
+                    o._spi_lock.release()
                 return False
 
         return _CS(self)
@@ -364,7 +390,8 @@ class ADS124S08:
         return self.read_raw_sample()
 
     def close(self) -> None:
-        try:
-            self.spi.close()
-        except Exception:
-            pass
+        if self._manage_spi:
+            try:
+                self.spi.close()
+            except Exception:
+                pass
