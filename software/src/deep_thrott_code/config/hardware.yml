@@ -17,7 +17,8 @@ adcs:
     # NOTE: this only works if ADC1's CS pin is physically wired to this GPIO (not CE0).
     cs_gpio: null
     drdy_gpio: 25
-    start_sync_gpio: 13
+    # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
+    start_sync_gpio: null
     notes: "ADC #1"
 
   ADC2:
@@ -31,7 +32,8 @@ adcs:
     # Use hardware CE1 (GPIO7) via spi_device: 1
     cs_gpio: null
     drdy_gpio: 5
-    start_sync_gpio: 26
+    # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
+    start_sync_gpio: null
     notes: "ADC #2"
 
   ADC3:
@@ -44,7 +46,8 @@ adcs:
     # datarate_dr: 12
     cs_gpio: 16
     drdy_gpio: 6
-    start_sync_gpio: 20
+    # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
+    start_sync_gpio: null
     notes: "ADC #3"
 
 sensors:
