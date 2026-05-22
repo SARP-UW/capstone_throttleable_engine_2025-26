@@ -326,11 +326,11 @@ class DaqRuntime:
 			stop_event.set()
 		for thr in producer_threads:
 			try:
-				thr.join(timeout=1.0)
+				thr.join()
 			except Exception:
 				pass
 		if consumer_thread is not None:
-			consumer_thread.join(timeout=1.0)
+			consumer_thread.join()
 
 		try:
 			if logger is not None:
