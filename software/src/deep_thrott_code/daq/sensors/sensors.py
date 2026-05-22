@@ -901,7 +901,6 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     use_internal_ref=False,
                     gain=1,
                 )
-                adc.start()
 
             except Exception as exc:
                 print(f"WARNING: failed to initialize {adc_id}: {exc}")

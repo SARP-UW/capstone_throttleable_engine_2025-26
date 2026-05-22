@@ -291,6 +291,7 @@ class ADS124S08:
         ainp: int,
         settle_discard: bool = True,
     ) -> int:
+        self.stop()
         self.set_inpmux_single(ainp)
         self.start()
 
@@ -311,6 +312,7 @@ class ADS124S08:
         ainn: int,
         settle_discard: bool = True,
     ) -> int:
+        self.stop()
         self.set_inpmux_diff(ainp, ainn)
         self.start()
 
