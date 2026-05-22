@@ -85,6 +85,7 @@ class DaqRuntime:
 		self._consumer_thread: threading.Thread | None = None
 		self._logger = None
 		self._state_store = None
+		self._sensors: list[object] = []
 
 	def snapshot_meta(self) -> dict[str, object]:
 		"""Return backend/runtime metadata for the GUI."""
@@ -295,6 +296,7 @@ class DaqRuntime:
 			self._consumer_thread = consumer_thread
 			self._logger = logger
 			self._state_store = state_store
+			self._sensors = list(sensors)
 
 		self._emit_system(f"Backend log started ({'SIM' if simulation else 'ADC'} mode).")
 
@@ -310,6 +312,7 @@ class DaqRuntime:
 			producer_threads = list(self._producer_threads)
 			consumer_thread = self._consumer_thread
 			logger = self._logger
+			sensors = list(self._sensors)
 
 			self._running = False
 			self._stop_event = None
@@ -317,6 +320,7 @@ class DaqRuntime:
 			self._consumer_thread = None
 			self._logger = None
 			self._state_store = None
+			self._sensors = []
 
 		if stop_event is not None:
 			stop_event.set()
@@ -333,6 +337,47 @@ class DaqRuntime:
 				logger.close()
 		except Exception:
 			pass
+
+		seen_adc_ids: set[int] = set()
+		seen_spi_ids: set[int] = set()
+		spi_handles: list[object] = []
+		for sensor in sensors:
+			adc = getattr(sensor, "adc", None)
+			if adc is None:
+				continue
+
+			adc_obj_id = id(adc)
+			if adc_obj_id not in seen_adc_ids:
+				seen_adc_ids.add(adc_obj_id)
+				enter_command_mode = getattr(adc, "enter_command_mode", None)
+				if callable(enter_command_mode):
+					try:
+						enter_command_mode()
+					except Exception:
+						pass
+				close = getattr(adc, "close", None)
+				if callable(close):
+					try:
+						close()
+					except Exception:
+						pass
+
+			spi = getattr(adc, "spi", None)
+			if spi is None:
+				continue
+			spi_obj_id = id(spi)
+			if spi_obj_id in seen_spi_ids:
+				continue
+			seen_spi_ids.add(spi_obj_id)
+			spi_handles.append(spi)
+
+		for spi in spi_handles:
+			close = getattr(spi, "close", None)
+			if callable(close):
+				try:
+					close()
+				except Exception:
+					pass
 
 		self._drain_queue(self._sample_queue)
 		self._drain_queue(self._gui_queue)
