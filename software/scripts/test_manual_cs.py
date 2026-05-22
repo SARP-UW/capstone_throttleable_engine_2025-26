@@ -14,7 +14,7 @@ SPI_MODE = 1            # ADS124S0x usually uses SPI mode 1
 ADC_CS_PINS = {
     "ADC1": 8,           # BCM GPIO8
     "ADC2": 7,           # BCM GPIO7
-    "ADC3": 13,          # change this to your ADC3 CS GPIO
+    "ADC3": 16,          # change this to your ADC3 CS GPIO
 }
 
 # ADS124S0x commands/registers
