@@ -6,7 +6,6 @@ except ModuleNotFoundError:
     GPIO_AVAILABLE = False
 
 import time
-from valve import Valve, ValveState
 from controller import Controller
 from queue import Queue
 import threading
