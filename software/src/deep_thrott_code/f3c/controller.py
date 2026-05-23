@@ -6,11 +6,10 @@ import time
 from enum import Enum
 from typing import Any
 import yaml
-from daq.services.logger import CsvLogger
+from deep_thrott_code.daq.services.logger import CsvLogger
 from valve import Valve, ValveState, ThrottleValve
 import sys
 import os
-sys.path.append(os.path.abspath("deep_thrott_code/"))
 import os
 import serial
 
