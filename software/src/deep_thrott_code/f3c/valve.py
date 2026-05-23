@@ -28,6 +28,11 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
+computer_sim = True
+
+if computer_sim:
+    GPIO_AVAILABLE = False
+
 class ValveState(Enum):
     """
     Defines the states a valve can be in.
