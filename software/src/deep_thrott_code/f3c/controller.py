@@ -423,13 +423,13 @@ class Controller:
                             # throttle controller, absolute max of 1.2
                             # gets valve action
                             act = str(step.get("action") or "").lower()
+
+                            # opening valve
                             if act == "open":
                                 valve_goal_state = ValveState.OPEN
-                            elif act in ("closed", "close"):
-                                valve_goal_state = ValveState.CLOSED
+                            # closing valve
                             else:
-                                # TODO: error handling for unknown action, skip or default to CLOSED
-                                continue
+                                valve_goal_state = ValveState.CLOSED
                             print("Valve goal state:", valve_goal_state)
 
                             # log valve actuation
@@ -485,23 +485,17 @@ class Controller:
 
                         # if the valve for this step is an on/off valve
                         else:
-                            if current_valve is None:
-                                # TODO: record error history
-                                continue
-
                             # gets valve action
                             act = str(step.get("action") or "").lower()
+
+                            # opening valve
                             if act == "open":
                                 valve_goal_state = ValveState.OPEN
-                            elif act in ("closed", "close"):
-                                valve_goal_state = ValveState.CLOSED
+                            # closing valve
                             else:
-                                # TODO: error handling for unknown action, skip or default to CLOSED
-                                continue
-                            print("Valve goal state:", valve_goal_state)
+                                valve_goal_state = ValveState.CLOSED
 
                             # actuates valve if current valve state is different from goal state
-                            print("Current valve state: ", current_valve.get_state())
                             if current_valve.get_state() != valve_goal_state:
                                 # log valve actuation
                                 self.logger.write_valve_action(
