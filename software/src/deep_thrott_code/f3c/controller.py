@@ -16,9 +16,7 @@ import serial
 
 computer_sim = False
 
-# TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
-    import RPi.GPIO as GPIO
     import pigpio
     pi = pigpio.pi()
 
