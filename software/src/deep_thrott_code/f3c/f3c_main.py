@@ -24,77 +24,21 @@ print("Starting controller thread...")
 controller_thread.start()
 print("Controller thread started.")
 
-print("Actuating valve 1")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve1",
-    "state": "open"
-})
+valve_id_list = ["test_valve1", "test_valve2", "test_valve3", "test_valve4", "test_valve5", "test_valve6", "test_valve7", "test_valve8"]
 
-time.sleep(1)
-
-print("Actuating valve 2")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve2",
-    "state": "open"
-})
-
-time.sleep(1)
-
-print("Actuating valve 3")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve3",
-    "state": "open"
-})
-
-time.sleep(1)
-
-print("Actuating valve 4")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve4",
-    "state": "open"
-})
-
-time.sleep(1)
-
-print("Actuating valve 5")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve5",
-    "state": "open"
-})
-
-time.sleep(1)
-
-print("Actuating valve 6")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve6",
-    "state": "open"
-})
-
-time.sleep(1)
-
-print("Actuating valve 7")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve7",
-    "state": "open"
-})
-
-time.sleep(1)
-
-print("Actuating valve 8")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve8",
-    "state": "open"
-})
-
-time.sleep(1)
+for valve_id in valve_id_list:
+    print(f"Actuating valve {valve_id}")
+    test_command_queue.put({
+        "type": "set_valve",
+        "valve_id": valve_id,
+        "state": "open"
+    })
+    time.sleep(1)
+    test_command_queue.put({
+        "type": "set_valve",
+        "valve_id": valve_id,
+        "state": "closed"
+    })
 
 # print("Actuating valve 9")
 # test_command_queue.put({
