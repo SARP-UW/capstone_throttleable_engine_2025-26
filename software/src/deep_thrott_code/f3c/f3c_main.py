@@ -31,12 +31,16 @@ test_command_queue.put({
     "state": "open"
 })
 
+time.sleep(1)
+
 print("Actuating valve 2")
 test_command_queue.put({
     "type": "set_valve",
     "valve_id": "test_valve2",
     "state": "open"
 })
+
+time.sleep(1)
 
 print("Actuating valve 3")
 test_command_queue.put({
@@ -45,12 +49,16 @@ test_command_queue.put({
     "state": "open"
 })
 
+time.sleep(1)
+
 print("Actuating valve 4")
 test_command_queue.put({
     "type": "set_valve",
     "valve_id": "test_valve4",
     "state": "open"
 })
+
+time.sleep(1)
 
 print("Actuating valve 5")
 test_command_queue.put({
@@ -59,12 +67,16 @@ test_command_queue.put({
     "state": "open"
 })
 
+time.sleep(1)
+
 print("Actuating valve 6")
 test_command_queue.put({
     "type": "set_valve",
     "valve_id": "test_valve6",
     "state": "open"
 })
+
+time.sleep(1)
 
 print("Actuating valve 7")
 test_command_queue.put({
@@ -73,6 +85,8 @@ test_command_queue.put({
     "state": "open"
 })
 
+time.sleep(1)
+
 print("Actuating valve 8")
 test_command_queue.put({
     "type": "set_valve",
@@ -80,12 +94,16 @@ test_command_queue.put({
     "state": "open"
 })
 
+time.sleep(1)
+
 print("Actuating valve 9")
 test_command_queue.put({
     "type": "set_valve",
     "valve_id": "test_valve9",
     "state": "open"
 })
+
+time.sleep(1)
 
 print("Actuating valve 10")
 test_command_queue.put({
