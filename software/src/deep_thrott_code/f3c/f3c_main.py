@@ -1,5 +1,6 @@
 try:
     import RPi.GPIO as GPIO
+    import pigpio
     GPIO_AVAILABLE = True
 except ModuleNotFoundError:
     GPIO_AVAILABLE = False

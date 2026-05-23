@@ -61,6 +61,9 @@ class Valve:
         elif not GPIO_AVAILABLE:
             print(f"Valve {self.valve_id}: RPi.GPIO unavailable; running in simulation mode")
 
+    def get_valve_id(self) -> str:
+        return self.valve_id
+
     def get_state(self) -> ValveState:
         return self.state
 
