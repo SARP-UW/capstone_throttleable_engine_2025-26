@@ -69,18 +69,19 @@ class Controller:
         if command_queue is None or ack_queue is None:
             raise TypeError("command_queue and ack_queue are required")
 
-        # pin values for talking to servos
-        self.tx_enable_pin = 18
-        self.tx_pin = 14
-        self.baud = 115200
+        if not computer_sim:
+            # pin values for talking to servos
+            self.tx_enable_pin = 18
+            self.tx_pin = 14
+            self.baud = 115200
 
-        # TX_ENABLE pin setup
-        pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
-        pi.set_mode(self.tx_pin, pigpio.OUTPUT)
-        pi.write(self.tx_enable_pin, 1)  # start in receive mode
+            # TX_ENABLE pin setup
+            pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
+            pi.set_mode(self.tx_pin, pigpio.OUTPUT)
+            pi.write(self.tx_enable_pin, 1)  # start in receive mode
 
-        # Open pigpio serial port for reading responses
-        serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
+            # Open pigpio serial port for reading responses
+            self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
 
         # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
@@ -113,12 +114,6 @@ class Controller:
         # bools to track whether sequences have been executed to prevent repeating sequences
         self.fill_executed = False
         self.fire_executed = False
-
-        # setup tx_enable pin if running on rasp pi
-        if not computer_sim:
-            TX_ENABLE_PIN = 18
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
         # set up to use for action identification in start()
         self.single_valve_actuation = "single valve actuation"
