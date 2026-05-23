@@ -100,13 +100,15 @@ sequences:
         system_state: fire
 
       - valve_id: fmctv
-        angle: 90.0
+        angle: 60.0
+        time: 0.5
         time_delay: 0.0
         user_input: false
         system_state: fire
 
       - valve_id: omctv
-        angle: 90.0
+        angle: 60.0
+        time: 0.5
         time_delay: 2.0
         user_input: false
         system_state: fire
@@ -131,12 +133,14 @@ sequences:
 
       - valve_id: fmctv
         angle: 45.0
+        time: 0.5
         time_delay: 0.0
         user_input: false
         system_state: fire
 
       - valve_id: omctv
         angle: 45.0
+        time: 0.5
         time_delay: 4.0
         user_input: false
         system_state: fire
