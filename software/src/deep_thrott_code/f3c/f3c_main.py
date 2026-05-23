@@ -96,21 +96,21 @@ test_command_queue.put({
 
 time.sleep(1)
 
-print("Actuating valve 9")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve9",
-    "state": "open"
-})
+# print("Actuating valve 9")
+# test_command_queue.put({
+#     "type": "set_valve",
+#     "valve_id": "test_valve9",
+#     "state": "open"
+# })
 
-time.sleep(1)
-
-print("Actuating valve 10")
-test_command_queue.put({
-    "type": "set_valve",
-    "valve_id": "test_valve10",
-    "state": "open"
-})
+# time.sleep(1)
+#
+# print("Actuating valve 10")
+# test_command_queue.put({
+#     "type": "set_valve",
+#     "valve_id": "test_valve10",
+#     "state": "open"
+# })
 
 # print("Single valve actuation command to controller: open")
 # test_command_queue.put({

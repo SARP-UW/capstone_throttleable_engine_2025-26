@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any
 import yaml
 from valve import Valve, ValveState, ThrottleValve
-from daq.services.logger import CsvLogger
+# from daq.services.logger import CsvLogger
 import os
 # import serial
 
