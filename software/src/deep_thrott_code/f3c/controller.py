@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any
 import yaml
 from deep_thrott_code.daq.services.logger import CsvLogger
-from valve import Valve, ValveState, ThrottleValve
+from .valve import Valve, ValveState, ThrottleValve
 import sys
 import os
 import os
