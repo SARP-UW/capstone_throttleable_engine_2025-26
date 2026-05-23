@@ -10,7 +10,7 @@ from valve import Valve, ValveState, ThrottleValve
 import sys
 import os
 sys.path.append(os.path.abspath("deep_thrott_code/"))
-from daq.services.logger import CsvLogger
+# from daq.services.logger import CsvLogger
 import os
 # import serial
 
@@ -119,10 +119,10 @@ class Controller:
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"
 
-        # set up logger
-        self.header = ["valve_id", "valve_type", "target_state", "dt", "angle", "t_wall", "sequence"]  # DOUBLECHECK THIS
-        self.log_path = self._build_log_path()
-        self.logger = CsvLogger(self.log_path, self.header)
+        # # set up logger
+        # self.header = ["valve_id", "valve_type", "target_state", "dt", "angle", "t_wall", "sequence"]  # DOUBLECHECK THIS
+        # self.log_path = self._build_log_path()
+        # self.logger = CsvLogger(self.log_path, self.header)
 
         # elyse added this
         self._lock = threading.RLock()
@@ -432,7 +432,7 @@ class Controller:
                             print("Valve goal state:", valve_goal_state)
 
                             # log valve actuation
-                            self.logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
+                            # self.logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
 
                             # actuate valve
                             current_valve.set_state(valve_goal_state)
@@ -496,9 +496,9 @@ class Controller:
 
                             # actuates valve if current valve state is different from goal state
                             if current_valve.get_state() != valve_goal_state:
-                                # log valve actuation
-                                self.logger.write_valve_action(
-                                    [valve_id, "on/off", valve_goal_state, None, None, time.time(), current_sequence])
+                                # # log valve actuation
+                                # self.logger.write_valve_action(
+                                #     [valve_id, "on/off", valve_goal_state, None, None, time.time(), current_sequence])
 
                                 # actuate valve
                                 current_valve.set_state(valve_goal_state)
@@ -507,8 +507,8 @@ class Controller:
                                 self._record_history(sequence=str(sequence_state.value), step_index=idx, status="READY",
                                                      valve_id=str(valve_id), action=action_seq)
 
-                                # log valve actuation
-                                self.logger.write_valve_action([valve_id, valve_goal_state.value,])
+                                # # log valve actuation
+                                # self.logger.write_valve_action([valve_id, valve_goal_state.value,])
 
                             # if not, set step status back to ready and move on to next step
                             else:
@@ -575,16 +575,16 @@ class Controller:
 
     def _execute_single_valve_actuation(self, valve: Valve, valve_goal_state: ValveState):
         # log valve actuation
-        self.logger.write_valve_action(
-            [valve.get_valve_id(), "on/off", valve_goal_state, None, None, time.time(), None])
+        # self.logger.write_valve_action(
+        #     [valve.get_valve_id(), "on/off", valve_goal_state, None, None, time.time(), None])
 
         # actuate valve
         valve.set_state(valve_goal_state)
 
     def _execute_pulse(self, valve: Valve, dt: float):
         # log valve actuation
-        self.logger.write_valve_action(
-            [valve.get_valve_id(), "on/off", None, dt, None, time.time(), None])
+        # self.logger.write_valve_action(
+        #     [valve.get_valve_id(), "on/off", None, dt, None, time.time(), None])
 
         # actuate valve
         valve.pulse_valve(dt)
