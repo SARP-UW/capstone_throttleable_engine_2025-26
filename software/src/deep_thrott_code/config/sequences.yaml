@@ -1,5 +1,3 @@
-# TODO: Add thrust profile into sequence
-
 sequences:
   - name: fill
     steps:
@@ -101,6 +99,18 @@ sequences:
         user_input: false
         system_state: fire
 
+      - valve_id: fmctv
+        angle: 90.0
+        time_delay: 0.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: omctv
+        angle: 90.0
+        time_delay: 2.0
+        user_input: false
+        system_state: fire
+
       - valve_id: fifv
         action: closed
         time_delay: 0.0
@@ -109,15 +119,27 @@ sequences:
 
       - valve_id: oifv
         action: closed
-        time_delay: 2.0
+        time_delay: 0.0
         user_input: false
         system_state: throttle
 
       - valve_id: sparker
         action: closed
-        time_delay: 4.0
+        time_delay: 2.0
         user_input: false
         system_state: throttle
+
+      - valve_id: fmctv
+        angle: 45.0
+        time_delay: 0.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: omctv
+        angle: 45.0
+        time_delay: 4.0
+        user_input: false
+        system_state: fire
 
       - valve_id: lffv
         action: closed
