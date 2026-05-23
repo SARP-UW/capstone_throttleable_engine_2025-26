@@ -6,12 +6,12 @@ import time
 from enum import Enum
 from typing import Any
 import yaml
-from .valve import Valve, ValveState, ThrottleValve
+from valve import Valve, ValveState, ThrottleValve
 from daq.services.logger import CsvLogger
 import os
 # import serial
 
-computer_sim = False
+computer_sim = True
 
 # TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
@@ -65,19 +65,6 @@ class Controller:
         if command_queue is None or ack_queue is None:
             raise TypeError("command_queue and ack_queue are required")
 
-        # pin values for talking to servos
-        self.tx_enable_pin = 18
-        self.tx_pin = 14
-        self.baud = 115200
-
-        # TX_ENABLE pin setup
-        pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
-        pi.set_mode(self.tx_pin, pigpio.OUTPUT)
-        pi.write(self.tx_enable_pin, 1)  # start in receive mode
-
-        # Open pigpio serial port for reading responses
-        self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
-
         # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
 
@@ -112,9 +99,18 @@ class Controller:
 
         # setup tx_enable pin if running on rasp pi
         if not computer_sim:
-            TX_ENABLE_PIN = 18
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
+            # pin values for talking to servos
+            self.tx_enable_pin = 18
+            self.tx_pin = 14
+            self.baud = 115200
+
+            # TX_ENABLE pin setup
+            pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
+            pi.set_mode(self.tx_pin, pigpio.OUTPUT)
+            pi.write(self.tx_enable_pin, 1)  # start in receive mode
+
+            # Open pigpio serial port for reading responses
+            self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
 
         # set up to use for action identification in start()
         self.single_valve_actuation = "single valve actuation"
