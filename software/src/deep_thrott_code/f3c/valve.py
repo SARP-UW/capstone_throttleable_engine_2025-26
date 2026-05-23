@@ -28,6 +28,11 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
+computer_sim = False
+
+if computer_sim:
+    GPIO_AVAILABLE = False
+
 class ValveState(Enum):
     """
     Defines the states a valve can be in.
@@ -60,6 +65,9 @@ class Valve:
             print(f"Valve {self.valve_id}: pin is None (not wired/configured)")
         elif not GPIO_AVAILABLE:
             print(f"Valve {self.valve_id}: RPi.GPIO unavailable; running in simulation mode")
+
+    def get_valve_id(self) -> str:
+        return self.valve_id
 
     def get_state(self) -> ValveState:
         return self.state

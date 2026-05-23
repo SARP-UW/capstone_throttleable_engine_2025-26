@@ -38,8 +38,7 @@ class CsvLogger:
     def write(self, sample) -> None:
         self._buffer.append(self._sample_to_row(sample))
 
-        if len(self._buffer) >= self.flush_every:
-            self.flush()
+        self.flush()
 
     # writing valve actions
     def write_valve_action(self, valve_action) -> None:

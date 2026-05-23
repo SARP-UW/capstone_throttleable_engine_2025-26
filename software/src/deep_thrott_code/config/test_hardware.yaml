@@ -1,78 +1,71 @@
 actuators:
   valves:
-    wmv:
-      enabled: true
-      mode: on_off
-      pin: 1
-      normally_closed: true
-      notes: "Water main valve"
-
-    ftvv:
+    test_valve1:
       enabled: true
       mode: on_off
       pin: 2
-      normally_closed: false
-      notes: "Fuel tank vent valve"
+      normally_closed: true
+      notes: "Test valve 1"
 
-    fmv:
+    test_valve2:
       enabled: true
       mode: on_off
       pin: 3
       normally_closed: true
-      notes: "Fuel main valve"
+      notes: "Fuel tank vent valve"
 
-    fifv:
+    test_valve3:
       enabled: true
       mode: on_off
       pin: 4
       normally_closed: true
-      notes: "Fuel igniter flow valve"
+      notes: "Fuel main valve"
 
-    lffv:
+    test_valve4:
       enabled: true
       mode: on_off
-      pin: 5
+      pin: 17
+      normally_closed: true
+      notes: "Fuel igniter flow valve"
+
+    test_valve5:
+      enabled: true
+      mode: on_off
+      pin: 22
       normally_closed: true
       notes: "Pressurant fuel filling flow valve"
 
-    xffv:
+    test_valve6:
       enabled: true
       mode: on_off
-      pin: 6
+      pin: 23
       normally_closed: true
       notes: "Pressurant oxidizer filling flow valve"
 
-    offv:
+    test_valve7:
       enabled: true
       mode: on_off
-      pin: 7
+      pin: 24
       normally_closed: true
       notes: "Oxidizer filling flow valve"
 
-    omv:
+    test_valve8:
       enabled: true
       mode: on_off
-      pin: 8
+      pin: 27
       normally_closed: true
       notes: "Oxidizer main valve"
 
-    otvv:
+    test_valve9:
       enabled: true
       mode: on_off
       pin: 9
       normally_closed: false
       notes: "Oxidizer tank vent valve"
 
-    oifv:
+    test_valve10:
       enabled: true
       mode: on_off
       pin: 10
       normally_closed: true
       notes: "Oxidizer igniter flow valve"
-
-    sparker:
-      enabled: true
-      mode: on_off
-      pin: 11
-      normally_closed: true
-      notes: "Igniter sparker"

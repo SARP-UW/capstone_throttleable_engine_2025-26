@@ -1,11 +1,11 @@
 try:
     import RPi.GPIO as GPIO
+    import pigpio
     GPIO_AVAILABLE = True
 except ModuleNotFoundError:
     GPIO_AVAILABLE = False
 
 import time
-from valve import Valve, ValveState
 from controller import Controller
 from queue import Queue
 import threading
@@ -24,10 +24,37 @@ print("Starting controller thread...")
 controller_thread.start()
 print("Controller thread started.")
 
-print("Sending fill sequence command to controller...")
-test_command_queue.put({
-    "type": "fill",
-})
+valve_id_list = ["test_valve1", "test_valve2", "test_valve3", "test_valve4", "test_valve5", "test_valve6", "test_valve7", "test_valve8"]
+
+for valve_id in valve_id_list:
+    print(f"Actuating valve {valve_id}")
+    test_command_queue.put({
+        "type": "set_valve",
+        "valve_id": valve_id,
+        "state": "open"
+    })
+    time.sleep(1)
+    test_command_queue.put({
+        "type": "set_valve",
+        "valve_id": valve_id,
+        "state": "closed"
+    })
+
+# print("Actuating valve 9")
+# test_command_queue.put({
+#     "type": "set_valve",
+#     "valve_id": "test_valve9",
+#     "state": "open"
+# })
+
+# time.sleep(1)
+#
+# print("Actuating valve 10")
+# test_command_queue.put({
+#     "type": "set_valve",
+#     "valve_id": "test_valve10",
+#     "state": "open"
+# })
 
 # print("Single valve actuation command to controller: open")
 # test_command_queue.put({
