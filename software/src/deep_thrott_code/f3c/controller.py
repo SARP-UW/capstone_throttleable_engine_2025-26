@@ -54,7 +54,6 @@ class Controller:
         sequence_config_file: str | None = None,
         command_queue: queue.Queue | None = None,
         ack_queue: queue.Queue | None = None,
-        logger: CsvLogger | None = None,
         *,
         # New-style kwargs used by deep_thrott_code.main
         hardware_config_path: str | None = None,
@@ -77,7 +76,7 @@ class Controller:
         pi.write(self.tx_enable_pin, 1)  # start in receive mode
 
         # Open pigpio serial port for reading responses
-        serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
+        self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
 
         # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
@@ -122,7 +121,9 @@ class Controller:
         self.pulse = "pulse"
 
         # set up logger
-        self.logger = logger
+        self.header = ["valve_id", "valve_type", "target_state", "dt", "angle", "t_wall", "sequence"]  # DOUBLECHECK THIS
+        self.log_path = self._build_log_path()
+        self.logger = CsvLogger(self.log_path, self.header)
 
         # elyse added this
         self._lock = threading.RLock()
@@ -419,19 +420,22 @@ class Controller:
                             # TODO: actual throttling implementation
                             # TODO: need to have something that limits what OF you can have based on angles provided by
                             # TODO: log throttle valve actuation
-                            # self.logger.write_valve_action([valve_id, angle])
                             # throttle controller, absolute max of 1.2
                             # gets valve action
                             act = str(step.get("action") or "").lower()
+
+                            # opening valve
                             if act == "open":
                                 valve_goal_state = ValveState.OPEN
-                            elif act in ("closed", "close"):
-                                valve_goal_state = ValveState.CLOSED
+                            # closing valve
                             else:
-                                # TODO: error handling for unknown action, skip or default to CLOSED
-                                continue
+                                valve_goal_state = ValveState.CLOSED
                             print("Valve goal state:", valve_goal_state)
 
+                            # log valve actuation
+                            self.logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
+
+                            # actuate valve
                             current_valve.set_state(valve_goal_state)
 
                             # wait for delay specified in step (can be 0.0)
@@ -481,24 +485,23 @@ class Controller:
 
                         # if the valve for this step is an on/off valve
                         else:
-                            if current_valve is None:
-                                # TODO: record error history
-                                continue
-
                             # gets valve action
                             act = str(step.get("action") or "").lower()
+
+                            # opening valve
                             if act == "open":
                                 valve_goal_state = ValveState.OPEN
-                            elif act in ("closed", "close"):
-                                valve_goal_state = ValveState.CLOSED
+                            # closing valve
                             else:
-                                # TODO: error handling for unknown action, skip or default to CLOSED
-                                continue
-                            print("Valve goal state:", valve_goal_state)
+                                valve_goal_state = ValveState.CLOSED
 
                             # actuates valve if current valve state is different from goal state
-                            print("Current valve state: ", current_valve.get_state())
                             if current_valve.get_state() != valve_goal_state:
+                                # log valve actuation
+                                self.logger.write_valve_action(
+                                    [valve_id, "on/off", valve_goal_state, None, None, time.time(), current_sequence])
+
+                                # actuate valve
                                 current_valve.set_state(valve_goal_state)
 
                                 # record this step
@@ -571,12 +574,20 @@ class Controller:
             # TODO: send to gui "invalid state transition"
             pass
 
-    @staticmethod
-    def _execute_single_valve_actuation(valve: Valve, valve_state: ValveState):
-        valve.set_state(valve_state)
+    def _execute_single_valve_actuation(self, valve: Valve, valve_goal_state: ValveState):
+        # log valve actuation
+        self.logger.write_valve_action(
+            [valve.get_valve_id(), "on/off", valve_goal_state, None, None, time.time(), None])
 
-    @staticmethod
-    def _execute_pulse(valve: Valve, dt: float):
+        # actuate valve
+        valve.set_state(valve_goal_state)
+
+    def _execute_pulse(self, valve: Valve, dt: float):
+        # log valve actuation
+        self.logger.write_valve_action(
+            [valve.get_valve_id(), "on/off", None, dt, None, time.time(), None])
+
+        # actuate valve
         valve.pulse_valve(dt)
     
     @staticmethod
@@ -645,3 +656,19 @@ class Controller:
                     # throttle valves
                     actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle)
         return actuator_list
+
+    @staticmethod
+    def _build_log_path() -> str:
+        from datetime import datetime
+        from pathlib import Path
+
+        now = datetime.now()
+        folder_date = now.strftime("%Y/%m/%d")
+        file_timestamp = now.strftime("%H-%M-%S_f3c_log.csv")
+        base_dir = Path("logs")
+        full_path = base_dir / folder_date / file_timestamp
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            return str(full_path.resolve())
+        except Exception:
+            return str(full_path)
