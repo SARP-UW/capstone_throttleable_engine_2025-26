@@ -6,8 +6,18 @@ import time
 from enum import Enum
 from typing import Any
 import yaml
+<<<<<<< Updated upstream
 from .valve import Valve, ValveState, ThrottleValve
 from deep_thrott_code.daq.services.logger import CsvLogger
+=======
+
+from daq.services.logger import CsvLogger
+from valve import Valve, ValveState, ThrottleValve
+import sys
+import os
+sys.path.append(os.path.abspath("deep_thrott_code/"))
+# from daq.services.logger import CsvLogger
+>>>>>>> Stashed changes
 import os
 # import serial
 
@@ -121,8 +131,20 @@ class Controller:
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"
 
+<<<<<<< Updated upstream
         # set up logger
         self.logger = logger
+=======
+        # set up valve actuation logger
+        self.actuation_header = ["valve_id", "valve_type", "target_state", "dt", "t_wall", "sequence"]  # DOUBLECHECK THIS
+        self.actuation_log_path = self._build_log_path("actuation_data")
+        self.actuation_logger = CsvLogger(self.actuation_log_path, self.actuation_header)
+
+        # set up servo encoder data logger
+        self.servo_encoder_header = ["valve_id", "angle", "t_wall"]
+        self.servo_encoder_log_path = self._build_log_path("servo_encoder_data")
+        self.servo_encoder_logger = CsvLogger(self.servo_encoder_log_path, self.servo_encoder_header)
+>>>>>>> Stashed changes
 
         # elyse added this
         self._lock = threading.RLock()
@@ -425,6 +447,7 @@ class Controller:
                             act = str(step.get("action") or "").lower()
                             if act == "open":
                                 valve_goal_state = ValveState.OPEN
+<<<<<<< Updated upstream
                             elif act in ("closed", "close"):
                                 valve_goal_state = ValveState.CLOSED
                             else:
@@ -433,6 +456,27 @@ class Controller:
                             print("Valve goal state:", valve_goal_state)
 
                             current_valve.set_state(valve_goal_state)
+=======
+
+                            # closing valve
+                            elif act == "close":
+                                valve_goal_state = ValveState.CLOSED
+                                # actuate valve
+                                current_valve.set_state(valve_goal_state)
+
+                            if act not None:
+                                # actuate valve
+                                current_valve.set_state(valve_goal_state)
+
+                            # throttling to a specific angle (for open loop only!)
+                            else:
+                                angle = step.get("angle")
+                                time = step.get("time")
+                                current_valve.throttle(angle, time)
+
+                            # log valve actuation
+                            self.actuation_logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
+>>>>>>> Stashed changes
 
                             # wait for delay specified in step (can be 0.0)
                             time.sleep(step.get("time_delay", 0.0))
@@ -645,3 +689,22 @@ class Controller:
                     # throttle valves
                     actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle)
         return actuator_list
+<<<<<<< Updated upstream
+=======
+
+    @staticmethod
+    def _build_log_path(file_name: str) -> str:
+        from datetime import datetime
+        from pathlib import Path
+
+        now = datetime.now()
+        folder_date = now.strftime("%Y/%m/%d")
+        file_timestamp = now.strftime("%H-%M-%S_" + file_name + ".csv")
+        base_dir = Path("logs")
+        full_path = base_dir / folder_date / file_timestamp
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            return str(full_path.resolve())
+        except Exception:
+            return str(full_path)
+>>>>>>> Stashed changes
