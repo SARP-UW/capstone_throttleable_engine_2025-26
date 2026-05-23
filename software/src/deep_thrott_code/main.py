@@ -17,9 +17,11 @@ try:
 	# NOTE: This import is expected to work in your environment.
 	from deep_thrott_code.f3c.controller import Controller as F3CController  # type: ignore
 	from deep_thrott_code.f3c.controller import State as F3CState  # type: ignore
-except Exception:  # pragma: no cover
+	_F3C_IMPORT_ERROR: Exception | None = None
+except Exception as exc:  # pragma: no cover
 	F3CController = None  # type: ignore[assignment]
 	F3CState = None  # type: ignore[assignment]
+	_F3C_IMPORT_ERROR = exc
 		
 
 
@@ -103,6 +105,11 @@ def main() -> None:
 		except Exception as exc:
 			print(f"Warning: F3C controller unavailable ({exc}); continuing without sequencer.")
 			f3_controller = None
+	elif _F3C_IMPORT_ERROR is not None:
+		print(
+			f"Warning: F3C controller failed to import ({_F3C_IMPORT_ERROR}); "
+			"continuing without sequencer."
+		)
 
 	if f3_controller is not None:
 		# TODO: don't start controller until start log is pressed,
