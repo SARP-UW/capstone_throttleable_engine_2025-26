@@ -191,6 +191,7 @@ def main() -> None:
 		port=cfg.port,
 		debug=cfg.debug,
 		use_reloader=False,
+		allow_unsafe_werkzeug=True,
 		log_output=True,
 	)
 

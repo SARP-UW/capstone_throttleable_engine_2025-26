@@ -13,9 +13,12 @@ adcs:
     # - datarate_dr: raw DR[3:0] register code (0..15)
     # datarate_sps: 2000
     # datarate_dr: 12
-    cs_gpio: null
+    # Manual CS (any free GPIO). If set, the driver uses `spi.no_cs = True` and toggles this GPIO.
+    # NOTE: this only works if ADC1's CS pin is physically wired to this GPIO (not CE0).
+    cs_gpio: 8
     drdy_gpio: 25
-    start_sync_gpio: 13
+    # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
+    start_sync_gpio: null
     notes: "ADC #1"
 
   ADC2:
@@ -26,9 +29,11 @@ adcs:
     # spi_max_speed_hz: 500000
     # datarate_sps: 2000
     # datarate_dr: 12
-    cs_gpio: null
+    # Use hardware CE1 (GPIO7) via spi_device: 1
+    cs_gpio: 7
     drdy_gpio: 5
-    start_sync_gpio: 26
+    # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
+    start_sync_gpio: null
     notes: "ADC #2"
 
   ADC3:
@@ -41,7 +46,8 @@ adcs:
     # datarate_dr: 12
     cs_gpio: 16
     drdy_gpio: 6
-    start_sync_gpio: 20
+    # START/SYNC is not software-controlled in this setup; hold the ADC pin HIGH in hardware.
+    start_sync_gpio: null
     notes: "ADC #3"
 
 sensors:
@@ -148,7 +154,7 @@ sensors:
 
     resistive temperature detectors:
       WI-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: rtd_3_wire
         lead1_ain: 4
@@ -159,7 +165,7 @@ sensors:
         notes: "Water inlet RTD"
 
       WO-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: rtd_3_wire
         lead1_ain: 4
@@ -170,7 +176,7 @@ sensors:
         notes: "Water outlet RTD"
 
     load cells:
-      E-LC:
+      N-LC:
         enabled: true
         adc_id: ADC1
         signal_mode: differential
@@ -181,9 +187,9 @@ sensors:
         sampling_rate_hz: 100
         notes: "Engine thrust load cell"
 
-      N-LC:
+      E-LC:
         enabled: true
-        adc_id: ADC2
+        adc_id: ADC1
         signal_mode: differential
         ain_pos: 11
         ain_neg: 10
@@ -193,16 +199,16 @@ sensors:
 
     flow meters:
       FM-FM:
-        enabled: true
-        adc_id: ADC3
+        enabled: false
+        adc_id: ADC1
         signal_mode: single_ended
         ain: 8
         sampling_rate_hz: 100
         notes: "Fuel main flow meter"
 
       OM-FM:
-        enabled: true
-        adc_id: ADC3
+        enabled: false
+        adc_id: ADC1
         signal_mode: single_ended
         ain: null
         sampling_rate_hz: 100

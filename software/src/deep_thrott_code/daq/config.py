@@ -13,6 +13,12 @@ ADC_SETTLE_DISCARD: bool = True
 ADC_FORCE_MAX_DATARATE: bool = False
 
 
+# When DATARATE is selected automatically from the configured sensor rates,
+# reserve extra headroom above the theoretical minimum conversion rate.
+# This accounts for SPI command overhead, MUX changes, and scheduling jitter.
+ADC_DATARATE_HEADROOM: float = 1.5
+
+
 # Optional producer rate instrumentation.
 DAQ_EMIT_RATE_STATS: bool = False
 DAQ_RATE_STATS_PERIOD_S: float = 5.0

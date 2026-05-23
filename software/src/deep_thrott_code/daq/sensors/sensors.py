@@ -22,6 +22,7 @@ from typing import Any
 
 from .. import config
 from ..services.sample import RawSample, Sample
+import RPi.GPIO as GPIO  # type: ignore
 
 
 _log = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ class SimulatedPressureSensor(Sensor):
         self,
         name: str,
         *,
+        sampling_rate_hz: float | None = None,
         offset: float = 200.0,
         amplitude: float = 20.0,
         frequency_hz: float = 0.2,
@@ -80,6 +82,8 @@ class SimulatedPressureSensor(Sensor):
     ):
         self.name = str(name)
         self.channel = int(channel)
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
         self.offset = float(offset)
         self.amplitude = float(amplitude)
@@ -176,6 +180,7 @@ class SimulatedLoadCellSensor(Sensor):
         self,
         name: str,
         *,
+        sampling_rate_hz: float | None = None,
         max_load_n: float = 1000.0,
         offset_n: float = 0.0,
         amplitude_n: float = 200.0,
@@ -192,6 +197,8 @@ class SimulatedLoadCellSensor(Sensor):
     ):
         self.name = str(name)
         self.channel = int(channel)
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
         self.max_load_n = float(max_load_n)
         self.offset_n = float(offset_n)
@@ -302,6 +309,7 @@ class SimulatedRTDSensor(Sensor):
         self,
         name: str,
         *,
+        sampling_rate_hz: float | None = None,
         offset_c: float = 20.0,
         amplitude_c: float = 5.0,
         frequency_hz: float = 0.05,
@@ -319,6 +327,8 @@ class SimulatedRTDSensor(Sensor):
         self.name = str(name)
         self.channel = int(channel)
         self.unit = unit
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
         self.offset_c = float(offset_c)
         self.amplitude_c = float(amplitude_c)
@@ -466,8 +476,6 @@ class LoadCellSensor(Sensor):
             pass
 
         settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
-        sig_plus_raw = self.adc.read_raw_single(self.sig_plus_ain, settle_discard=settle_discard)
-        sig_minus_raw = self.adc.read_raw_single(self.sig_minus_ain, settle_discard=settle_discard)
         raw_diff = self.adc.read_raw_diff(self.sig_plus_ain, self.sig_minus_ain, settle_discard=settle_discard)
 
         return RawSample(
@@ -478,16 +486,19 @@ class LoadCellSensor(Sensor):
             t_monotonic=t_mono,
             t_wall=t_wall,
             raw_count=int(raw_diff),
-            raw_diff_1=int(sig_plus_raw),
-            raw_diff_2=int(sig_minus_raw),
         )
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
-        code_plus = raw_sample.raw_diff_1
-        code_minus = raw_sample.raw_diff_2
-        v_plus = _adc_code_to_voltage(int(code_plus), vref=self.adc_vref, gain=self.adc_gain) if code_plus is not None else 0.0
-        v_minus = _adc_code_to_voltage(int(code_minus), vref=self.adc_vref, gain=self.adc_gain) if code_minus is not None else 0.0
-        v_diff = abs(v_plus - v_minus)
+        # Load cells are read as a true differential pair. Under higher PGA gain,
+        # the bridge common-mode can saturate single-ended measurements even when
+        # the differential signal is still valid, so convert from the diff code.
+        v_diff = abs(
+            _adc_code_to_voltage(
+                int(raw_sample.raw_count),
+                vref=self.adc_vref,
+                gain=self.adc_gain,
+            )
+        )
 
         if self.excitation_voltage == 0 or self.sensitivity_v_per_v == 0:
             force_n = 0.0
@@ -504,8 +515,7 @@ class LoadCellSensor(Sensor):
             raw_value=raw_sample.raw_count,
             value=float(force_n),
             units="N",
-            V_diff_1=v_plus,
-            V_diff_2=v_minus,
+            V_diff_1=v_diff,
             source="hardware",
         )
 
@@ -743,6 +753,9 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         from deep_thrott_code.daq.drivers.adc import ADS124S08  # noqa: PLC0415
 
+        import threading  # noqa: PLC0415
+        import spidev  # type: ignore  # noqa: PLC0415
+
         # ADS124S08 DATARATE.DR[3:0] mapping (Table 30 in SBAS660).
         # Register reset value is 0x14 -> FILTER=1 (low-latency), DR=0x4 (20 SPS).
         _ADS124S08_ALLOWED_ODR: list[tuple[float, int]] = [
@@ -796,54 +809,104 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             raise RuntimeError(f"No 'adcs' configured in {hardware_path}")
 
         adc_by_id: dict[str, Any] = {}
+        shared_spi_by_node: dict[tuple[int, int], spidev.SpiDev] = {}
+        # One lock per physical SPI bus; devices on the same bus share wires.
+        spi_lock_by_bus: dict[int, threading.Lock] = {}
+
+        # one global/manual-CS registry
+        manual_cs_pins: list[int] = []
+
+        for adc_id, cfg in adcs_cfg.items():
+            cs_gpio = cfg.get("cs_gpio")
+            if cs_gpio is None:
+                raise RuntimeError(f"{adc_id}: cs_gpio must be set for manual CS mode")
+
+            manual_cs_pins.append(int(cs_gpio))
+
+        # initialize all CS GPIOs high before opening/using SPI
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+
+        for cs in manual_cs_pins:
+            GPIO.setup(cs, GPIO.OUT, initial=GPIO.HIGH)
+
         for adc_id, cfg in adcs_cfg.items():
             if not isinstance(adc_id, str) or not isinstance(cfg, dict):
                 continue
 
             if str(cfg.get("transport", "")).lower() != "spi":
                 continue
+
             if str(cfg.get("model", "")).upper() not in {"ADS124S08IRHBT", "ADS124S08"}:
                 continue
 
             spi_bus = cfg.get("spi_bus")
             spi_dev = cfg.get("spi_device")
+
             if spi_bus is None or spi_dev is None:
                 continue
 
+            spi_bus_i = int(spi_bus)
+            spi_dev_i = int(spi_dev)
+
+            spi_node = (spi_bus_i, spi_dev_i)
+
             cs_gpio = cfg.get("cs_gpio")
+
+            if cs_gpio is None:
+                raise RuntimeError(
+                    f"{adc_id}: cs_gpio must be specified."
+                )
+
             reset_gpio = cfg.get("reset_gpio")
             drdy_gpio = cfg.get("drdy_gpio")
+            start_gpio = cfg.get("start_sync_gpio")
 
-            cs_pin = int(cs_gpio) if cs_gpio is not None else None
-            # Convention:
-            # - cs_gpio set  -> use GPIO-controlled chip select (for "extra" CS lines)
-            # - cs_gpio null -> use hardware CE line selected by spi_device
-
-            # NOTE: The ADS124S08 driver defaulted to a very low SPI clock (10 kHz),
-            # which is fine for smoke-testing but will cap DAQ throughput once you
-            # raise the ADC output data rate. Default to a more realistic value here
-            # for the DAQ runner; allow per-ADC override in hardware.yml.
             spi_max_speed_hz = cfg.get("spi_max_speed_hz")
+
             try:
-                spi_max_speed_hz_i = int(spi_max_speed_hz) if spi_max_speed_hz is not None else 500_000
+                spi_max_speed_hz_i = (
+                    int(spi_max_speed_hz)
+                    if spi_max_speed_hz is not None
+                    else 500_000
+                )
             except Exception:
                 spi_max_speed_hz_i = 500_000
 
+            if spi_node not in shared_spi_by_node:
+                spi = spidev.SpiDev()
+                spi.open(spi_bus_i, spi_dev_i)
+
+                spi.mode = 0b01
+                spi.max_speed_hz = spi_max_speed_hz_i
+                spi.bits_per_word = 8
+                spi.no_cs = True
+
+                shared_spi_by_node[spi_node] = spi
+
+            spi_lock = spi_lock_by_bus.setdefault(spi_bus_i, threading.Lock())
+
             adc = ADS124S08(
                 id=adc_id,
-                spi_bus=int(spi_bus),
-                spi_dev=int(spi_dev),
-                cs_pin=cs_pin,
+                spi=shared_spi_by_node[spi_node],
+                spi_lock=spi_lock,
+                cs_pin=int(cs_gpio),
+                all_cs_pins=manual_cs_pins,
                 reset_pin=int(reset_gpio) if reset_gpio is not None else None,
                 drdy_pin=int(drdy_gpio) if drdy_gpio is not None else None,
-                max_speed_hz=spi_max_speed_hz_i,
+                start_pin=int(start_gpio) if start_gpio is not None else None,
             )
+
             try:
                 adc.hardware_reset()
-                adc.configure_basic(use_internal_ref=False, gain=1)
-                adc.start()
-            except Exception:
-                pass
+                adc.enter_command_mode()
+                adc.configure_basic(
+                    use_internal_ref=False,
+                    gain=1,
+                )
+
+            except Exception as exc:
+                print(f"WARNING: failed to initialize {adc_id}: {exc}")
 
             adc_by_id[adc_id] = adc
 
@@ -971,6 +1034,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
             try:
                 force_max = bool(getattr(config, "ADC_FORCE_MAX_DATARATE", False))
+                datarate_headroom = float(getattr(config, "ADC_DATARATE_HEADROOM", 1.5) or 1.5)
+                if datarate_headroom < 1.0:
+                    datarate_headroom = 1.0
+                target_convs_per_sec = float(convs_per_sec) * datarate_headroom
 
                 if override_dr is not None:
                     dr_code = int(override_dr) & 0x0F
@@ -983,7 +1050,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     dr_code = 0x0D
                     chosen_sps = 4000.0
                 else:
-                    dr_code, chosen_sps = _pick_ads124s08_dr_code(float(convs_per_sec))
+                    dr_code, chosen_sps = _pick_ads124s08_dr_code(target_convs_per_sec)
 
                 _set_ads124s08_datarate_dr_bits(adc_by_id[adc_id], dr_code)
                 if override_dr is not None:
@@ -993,7 +1060,14 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 elif force_max:
                     _log.info("[%s] ADS124S08 DATARATE forced to max (%.1f SPS)", adc_id, chosen_sps)
                 else:
-                    _log.info("[%s] ADS124S08 DATARATE set for ~%.1f conv/s (chose %.1f SPS)", adc_id, convs_per_sec, chosen_sps)
+                    _log.info(
+                        "[%s] ADS124S08 DATARATE set for ~%.1f conv/s with %.2fx headroom (target %.1f SPS, chose %.1f SPS)",
+                        adc_id,
+                        convs_per_sec,
+                        datarate_headroom,
+                        target_convs_per_sec,
+                        chosen_sps,
+                    )
             except Exception as e:
                 _log.warning("[%s] Failed to configure ADS124S08 DATARATE: %s", adc_id, e)
 
@@ -1221,6 +1295,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
     return [
         SimulatedPressureSensor(
             name="CC-PT",
+            sampling_rate_hz=100.0,
             offset=200.0,
             amplitude=20.0,
             frequency_hz=0.2,
@@ -1228,6 +1303,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         ),
         SimulatedPressureSensor(
             name="FI-PT",
+            sampling_rate_hz=100.0,
             offset=300.0,
             amplitude=10.0,
             frequency_hz=0.1,
@@ -1235,6 +1311,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         ),
         SimulatedLoadCellSensor(
             name="thrust",
+            sampling_rate_hz=100.0,
             max_load_n=1000.0,
             amplitude_n=200.0,
             frequency_hz=0.5,
@@ -1242,6 +1319,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         ),
         SimulatedRTDSensor(
             name="tank_temp",
+            sampling_rate_hz=10.0,
             offset_c=20.0,
             amplitude_c=2.0,
             frequency_hz=0.02,

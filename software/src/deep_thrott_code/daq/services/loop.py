@@ -62,6 +62,22 @@ def producer_loop(
 ):
     dt = (1.0 / loop_hz) if pace and loop_hz > 0 else 0.0
 
+    # If any sensor specifies a sampling rate, we can pace based on the next
+    # scheduled due time instead of a fixed loop dt. This avoids pathological
+    # behavior on platforms with coarse sleep granularity (e.g., ~10-15ms on
+    # Windows), where trying to sleep at 1ms can collapse effective rates.
+    use_due_scheduler = False
+    for _s in sensor_list:
+        hz = getattr(_s, "sampling_rate_hz", None)
+        if hz is None:
+            continue
+        try:
+            if float(hz) > 0:
+                use_due_scheduler = True
+                break
+        except Exception:
+            continue
+
     # Optional per-sensor sampling schedule.
     # If a sensor instance defines `sampling_rate_hz`, we only read it when due.
     next_due_t: dict[str, float] = {}
@@ -98,13 +114,13 @@ def producer_loop(
 
             try:
                 sample = sensor.read_raw_sample()
-            except TimeoutError:
+            except TimeoutError as exc:
                 # Treat ADC DRDY timeouts as a dropped sample for this cycle.
                 # Keep the producer loop alive so other channels can continue.
                 now = time.monotonic()
                 last = last_timeout_log_t.get(sensor_name, 0.0)
                 if (now - last) >= timeout_log_period_s:
-                    _log.warning("DAQ read timeout (dropping sample): %s", sensor_name)
+                    _log.warning("DAQ read timeout (dropping sample): %s | %s", sensor_name, exc)
                     last_timeout_log_t[sensor_name] = now
 
                 # Back off until next period (if configured) so we don't hammer a failing channel.
@@ -132,25 +148,31 @@ def producer_loop(
         t_end = time.perf_counter()
         elapsed = t_end - t_start
 
-        if pace and dt > 0:
-            sleep_requested = dt - elapsed
+        sleep_requested = 0.0
+        sleep_actual = 0.0
+        sleep_overshoot = 0.0
+        overrun = 0
+
+        if pace:
+            if use_due_scheduler and next_due_t:
+                try:
+                    next_due = min(next_due_t.values())
+                except Exception:
+                    next_due = None
+                if next_due is not None:
+                    sleep_requested = next_due - time.perf_counter()
+            elif dt > 0:
+                sleep_requested = dt - elapsed
+
             if sleep_requested > 0:
                 t_sleep_start = time.perf_counter()
                 time.sleep(sleep_requested)
                 t_sleep_end = time.perf_counter()
                 sleep_actual = t_sleep_end - t_sleep_start
                 sleep_overshoot = sleep_actual - sleep_requested
-                overrun = 0
             else:
                 sleep_requested = 0.0
-                sleep_actual = 0.0
-                sleep_overshoot = 0.0
-                overrun = 1
-        else:
-            sleep_requested = 0.0
-            sleep_actual = 0.0
-            sleep_overshoot = 0.0
-            overrun = 0
+                overrun = 1 if (dt > 0 and not use_due_scheduler) else 0
 
         if stats is not None:
             stats.update(
