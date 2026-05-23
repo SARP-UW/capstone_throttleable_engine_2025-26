@@ -11,7 +11,7 @@ from daq.services.logger import CsvLogger
 import os
 # import serial
 
-computer_sim = True
+computer_sim = False
 
 # TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
