@@ -6,16 +6,16 @@ import time
 from enum import Enum
 from typing import Any
 import yaml
-from .valve import Valve, ValveState, ThrottleValve
 from deep_thrott_code.daq.services.logger import CsvLogger
+from .valve import Valve, ValveState, ThrottleValve
+import sys
 import os
-# import serial
+import os
+import serial
 
 computer_sim = False
 
-# TODO: change RPi.GPIO to pigpio waveforms
 if not computer_sim:
-    import RPi.GPIO as GPIO
     import pigpio
     pi = pigpio.pi()
 
@@ -66,18 +66,19 @@ class Controller:
         if command_queue is None or ack_queue is None:
             raise TypeError("command_queue and ack_queue are required")
 
-        # pin values for talking to servos
-        self.tx_enable_pin = 18
-        self.tx_pin = 14
-        self.baud = 115200
+        if not computer_sim:
+            # pin values for talking to servos
+            self.tx_enable_pin = 18
+            self.tx_pin = 14
+            self.baud = 115200
 
-        # TX_ENABLE pin setup
-        pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
-        pi.set_mode(self.tx_pin, pigpio.OUTPUT)
-        pi.write(self.tx_enable_pin, 1)  # start in receive mode
+            # TX_ENABLE pin setup
+            pi.set_mode(self.tx_enable_pin, pigpio.OUTPUT)
+            pi.set_mode(self.tx_pin, pigpio.OUTPUT)
+            pi.write(self.tx_enable_pin, 1)  # start in receive mode
 
-        # Open pigpio serial port for reading responses
-        serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
+            # Open pigpio serial port for reading responses
+            self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
 
         # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
@@ -111,18 +112,19 @@ class Controller:
         self.fill_executed = False
         self.fire_executed = False
 
-        # setup tx_enable pin if running on rasp pi
-        if not computer_sim:
-            TX_ENABLE_PIN = 18
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(TX_ENABLE_PIN, GPIO.OUT, initial=GPIO.HIGH)
-
         # set up to use for action identification in start()
         self.single_valve_actuation = "single valve actuation"
         self.pulse = "pulse"
 
-        # set up logger
-        self.logger = logger
+        # set up valve actuation logger
+        self.actuation_header = ["valve_id", "valve_type", "target_state", "dt", "t_wall", "sequence"]  # DOUBLECHECK THIS
+        self.actuation_log_path = self._build_log_path("actuation_data")
+        self.actuation_logger = CsvLogger(self.actuation_log_path, self.actuation_header)
+
+        # set up servo encoder data logger
+        self.servo_encoder_header = ["valve_id", "angle", "t_wall"]
+        self.servo_encoder_log_path = self._build_log_path("servo_encoder_data")
+        self.servo_encoder_logger = CsvLogger(self.servo_encoder_log_path, self.servo_encoder_header)
 
         # elyse added this
         self._lock = threading.RLock()
@@ -140,10 +142,6 @@ class Controller:
             self.step_list = deque(maxlen=100)
             self.history: list[dict] = []
             self.waiting_manual: dict | None = None
-            # if not computer_sim:
-            #     self.ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
-            # else:
-            #     self.ser = None
 
     # elyse added this, for gui simulation mode, reset button will reset sequence and state
     def reset_sequences(self):
@@ -423,16 +421,26 @@ class Controller:
                             # throttle controller, absolute max of 1.2
                             # gets valve action
                             act = str(step.get("action") or "").lower()
-                            if act == "open":
-                                valve_goal_state = ValveState.OPEN
-                            elif act in ("closed", "close"):
-                                valve_goal_state = ValveState.CLOSED
-                            else:
-                                # TODO: error handling for unknown action, skip or default to CLOSED
-                                continue
-                            print("Valve goal state:", valve_goal_state)
 
-                            current_valve.set_state(valve_goal_state)
+                            if act is not None:
+                                if act == "open":
+                                    valve_goal_state = ValveState.OPEN
+
+                                # closing valve
+                                elif act == "close":
+                                    valve_goal_state = ValveState.CLOSED
+
+                                # actuate valve
+                                current_valve.set_state(valve_goal_state)
+
+                            # throttling to a specific angle (for open loop only!)
+                            else:
+                                angle = step.get("angle")
+                                time = step.get("time")
+                                current_valve.throttle(angle, time)
+
+                            # log valve actuation
+                            self.actuation_logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
 
                             # wait for delay specified in step (can be 0.0)
                             time.sleep(step.get("time_delay", 0.0))
@@ -645,3 +653,19 @@ class Controller:
                     # throttle valves
                     actuator_list[str(valve_id)] = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle)
         return actuator_list
+
+    @staticmethod
+    def _build_log_path(file_name: str) -> str:
+        from datetime import datetime
+        from pathlib import Path
+
+        now = datetime.now()
+        folder_date = now.strftime("%Y/%m/%d")
+        file_timestamp = now.strftime("%H-%M-%S_" + file_name + ".csv")
+        base_dir = Path("logs")
+        full_path = base_dir / folder_date / file_timestamp
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            return str(full_path.resolve())
+        except Exception:
+            return str(full_path)
