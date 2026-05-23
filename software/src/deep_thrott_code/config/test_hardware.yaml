@@ -1,78 +1,71 @@
 actuators:
   valves:
-    wmv:
+    test_valve1:
       enabled: true
       mode: on_off
       pin: 1
       normally_closed: true
-      notes: "Water main valve"
+      notes: "Test valve 1"
 
-    ftvv:
+    test_valve2:
       enabled: true
       mode: on_off
       pin: 2
-      normally_closed: false
+      normally_closed: true
       notes: "Fuel tank vent valve"
 
-    fmv:
+    test_valve3:
       enabled: true
       mode: on_off
       pin: 3
       normally_closed: true
       notes: "Fuel main valve"
 
-    fifv:
+    test_valve4:
       enabled: true
       mode: on_off
       pin: 4
       normally_closed: true
       notes: "Fuel igniter flow valve"
 
-    lffv:
+    test_valve5:
       enabled: true
       mode: on_off
       pin: 5
       normally_closed: true
       notes: "Pressurant fuel filling flow valve"
 
-    xffv:
+    test_valve6:
       enabled: true
       mode: on_off
       pin: 6
       normally_closed: true
       notes: "Pressurant oxidizer filling flow valve"
 
-    offv:
+    test_valve7:
       enabled: true
       mode: on_off
       pin: 7
       normally_closed: true
       notes: "Oxidizer filling flow valve"
 
-    omv:
+    test_valve8:
       enabled: true
       mode: on_off
       pin: 8
       normally_closed: true
       notes: "Oxidizer main valve"
 
-    otvv:
+    test_valve9:
       enabled: true
       mode: on_off
       pin: 9
       normally_closed: false
       notes: "Oxidizer tank vent valve"
 
-    oifv:
+    test_valve10:
       enabled: true
       mode: on_off
       pin: 10
       normally_closed: true
       notes: "Oxidizer igniter flow valve"
-
-    sparker:
-      enabled: true
-      mode: on_off
-      pin: 11
-      normally_closed: true
-      notes: "Igniter sparker"
