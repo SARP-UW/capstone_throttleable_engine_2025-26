@@ -143,10 +143,6 @@ class Controller:
             self.step_list = deque(maxlen=100)
             self.history: list[dict] = []
             self.waiting_manual: dict | None = None
-            # if not computer_sim:
-            #     self.ser = serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=0.1)
-            # else:
-            #     self.ser = None
 
     # elyse added this, for gui simulation mode, reset button will reset sequence and state
     def reset_sequences(self):
