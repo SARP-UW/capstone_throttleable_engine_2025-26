@@ -1179,11 +1179,11 @@
       window.open(url, '_blank', 'noopener,noreferrer');
     }
 
-    // Fit target dimensions (used by the existing Ethanol layout).
-    const PID_FIT_W = 1700;
+    // Fallback fit dimensions when the canvas hasn't been laid out yet.
+    const PID_FIT_W = 1550;
     const PID_FIT_H = 664;
 
-    let activeTab = 'ethanol';
+    let activeTab = document.querySelector('.tab.active[data-tab]')?.dataset.tab || 'ethanol';
 
     function applyScaleFor(tabName, scale) {
       const entry = pidStages[tabName];
@@ -1195,9 +1195,11 @@
       const entry = pidStages[activeTab];
       if (!entry || !entry.stage || !entry.canvas) return;
       if (entry.stage.classList.contains('hidden')) return;
-      const stageWidth = entry.stage.clientWidth - 24;
-      const stageHeight = entry.stage.clientHeight - 24;
-      const fitScale = Math.min(stageWidth / PID_FIT_W, stageHeight / PID_FIT_H);
+      const stageWidth = Math.max(entry.stage.clientWidth - 8, 1);
+      const stageHeight = Math.max(entry.stage.clientHeight - 8, 1);
+      const canvasWidth = entry.canvas.offsetWidth || PID_FIT_W;
+      const canvasHeight = entry.canvas.offsetHeight || PID_FIT_H;
+      const fitScale = Math.min(stageWidth / canvasWidth, stageHeight / canvasHeight);
       const scale = Math.min(fitScale, 1);
       applyScaleFor(activeTab, scale);
     }
@@ -1220,7 +1222,7 @@
     document.getElementById('openReelsPopup')?.addEventListener('click', openInstagramReelsPopup);
 
     window.addEventListener('resize', fitCanvasToPanel);
-    window.addEventListener('load', fitCanvasToPanel);
+    window.addEventListener('load', () => setActiveTab(activeTab));
   </script>
 
 </body></html>
