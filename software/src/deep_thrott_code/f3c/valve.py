@@ -28,7 +28,7 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
-computer_sim = False
+computer_sim = True
 
 if computer_sim:
     GPIO_AVAILABLE = False
@@ -137,6 +137,7 @@ class ThrottleValve():
         self.serial_handle = serial_handle
         self.load_motor()
         self.checksum_found = False
+        self.state = ValveState.OPEN
 
     # do we want this, or is throttle enough?
     def set_state(self, new_state: ValveState, theta: float | None = None):
