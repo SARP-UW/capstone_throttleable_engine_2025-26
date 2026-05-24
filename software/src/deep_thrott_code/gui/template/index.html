@@ -247,9 +247,9 @@
 
     .pid-stage {
       position: absolute;
-      inset: 12px;
+      inset: 4px;
       overflow: hidden;
-      padding: 12px;
+      padding: 4px;
       border: none;
       background: white;
     }
@@ -1182,6 +1182,8 @@
     // Fit target dimensions (used by the existing Ethanol layout).
     const PID_FIT_W = 1700;
     const PID_FIT_H = 664;
+    const PID_PANEL_GUTTER_PX = 8;
+    const PID_FILL_SCALE = 1.45;
 
     let activeTab = 'ethanol';
 
@@ -1195,10 +1197,10 @@
       const entry = pidStages[activeTab];
       if (!entry || !entry.stage || !entry.canvas) return;
       if (entry.stage.classList.contains('hidden')) return;
-      const stageWidth = entry.stage.clientWidth - 24;
-      const stageHeight = entry.stage.clientHeight - 24;
+      const stageWidth = Math.max(entry.stage.clientWidth - PID_PANEL_GUTTER_PX, 1);
+      const stageHeight = Math.max(entry.stage.clientHeight - PID_PANEL_GUTTER_PX, 1);
       const fitScale = Math.min(stageWidth / PID_FIT_W, stageHeight / PID_FIT_H);
-      const scale = Math.min(fitScale, 1);
+      const scale = Math.min(fitScale * PID_FILL_SCALE, PID_FILL_SCALE);
       applyScaleFor(activeTab, scale);
     }
 
