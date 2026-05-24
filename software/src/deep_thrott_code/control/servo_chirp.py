@@ -146,21 +146,21 @@ time.sleep(0.1)
 
 # initialize test throttle valve
 # test_valve_naked1 = ThrottleValve("test_valve", 2, serial_handle)
-# test_valve_naked2 = ThrottleValve("test_valve2", 3, serial_handle)
+test_valve_naked2 = ThrottleValve("test_valve2", 3, serial_handle)
 # test_valve_decent = ThrottleValve("test_valve3", 1, serial_handle)
 
-# while True:
-#     # test open and close servo to 90 deg
-#     test_valve_naked.throttle(90, 2)
-#     # test_valve_decent.throttle(90, 2)
-#     time.sleep(2)
-#     # print("Valve angle:", test_valve_naked.read_pos())
-#     time.sleep(3)
-#     test_valve_naked.throttle(0, 2)
-#     # test_valve_decent.throttle(0, 2)
-#     time.sleep(2)
-#     # print("Valve angle:", test_valve_naked.read_pos())
-#     time.sleep(3)
+while True:
+    # test open and close servo to 90 deg
+    test_valve_naked2.throttle(90, 2)
+    # test_valve_decent.throttle(90, 2)
+    time.sleep(2)
+    # print("Valve angle:", test_valve_naked.read_pos())
+    time.sleep(3)
+    test_valve_naked2.throttle(0, 2)
+    # test_valve_decent.throttle(0, 2)
+    time.sleep(2)
+    # print("Valve angle:", test_valve_naked.read_pos())
+    time.sleep(3)
 
 pi.serial_close(serial_handle)
 pi.stop()
