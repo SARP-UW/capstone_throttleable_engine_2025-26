@@ -6,7 +6,7 @@ except ModuleNotFoundError:
     GPIO_AVAILABLE = False
 
 import time
-from controller import Controller
+from deep_thrott_code.f3c.controller import Controller
 from queue import Queue
 import threading
 
@@ -39,6 +39,8 @@ for valve_id in valve_id_list:
         "valve_id": valve_id,
         "state": "closed"
     })
+
+
 
 # print("Actuating valve 9")
 # test_command_queue.put({
