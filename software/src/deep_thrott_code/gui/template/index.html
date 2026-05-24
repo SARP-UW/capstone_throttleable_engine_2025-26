@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SARP Capstone GUI Mockup</title>
   <script>
     // Optional explicit backend Socket.IO URL (e.g. "http://pi-host:6000").
     // When empty, the frontend defaults to same-origin.
-    window.__BACKEND_SOCKET_URL__ = "{{ backend_socket_url|default('') }}";
+    window.__BACKEND_SOCKET_URL__ = "";
   </script>
   <style>
     :root {
@@ -769,8 +767,8 @@
     <div class="top-row">
       <div class="meta-box">
         <div><strong>TEST NAME:</strong> BAJA BLAST HOTFIRE 1</div>
-        <div><strong>DATE AND TIME:</strong> <span id="metaDateTime">5/23/2026, 10:59:46 PM</span></div>
-        <div><strong>LOGGING DIRECTORY:</strong> <span id="metaLogPath">/home/pi/capstone_throttleable_engine_2025-26/software/logs/daq/2026/05/23</span></div>
+        <div><strong>DATE AND TIME:</strong> <span id="metaDateTime">5/24/2026, 12:12:24 AM</span></div>
+        <div><strong>LOGGING DIRECTORY:</strong> <span id="metaLogPath">/home/pi/capstone_throttleable_engine_2025-26/software/logs/daq/2026/05/24</span></div>
         <div><strong>OPERATOR:</strong> ELYSE LIAN</div>
       </div>
 
@@ -889,7 +887,7 @@
           </div>
 
           <div class="pid-stage" id="pidStageNitrous" data-stage="nitrous">
-            <div class="pid-canvas" id="pidCanvasNitrous" style="transform: translate(-50%, -50%) scale(0.280588);">
+            <div class="pid-canvas" id="pidCanvasNitrous" style="transform: translate(-50%, -50%) scale(0.257059);">
               <img class="pid-image" src="/static/nitrous_line_pid.png">
 
               <div class="overlay" style="left: 480px;top: 246px;" data-valve="XFFV">
@@ -1008,7 +1006,7 @@
       <div class="side-panel">
         <div id="sequencesBlock">
           <div class="side-title" id="sequencesTitle">SEQUENCES</div>
-          <div class="sequence-tabs" id="sequenceTabs"><details open=""><summary class="seq-active">IDLE</summary></details><details><summary>FILL</summary><div class="sequence-step"><div class="step-text">FTVV closed (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTVV closed (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">LFFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">LFFV closed (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTVV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OFFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OFFV close (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTVV close (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">FTFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OMCTV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">FMCTV open (manual)</div><div></div></div></details><details><summary>FIRE</summary><div class="sequence-step"><div class="step-text">IGNITER open</div><div></div></div><div class="sequence-step"><div class="step-text">FMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">OMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">IGNITER closed</div><div></div></div><div class="sequence-step"><div class="step-text">FMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">OMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">LFFV closed</div><div></div></div><div class="sequence-step"><div class="step-text">XFFV closed (manual)</div><div></div></div></details></div>
+          <div class="sequence-tabs" id="sequenceTabs"><div class="sequence-placeholder">No sequences loaded (sequencer disabled or backend failed to start). If you started the backend with <code>--no-sequencer</code>, remove that flag.</div></div>
 
           <div id="reelsEmbed">
             <div class="reels-popup">
@@ -1026,7 +1024,7 @@
     </div>
 
     <div class="bottom-row">
-      <div class="message-bar" id="systemMessage">System message: Socket connect error: timeout</div>
+      <div class="message-bar" id="systemMessage">System message: Test set to hotfire.</div>
 
       <div class="settings-panel">
         <button class="settings-toggle" id="settingsToggle" type="button" aria-haspopup="true" aria-expanded="false">
