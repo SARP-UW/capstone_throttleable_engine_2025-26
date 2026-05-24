@@ -761,7 +761,7 @@
       .top-row { grid-template-columns: 1.2fr 0.5fr 1.3fr; }
     }
   </style>
-</head>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" async=""></script><script src="/static/main.js" async=""></script></head>
 <body>
   <div class="app">
     <div class="title-bar">SARP Capstone Baja Blast Data Acquisition and Control Interface</div>
@@ -769,8 +769,8 @@
     <div class="top-row">
       <div class="meta-box">
         <div><strong>TEST NAME:</strong> BAJA BLAST HOTFIRE 1</div>
-        <div><strong>DATE AND TIME:</strong> <span id="metaDateTime">--</span></div>
-        <div><strong>LOGGING DIRECTORY:</strong> <span id="metaLogPath">--</span></div>
+        <div><strong>DATE AND TIME:</strong> <span id="metaDateTime">5/23/2026, 10:59:46 PM</span></div>
+        <div><strong>LOGGING DIRECTORY:</strong> <span id="metaLogPath">/home/pi/capstone_throttleable_engine_2025-26/software/logs/daq/2026/05/23</span></div>
         <div><strong>OPERATOR:</strong> ELYSE LIAN</div>
       </div>
 
@@ -792,146 +792,152 @@
     <div class="main-row">
       <div class="pid-section">
         <div class="pid-tabs">
-          <div class="tab active" data-tab="ethanol">Ethanol Line Control</div>
-          <div class="tab" data-tab="nitrous">Nitrous Line Control</div>
+          <div class="tab" data-tab="ethanol">Ethanol Line Control</div>
+          <div class="tab active" data-tab="nitrous">Nitrous Line Control</div>
           <div class="tab" data-tab="daq">Data Acquisition</div>
         </div>
 
         <div class="pid-panel">
-          <div class="pid-stage" id="pidStageEthanol" data-stage="ethanol">
-            <div class="pid-canvas" id="pidCanvasEthanol">
-              <img class="pid-image" src="{{ url_for('static', filename='ethanol_line_pid.png') }}">
+          <div class="pid-stage hidden" id="pidStageEthanol" data-stage="ethanol">
+            <div class="pid-canvas" id="pidCanvasEthanol" style="transform: translate(-50%, -50%) scale(0.280588);">
+              <img class="pid-image" src="/static/ethanol_line_pid.png">
 
-              <div class="overlay" style="left: 385px;top: 145px;" data-valve="LFFV">
-                <div class="overlay-label">LFFV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+              <div class="overlay" style="left: 430px;top: 170px;" data-valve="LFFV">
+                <div class="overlay-label">1-LFFV</div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for LFFV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 728px;top: 4px;" data-valve="FTVV">
-                <div class="overlay-label">FTVV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+              <div class="overlay" style="left: 760px;top: -9px;" data-valve="FTVV">
+                <div class="overlay-label">2-FTVV</div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button><button class="mini-btn" type="button" data-valve-action="close">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for FTVV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 1164px;top: 396px;" data-valve="FMCTV">
-                <div class="overlay-label">FMCTV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+              <div class="overlay" style="left: 1359px;top: 441px;" data-valve="FMCTV">
+                <div class="overlay-label">13-FMCTV</div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for FMCTV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 818px;top: 401px;" data-valve="FMV">
-                <div class="overlay-label">FMV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+              <div class="overlay" style="left: 1132px;top: 436px;" data-valve="FMV">
+                <div class="overlay-label">8-FMV</div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for FMV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 979px;top: 529px;" data-valve="FIFV">
-                <div class="overlay-label">FIFV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+              <div class="overlay" style="left: 1112px;top: 564px;" data-valve="FIFV">
+                <div class="overlay-label">9-FIFV</div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for FIFV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
               <div class="overlay" style="left: 490px;top: 610px;" data-valve="WMV">
                 <div class="overlay-label">WMV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for WMV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 590px;top: -9px;">
+              <div class="overlay" style="left: 326px;top: 13px;">
                 <div class="overlay-label">LF-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-LF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 792px;top: 144px;">
+              <div class="overlay" style="left: 867px;top: 168px;">
                 <div class="overlay-label">FT-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-FT-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 971px;top: 261px;">
+              <div class="overlay" style="left: 1037px;top: 306px;">
                 <div class="overlay-label">FM-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-FM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1248px;top: 287px;">
+              <div class="overlay" style="left: 1433px;top: 336px;">
                 <div class="overlay-label">FI-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-FI-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 632px;top: 443px;">
+              <div class="overlay" style="left: 286px;top: 617px;">
                 <div class="overlay-label">WM-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-WM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1425px;top: 361px;">
+              <div class="overlay" style="left: 1619px;top: 416px;">
                 <div class="overlay-label"></div>
                 <div class="sensor-box is-placeholder" id="sensor-CC-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
-            </div>
+            <div class="overlay" style="left: 878px;top: 443px;" data-valve="FTFV">
+                <div class="overlay-label">3-FTFV</div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for FIFV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
+              </div></div>
           </div>
 
-          <div class="pid-stage hidden" id="pidStageNitrous" data-stage="nitrous">
-            <div class="pid-canvas" id="pidCanvasNitrous">
-              <img class="pid-image" src="{{ url_for('static', filename='nitrous_line_pid.png') }}">
+          <div class="pid-stage" id="pidStageNitrous" data-stage="nitrous">
+            <div class="pid-canvas" id="pidCanvasNitrous" style="transform: translate(-50%, -50%) scale(0.280588);">
+              <img class="pid-image" src="/static/nitrous_line_pid.png">
 
-              <div class="overlay" style="left: 377px;top: 220px;" data-valve="XFFV">
+              <div class="overlay" style="left: 480px;top: 246px;" data-valve="XFFV">
                 <div class="overlay-label">XFFV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for XFFV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 375px;top: 476px;" data-valve="OFFV">
+              <div class="overlay" style="left: 445px;top: 488px;" data-valve="OFFV">
                 <div class="overlay-label">OFFV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for OFFV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 945px;top: 220px;" data-valve="OIFV">
+              <div class="overlay" style="left: 1130px;top: 234px;" data-valve="OIFV">
                 <div class="overlay-label">OIFV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for OIFV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 679px;top: 83px;" data-valve="OTVV">
+              <div class="overlay" style="left: 811px;top: 75px;" data-valve="OTVV">
                 <div class="overlay-label">OTVV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button><button class="mini-btn" type="button" data-valve-action="close">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for OTVV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 942px;top: 473px;" data-valve="OMV">
+              <div class="overlay" style="left: 1191px;top: 482px;" data-valve="OMV">
                 <div class="overlay-label">OMV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for OMV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
-              <div class="overlay" style="left: 1168px;top: 474px;" data-valve="OMCTV">
+              <div class="overlay" style="left: 1350px;top: 488px;" data-valve="OMCTV">
                 <div class="overlay-label">OMCTV</div>
-                <div class="valve-controls">
-                  <button class="mini-btn is-active-open" type="button" data-valve-action="open" disabled="">OPEN</button>
-                  <button class="mini-btn" type="button" data-valve-action="close">CLOSE</button>
-                </div>
+                <div class="valve-controls"><div class="valve-actions"><button class="mini-btn" type="button" data-valve-action="open">OPEN</button><button class="mini-btn is-active-close" type="button" data-valve-action="close" disabled="">CLOSE</button></div>
+                  
+                  
+                <div class="pulse-controls"><input class="pulse-dt" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Pulse duration for OMCTV (seconds)" title="Pulse dt (seconds)"><button class="mini-btn pulse-btn" type="button">PULSE</button></div></div>
               </div>
 
               <div class="overlay" style="left: 267px;top: 73px;">
@@ -939,22 +945,22 @@
                 <div class="sensor-box is-placeholder" id="sensor-XF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 788px;top: 218px;">
+              <div class="overlay" style="left: 943px;top: 211px;">
                 <div class="overlay-label">OT-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-OT-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 342px;top: 338px;">
+              <div class="overlay" style="left: 418px;top: 344px;">
                 <div class="overlay-label">OF-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-OF-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1024px;top: 343px;">
+              <div class="overlay" style="left: 1145px;top: 347px;">
                 <div class="overlay-label">OM-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-OM-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
 
-              <div class="overlay" style="left: 1249px;top: 366px;">
+              <div class="overlay" style="left: 1431px;top: 385px;">
                 <div class="overlay-label">OI-PT</div>
                 <div class="sensor-box is-placeholder" id="sensor-OI-PT" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
@@ -964,33 +970,33 @@
           <div class="pid-stage hidden" id="daqStage" data-stage="daq">
             <div class="daq-grid" id="daqPlots">
               <div class="daq-panel">
-                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot1"></canvas></div>
-                <div class="daq-select"><select id="daqSelect1" aria-label="Select signal for plot 1"></select></div>
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot1" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect1" aria-label="Select signal for plot 1"><option value="">Waiting for data...</option></select></div>
               </div>
 
               <div class="daq-panel">
-                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot2"></canvas></div>
-                <div class="daq-select"><select id="daqSelect2" aria-label="Select signal for plot 2"></select></div>
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot2" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect2" aria-label="Select signal for plot 2"><option value="">Waiting for data...</option></select></div>
               </div>
 
               <div class="daq-panel">
-                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot3"></canvas></div>
-                <div class="daq-select"><select id="daqSelect3" aria-label="Select signal for plot 3"></select></div>
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot3" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect3" aria-label="Select signal for plot 3"><option value="">Waiting for data...</option></select></div>
               </div>
 
               <div class="daq-panel">
-                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot4"></canvas></div>
-                <div class="daq-select"><select id="daqSelect4" aria-label="Select signal for plot 4"></select></div>
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot4" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect4" aria-label="Select signal for plot 4"><option value="">Waiting for data...</option></select></div>
               </div>
 
               <div class="daq-panel">
-                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot5"></canvas></div>
-                <div class="daq-select"><select id="daqSelect5" aria-label="Select signal for plot 5"></select></div>
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot5" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect5" aria-label="Select signal for plot 5"><option value="">Waiting for data...</option></select></div>
               </div>
 
               <div class="daq-panel">
-                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot6"></canvas></div>
-                <div class="daq-select"><select id="daqSelect6" aria-label="Select signal for plot 6"></select></div>
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot6" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect6" aria-label="Select signal for plot 6"><option value="">Waiting for data...</option></select></div>
               </div>
             </div>
 
@@ -1002,9 +1008,7 @@
       <div class="side-panel">
         <div id="sequencesBlock">
           <div class="side-title" id="sequencesTitle">SEQUENCES</div>
-          <div class="sequence-tabs" id="sequenceTabs">
-            <div class="sequence-placeholder">Loading sequences...</div>
-          </div>
+          <div class="sequence-tabs" id="sequenceTabs"><details open=""><summary class="seq-active">IDLE</summary></details><details><summary>FILL</summary><div class="sequence-step"><div class="step-text">FTVV closed (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTVV closed (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">LFFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">LFFV closed (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTVV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OFFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OFFV close (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTVV close (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">FTFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OTFV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">OMCTV open (manual)</div><div></div></div><div class="sequence-step"><div class="step-text">FMCTV open (manual)</div><div></div></div></details><details><summary>FIRE</summary><div class="sequence-step"><div class="step-text">IGNITER open</div><div></div></div><div class="sequence-step"><div class="step-text">FMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">OMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">IGNITER closed</div><div></div></div><div class="sequence-step"><div class="step-text">FMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">OMCTV </div><div></div></div><div class="sequence-step"><div class="step-text">LFFV closed</div><div></div></div><div class="sequence-step"><div class="step-text">XFFV closed (manual)</div><div></div></div></details></div>
 
           <div id="reelsEmbed">
             <div class="reels-popup">
@@ -1022,7 +1026,7 @@
     </div>
 
     <div class="bottom-row">
-      <div class="message-bar" id="systemMessage">System message: Load Cell Initialization Complete... Initializing Flow Meter</div>
+      <div class="message-bar" id="systemMessage">System message: Socket connect error: timeout</div>
 
       <div class="settings-panel">
         <button class="settings-toggle" id="settingsToggle" type="button" aria-haspopup="true" aria-expanded="false">
@@ -1040,7 +1044,7 @@
           </button>
           <div class="settings-submenu hidden" id="themeSubmenu" aria-label="Color Scheme">
             <button class="settings-btn" type="button" data-theme="light" role="menuitem">
-              <span>Light</span><span class="settings-tick" data-theme-tick="light" aria-hidden="true"></span>
+              <span>Light</span><span class="settings-tick" data-theme-tick="light" aria-hidden="true">✓</span>
             </button>
             <button class="settings-btn" type="button" data-theme="dark" role="menuitem">
               <span>Dark</span><span class="settings-tick" data-theme-tick="dark" aria-hidden="true"></span>
@@ -1056,7 +1060,7 @@
           </button>
           <div class="settings-submenu hidden" id="simulationSubmenu" aria-label="Simulation Mode">
             <button class="settings-btn" type="button" data-simulation="enabled" role="menuitem">
-              <span>Enable</span><span class="settings-tick" data-sim-tick="enabled" aria-hidden="true"></span>
+              <span>Enable</span><span class="settings-tick" data-sim-tick="enabled" aria-hidden="true">✓</span>
             </button>
             <button class="settings-btn" type="button" data-simulation="disabled" role="menuitem">
               <span>Disable</span><span class="settings-tick" data-sim-tick="disabled" aria-hidden="true"></span>
@@ -1069,7 +1073,7 @@
           </button>
           <div class="settings-submenu hidden" id="testSubmenu" aria-label="Test">
             <button class="settings-btn" type="button" data-test="hotfire" role="menuitem">
-              <span>Hotfire</span><span class="settings-tick" data-test-tick="hotfire" aria-hidden="true"></span>
+              <span>Hotfire</span><span class="settings-tick" data-test-tick="hotfire" aria-hidden="true">✓</span>
             </button>
             <button class="settings-btn" type="button" data-test="injector cold flow" role="menuitem">
               <span>Injector Cold Flow</span><span class="settings-tick" data-test-tick="injector cold flow" aria-hidden="true"></span>
@@ -1112,7 +1116,7 @@
 
       function loadMainJs() {
         const main = document.createElement('script');
-        main.src = "{{ url_for('static', filename='main.js') }}";
+        main.src = "/static/main.js";
         main.async = true;
         document.head.appendChild(main);
       }
@@ -1220,5 +1224,5 @@
     window.addEventListener('resize', fitCanvasToPanel);
     window.addEventListener('load', fitCanvasToPanel);
   </script>
-</body>
-</html>
+
+</body></html>
