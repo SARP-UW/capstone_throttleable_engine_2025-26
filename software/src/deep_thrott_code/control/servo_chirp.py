@@ -122,15 +122,15 @@ def read_response(packet_checksum, expected_length):
         return None
     return serial_response
 
-# valve_id_assignment_packet = build_packet(0xFE, 13, [2])
-# send_packet(valve_id_assignment_packet)
+valve_id_assignment_packet = build_packet(0xFE, 13, [3])
+send_packet(valve_id_assignment_packet)
 
-# # get valve id
-# print("Sending valve id request...")
-# packet = build_packet(0xFE, 14)
-# print(f"Packet bytes: {list(packet)}")
-# send_packet(packet)
-# time.sleep(0.1)
+# get valve id
+print("Sending valve id request...")
+packet = build_packet(0xFE, 14)
+print(f"Packet bytes: {list(packet)}")
+send_packet(packet)
+time.sleep(0.1)
 #
 # response = read_response(len(packet), 7)
 # print(f"Response: {response}")
@@ -145,21 +145,21 @@ def read_response(packet_checksum, expected_length):
 # print(f"Valve ID: {valve_id}")
 
 # initialize test throttle valve
-test_valve_naked = ThrottleValve("test_valve", 2, serial_handle)
+# test_valve_naked = ThrottleValve("test_valve", 2, serial_handle)
 # test_valve_decent = ThrottleValve("test_valve2", 1, serial_handle)
 
-while True:
-    # test open and close servo to 90 deg
-    test_valve_naked.throttle(90, 2)
-    # test_valve_decent.throttle(90, 2)
-    time.sleep(2)
-    # print("Valve angle:", test_valve_naked.read_pos())
-    time.sleep(3)
-    test_valve_naked.throttle(0, 2)
-    # test_valve_decent.throttle(0, 2)
-    time.sleep(2)
-    # print("Valve angle:", test_valve_naked.read_pos())
-    time.sleep(3)
+# while True:
+#     # test open and close servo to 90 deg
+#     test_valve_naked.throttle(90, 2)
+#     # test_valve_decent.throttle(90, 2)
+#     time.sleep(2)
+#     # print("Valve angle:", test_valve_naked.read_pos())
+#     time.sleep(3)
+#     test_valve_naked.throttle(0, 2)
+#     # test_valve_decent.throttle(0, 2)
+#     time.sleep(2)
+#     # print("Valve angle:", test_valve_naked.read_pos())
+#     time.sleep(3)
 
 pi.serial_close(serial_handle)
 pi.stop()
