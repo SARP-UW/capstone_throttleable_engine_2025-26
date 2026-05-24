@@ -55,7 +55,6 @@ class Controller:
         sequence_config_file: str | None = None,
         command_queue: queue.Queue | None = None,
         ack_queue: queue.Queue | None = None,
-        logger: CsvLogger | None = None,
         *,
         # New-style kwargs used by deep_thrott_code.main
         hardware_config_path: str | None = None,
@@ -246,6 +245,7 @@ class Controller:
         return out
     
     # main loop that is checking the command queue for gui commands always
+    # TODO: add functionality that looks for "start log" pressed to start logging encoder data
     def start(self):
         print("Controller.start() loop entered")
         while not self._stop_event.is_set():
@@ -418,7 +418,6 @@ class Controller:
                             # TODO: actual throttling implementation
                             # TODO: need to have something that limits what OF you can have based on angles provided by
                             # TODO: log throttle valve actuation
-                            # self.logger.write_valve_action([valve_id, angle])
                             # throttle controller, absolute max of 1.2
                             # gets valve action
                             act = str(step.get("action") or "").lower()
@@ -434,14 +433,25 @@ class Controller:
                                 # actuate valve
                                 current_valve.set_state(valve_goal_state)
 
+                                # log valve actuation
+                                self.actuation_logger.write_valve_action(
+                                    [valve_id, "throttle", valve_goal_state, None, time.time(), current_sequence])
+
+
                             # throttling to a specific angle (for open loop only!)
                             else:
+                                # get target angle and time to reach that angle
                                 angle = step.get("angle")
                                 time = step.get("time")
+
+                                # actuate servo to given angle
                                 current_valve.throttle(angle, time)
 
-                            # log valve actuation
-                            self.actuation_logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
+                                # log valve actuation
+                                self.actuation_logger.write_valve_action(
+                                    [valve_id, "throttle", None, angle, time, current_sequence])
+
+
 
                             # wait for delay specified in step (can be 0.0)
                             time.sleep(step.get("time_delay", 0.0))
@@ -515,7 +525,7 @@ class Controller:
                                                      valve_id=str(valve_id), action=action_seq)
 
                                 # log valve actuation
-                                self.logger.write_valve_action([valve_id, valve_goal_state.value,])
+                                self.actuation_logger.write_valve_action([valve_id, "on/off", valve_goal_state.value, None, time.time(), current_sequence])
 
                             # if not, set step status back to ready and move on to next step
                             else:
@@ -580,14 +590,29 @@ class Controller:
             # TODO: send to gui "invalid state transition"
             pass
 
-    @staticmethod
-    def _execute_single_valve_actuation(valve: Valve, valve_state: ValveState):
+    def _execute_single_valve_actuation(self, valve: Valve, valve_state: ValveState):
+        # actuate valve
         valve.set_state(valve_state)
 
-    @staticmethod
-    def _execute_pulse(valve: Valve, dt: float):
+        # log valve actuation
+        valve_id = valve.get_valve_id()
+        valve_state = valve.get_state()
+        valve_goal_state = valve_state.value
+        valve_actuation_data = [valve_id, "on/off", valve_goal_state, None, time.time(), None]
+        self.actuation_logger.write_valve_action(valve_actuation_data)
+
+
+    def _execute_pulse(self, valve: Valve, dt: float):
+        # pulse valve
         valve.pulse_valve(dt)
-    
+
+        # log valve pulse
+        valve_id = valve.get_valve_id()
+        valve_state = valve.get_state()
+        valve_goal_state = valve_state.value
+        valve_actuation_data = [valve_id, "on/off", valve_goal_state, dt, time.time(), None]
+        self.actuation_logger.write_valve_action(valve_actuation_data)
+
     @staticmethod
     def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
         """
