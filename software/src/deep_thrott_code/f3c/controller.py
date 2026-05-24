@@ -435,9 +435,11 @@ class Controller:
 
                             # throttling to a specific angle (for open loop only!)
                             else:
+                                # getting throttle angle and time to reach angle 
                                 angle = step.get("angle")
-                                time = step.get("time")
-                                current_valve.throttle(angle, time)
+                                throttle_time = step.get("time")
+                                # actuating valve
+                                current_valve.throttle(angle, throttle_time)
 
                             # log valve actuation
                             self.actuation_logger.write_valve_action([valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
