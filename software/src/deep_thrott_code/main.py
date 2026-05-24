@@ -34,10 +34,10 @@ except Exception as exc:  # pragma: no cover
 # - Core 2: DAQ producer
 # - Core 3: DAQ consumer + F3C loop (placeholder)
 
-CPU_CORE_1_OS_AND_GUI = 0
-CPU_CORE_2_THROTTLE = 1
-CPU_CORE_3_DAQ_PRODUCER = 2
-CPU_CORE_4_DAQ_CONSUMER_AND_F3 = 3
+CPU_CORE_0_OS_AND_GUI = 0
+CPU_CORE_1_THROTTLE = 1
+CPU_CORE_2_DAQ_PRODUCER = 2
+CPU_CORE_3_DAQ_CONSUMER_AND_F3 = 3
 
 
 class _WerkzeugRequestNoiseFilter(logging.Filter):
@@ -117,7 +117,7 @@ def main() -> None:
 		loop_forever = getattr(f3_controller, "loop_forever", None)
 		if callable(loop_forever):
 			def f3_controller_entrypoint() -> None:
-				pin_current_thread_to_cpu(CPU_CORE_4_DAQ_CONSUMER_AND_F3)
+				pin_current_thread_to_cpu(CPU_CORE_3_DAQ_CONSUMER_AND_F3)
 				loop_forever()
 
 			threading.Thread(target=f3_controller_entrypoint, daemon=True, name="f3c_loop").start()
@@ -135,8 +135,8 @@ def main() -> None:
 		emit_system_fn=_emit_system,
 		drain_queue_fn=drain_queue,
 		pin_thread_to_cpu=pin_current_thread_to_cpu,
-		producer_cpu=CPU_CORE_3_DAQ_PRODUCER,
-		consumer_cpu=CPU_CORE_4_DAQ_CONSUMER_AND_F3,
+		producer_cpu=CPU_CORE_2_DAQ_PRODUCER,
+		consumer_cpu=CPU_CORE_3_DAQ_CONSUMER_AND_F3,
 	)
 
 	# -----------------------------------------------------------------
@@ -164,7 +164,7 @@ def main() -> None:
 		sequence_defs=sequence_defs_for_gui,
 		backend_meta_getter=daq.snapshot_meta,
 		pin_thread_to_cpu = pin_current_thread_to_cpu,
-		cpu=CPU_CORE_1_OS_AND_GUI,
+		cpu=CPU_CORE_0_OS_AND_GUI,
 	)
 
 	controller = GuiCommandHandler(
