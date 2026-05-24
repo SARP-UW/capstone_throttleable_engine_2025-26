@@ -447,7 +447,7 @@ class Controller:
 
                                 # log valve actuation
                                 self.actuation_logger.write_valve_action(
-                                    [valve_id, "throttle", None, angle, time, current_sequence])
+                                    [valve_id, "throttle", None, angle, time.time(), current_sequence])
 
 
 
