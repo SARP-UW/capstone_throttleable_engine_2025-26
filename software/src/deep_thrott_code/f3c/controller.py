@@ -7,13 +7,12 @@ from enum import Enum
 from typing import Any
 import yaml
 from deep_thrott_code.daq.services.logger import CsvLogger
-from .valve import Valve, ValveState, ThrottleValve
+from deep_thrott_code.f3c.valve import Valve, ValveState, ThrottleValve
 import sys
 import os
 import os
-import serial
 
-computer_sim = False
+computer_sim = True
 
 if not computer_sim:
     import pigpio
@@ -116,7 +115,7 @@ class Controller:
         self.pulse = "pulse"
 
         # set up valve actuation logger
-        self.actuation_header = ["valve_id", "valve_type", "target_state", "dt", "t_wall", "sequence"]  # DOUBLECHECK THIS
+        self.actuation_header = ["valve_id", "valve_type", "target_state", "target_angle", "dt", "t_wall", "sequence"]
         self.actuation_log_path = self._build_log_path("actuation_data")
         self.actuation_logger = CsvLogger(self.actuation_log_path, self.actuation_header)
 
@@ -434,7 +433,7 @@ class Controller:
 
                                 # log valve actuation
                                 self.actuation_logger.write_valve_action(
-                                    [valve_id, "throttle", valve_goal_state, None, time.time(), current_sequence])
+                                    [valve_id, "throttle", valve_goal_state, None, None, time.time(), current_sequence])
 
 
                             # throttling to a specific angle (for open loop only!)
@@ -447,7 +446,7 @@ class Controller:
 
                                 # log valve actuation
                                 self.actuation_logger.write_valve_action(
-                                    [valve_id, "throttle", None, angle, time.time(), current_sequence])
+                                    [valve_id, "throttle", angle, None, time.time(), current_sequence])
 
 
 
@@ -523,7 +522,7 @@ class Controller:
                                                      valve_id=str(valve_id), action=action_seq)
 
                                 # log valve actuation
-                                self.actuation_logger.write_valve_action([valve_id, "on/off", valve_goal_state.value, None, time.time(), current_sequence])
+                                self.actuation_logger.write_valve_action([valve_id, "on/off", valve_goal_state.value, None, None, time.time(), current_sequence])
 
                             # if not, set step status back to ready and move on to next step
                             else:
@@ -596,7 +595,7 @@ class Controller:
         valve_id = valve.get_valve_id()
         valve_state = valve.get_state()
         valve_goal_state = valve_state.value
-        valve_actuation_data = [valve_id, "on/off", valve_goal_state, None, time.time(), None]
+        valve_actuation_data = [valve_id, "on/off", valve_goal_state, None, None, time.time(), None]
         self.actuation_logger.write_valve_action(valve_actuation_data)
 
 
@@ -608,8 +607,12 @@ class Controller:
         valve_id = valve.get_valve_id()
         valve_state = valve.get_state()
         valve_goal_state = valve_state.value
-        valve_actuation_data = [valve_id, "on/off", valve_goal_state, dt, time.time(), None]
+        valve_actuation_data = [valve_id, "on/off", valve_goal_state, None, dt, time.time(), None]
         self.actuation_logger.write_valve_action(valve_actuation_data)
+
+    def _return_to_nominal(self):
+        # TODO: return all valves to nominal states implementation
+        pass
 
     @staticmethod
     def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
