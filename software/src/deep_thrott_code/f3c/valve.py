@@ -28,7 +28,7 @@ except ModuleNotFoundError:
     # "simulation" without touching GPIO.
     GPIO_AVAILABLE = False
 
-computer_sim = True
+computer_sim = False
 
 if computer_sim:
     GPIO_AVAILABLE = False
