@@ -260,7 +260,8 @@
 
 	const bindings = [
 		// Untied PTs: expect distinct sensor names from the DAQ state store.
-		{ sensorName: 'CC-PT', elementId: 'sensor-CC-PT' },
+		{ sensorName: 'CC-PT', elementId: 'sensor-CC-PT-hotfire' },
+		{ sensorName: 'CC-PT', elementId: 'sensor-CC-PT-nitrous' },
 		{ sensorName: 'FI-PT', elementId: 'sensor-FI-PT' },
 		{ sensorName: 'LF-PT', elementId: 'sensor-LF-PT' },
 		{ sensorName: 'FT-PT', elementId: 'sensor-FT-PT' },
@@ -662,7 +663,7 @@
 			ctx.moveTo(axisX, y);
 			ctx.lineTo(right, y);
 			ctx.stroke();
-			ctx.fillText(formatAxisTick(tickValue), left - 6, y);
+			ctx.fillText(formatAxisTick(tickValue), Math.max(26, left - 20), y);
 		}
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'alphabetic';
