@@ -90,6 +90,7 @@ class ADS124S08:
         self._cached_pga_reg = None
         self._cached_ref_reg = None
         self._cached_datarate_reg = None
+        self._conversion_started = False
 
         self._deselect_all()
         time.sleep(0.01)
@@ -154,17 +155,21 @@ class ADS124S08:
             self._send_cmd(self.CMD_RESET)
 
         time.sleep(0.05)
+        self._conversion_started = False
 
     def start(self) -> None:
         self._send_cmd(self.CMD_START)
+        self._conversion_started = True
 
     def stop(self) -> None:
         self._send_cmd(self.CMD_STOP)
+        self._conversion_started = False
 
     def enter_command_mode(self) -> None:
         self.stop()
         self._send_cmd(self.CMD_SDATAC)
         time.sleep(0.01)
+        self._conversion_started = False
 
     def wait_drdy(self, timeout_s: float = 0.5) -> bool:
         if self.drdy_pin is None:
@@ -327,9 +332,9 @@ class ADS124S08:
         ainp: int,
         settle_discard: bool = True,
     ) -> int:
-        self.stop()
+        if not self._conversion_started:
+            self.start()
         self.set_inpmux_single(ainp)
-        self.start()
 
         if not self.wait_drdy(0.5):
             raise TimeoutError(f"{self.id}: DRDY timeout after MUX change")
@@ -348,9 +353,9 @@ class ADS124S08:
         ainn: int,
         settle_discard: bool = True,
     ) -> int:
-        self.stop()
+        if not self._conversion_started:
+            self.start()
         self.set_inpmux_diff(ainp, ainn)
-        self.start()
 
         if not self.wait_drdy(0.5):
             raise TimeoutError(f"{self.id}: DRDY timeout after MUX change")
