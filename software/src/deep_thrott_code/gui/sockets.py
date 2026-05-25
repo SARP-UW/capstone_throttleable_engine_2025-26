@@ -319,7 +319,7 @@ def register_socket_handlers(
 			socketio.emit("command_reject", {"ok": False, "reason": "missing_name"})
 			return
 		# Commands intended for the sequencer/controller loop.
-		if name in {"fill", "fire"}:
+		if name in {"fill", "fire", "return_to_nominal"}:
 			if command_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
 				return

@@ -866,6 +866,14 @@
 				}
 			});
 		}
+
+		const abortBtn = document.getElementById('abortBtn');
+		if (abortBtn) {
+			abortBtn.addEventListener('click', () => {
+				setSystemMessage('System message: Returning valves to nominal state...');
+				emitGuiCommand({ name: 'return_to_nominal' });
+			});
+		}
 	}
 
 	function initSettingsMenu() {
