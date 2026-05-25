@@ -322,6 +322,7 @@ class WaterValvePWM:
 
 
 if __name__ == "main":
+    print("TESTING")
     PWM_PIN = 12
     print("Testing WaterValvePWM class")
     print(f"Using pin: {PWM_PIN}")
