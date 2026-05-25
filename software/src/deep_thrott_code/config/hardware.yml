@@ -267,11 +267,11 @@ sensors:
 
 actuators:
   valves:
-#    wmv:
-#       enabled: true
-#       mode: throttle
-#       uart_id: null
-#       notes: "Water main valve"
+    wmv:
+       enabled: true
+       mode: throttle
+       uart_id: 1
+       notes: "Water main valve"
 
     ftvv:
       enabled: true
@@ -335,7 +335,7 @@ actuators:
       normally_closed: true
       notes: "Oxidizer filling flow valve"
 
-    igniter:
+    oifv/sparker:
       enabled: true
       mode: on_off
       pin: 27
@@ -352,7 +352,7 @@ actuators:
     omctv:
        enabled: true
        mode: throttle
-       uart_id: 1
+       uart_id: 3
        notes: "Oxidizer main control/throttle valve"
 
     otvv:
