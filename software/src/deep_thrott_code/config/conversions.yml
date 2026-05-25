@@ -86,6 +86,10 @@ calibration:
     E-LC: { profile: generic_bridge_vdiff_to_force_1000N }
     N-LC: { profile: generic_bridge_vdiff_to_force_1000N }
 
+  flow_meters:
+    FM-FM: { profile: v_to_gpm_linear }
+    OM-FM: { profile: v_to_gpm_linear }
+
   rtds:
     WI-RTD: { profile: pt1000_water_inlet }
     WO-RTD: { profile: pt1000_water_outlet }

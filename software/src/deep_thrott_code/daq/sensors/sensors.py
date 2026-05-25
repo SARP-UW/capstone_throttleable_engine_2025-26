@@ -175,6 +175,124 @@ class SimulatedPressureSensor(Sensor):
         )
 
 
+class SimulatedFlowMeterSensor(Sensor):
+    def __init__(
+        self,
+        name: str,
+        *,
+        sampling_rate_hz: float | None = None,
+        offset: float = 10.0,
+        amplitude: float = 2.0,
+        frequency_hz: float = 0.1,
+        step_at_s: float = 3.0,
+        step_flow: float = 0.0,
+        v_min: float = 0.8,
+        v_max: float = 4.0,
+        flow_min: float = 0.0,
+        flow_max: float = 30.0,
+        adc_vref: float = 5.0,
+        adc_gain: float = 1.0,
+        noise_std_flow: float = 0.2,
+        seed: int = 4,
+        channel: int = 0,
+        unit: str = "gallons_per_minute",
+    ):
+        self.name = str(name)
+        self.channel = int(channel)
+        self.unit = str(unit)
+
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
+
+        self.offset = float(offset)
+        self.amplitude = float(amplitude)
+        self.frequency_hz = float(frequency_hz)
+        self.step_at_s = float(step_at_s)
+        self.step_flow = float(step_flow)
+        self.noise_std_flow = float(noise_std_flow)
+        self._rng = random.Random(int(seed))
+
+        self.v_min = float(v_min)
+        self.v_max = float(v_max)
+        self.v_span = self.v_max - self.v_min
+        self.flow_min = float(flow_min)
+        self.flow_max = float(flow_max)
+        self.flow_span = self.flow_max - self.flow_min
+
+        self.adc_vref = float(adc_vref)
+        self.adc_gain = float(adc_gain)
+
+        self._t0 = time.perf_counter()
+
+    def _t(self, t_mono: float) -> float:
+        return t_mono - self._t0
+
+    def flow_profile(self, t_s: float) -> float:
+        flow = self.offset + self.amplitude * math.sin(2.0 * math.pi * self.frequency_hz * t_s)
+        if t_s > self.step_at_s:
+            flow += self.step_flow
+        if self.noise_std_flow:
+            flow += self._rng.gauss(0.0, self.noise_std_flow)
+        return flow
+
+    def flow_to_voltage(self, flow_value: float) -> float:
+        if self.flow_span == 0:
+            return self.v_min
+        frac = (flow_value - self.flow_min) / self.flow_span
+        frac = max(0.0, min(1.0, frac))
+        return self.v_min + frac * self.v_span
+
+    def voltage_to_flow(self, voltage_v: float) -> float:
+        if self.v_span == 0:
+            return self.flow_min
+        frac = (voltage_v - self.v_min) / self.v_span
+        return self.flow_min + frac * self.flow_span
+
+    def voltage_to_adc_code(self, voltage_v: float) -> int:
+        fs_code = (1 << 23) - 1
+        full_scale = self.adc_vref / self.adc_gain if self.adc_gain else self.adc_vref
+        voltage_v = max(-full_scale, min(full_scale, voltage_v))
+        code = int(round((voltage_v / full_scale) * fs_code))
+        return max(-(1 << 23), min((1 << 23) - 1, code))
+
+    def adc_code_to_voltage(self, code: int) -> float:
+        return _adc_code_to_voltage(code, vref=self.adc_vref, gain=self.adc_gain)
+
+    def read_raw_sample(self) -> RawSample:
+        t_mono = time.perf_counter()
+        t_wall = time.time()
+
+        flow_value = self.flow_profile(self._t(t_mono))
+        voltage = self.flow_to_voltage(flow_value)
+        code = self.voltage_to_adc_code(voltage)
+
+        return RawSample(
+            sensor_name=self.name,
+            sensor_kind="flow",
+            conversion_type="sim_flow_meter",
+            channel=self.channel,
+            t_monotonic=t_mono,
+            t_wall=t_wall,
+            raw_count=code,
+        )
+
+    def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
+        code = int(raw_sample.raw_count)
+        voltage = self.adc_code_to_voltage(code)
+        flow_value = self.voltage_to_flow(voltage)
+
+        return Sample(
+            sensor_name=raw_sample.sensor_name,
+            sensor_kind="flow",
+            t_monotonic=raw_sample.t_monotonic,
+            t_wall=raw_sample.t_wall,
+            raw_value=code,
+            value=float(flow_value),
+            units=self.unit,
+            V_diff_1=voltage,
+            source="simulated",
+        )
+
+
 class SimulatedLoadCellSensor(Sensor):
     def __init__(
         self,
@@ -712,17 +830,81 @@ class RTDSensor(Sensor):
 
 
 class FlowMeterSensor(Sensor):
-    """Placeholder base for a future flow meter implementation."""
+    """Hardware flow meter with linear voltage-to-flow mapping."""
 
-    def __init__(self, name: str, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        *,
+        adc: Any,
+        sig_ain: int,
+        sampling_rate_hz: float | None = None,
+        v_min: float = 0.8,
+        v_max: float = 4.0,
+        flow_min: float = 0.0,
+        flow_max: float = 30.0,
+        offset_flow: float = 0.0,
+        unit: str = "gallons_per_minute",
+        adc_vref: float = 5.0,
+        adc_gain: float = 1.0,
+    ):
         self.name = str(name)
-        self.kwargs = dict(kwargs)
+        self.adc = adc
+        self.sig_ain = int(sig_ain)
+        self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
+        self.v_min = float(v_min)
+        self.v_max = float(v_max)
+        self.v_span = self.v_max - self.v_min
+        self.flow_min = float(flow_min)
+        self.flow_max = float(flow_max)
+        self.flow_span = self.flow_max - self.flow_min
+        self.offset_flow = float(offset_flow)
+        self.unit = str(unit)
+        self.adc_vref = float(adc_vref)
+        self.adc_gain = float(adc_gain)
 
     def read_raw_sample(self) -> RawSample:
-        raise NotImplementedError("FlowMeterSensor is not implemented yet")
+        t_mono = time.perf_counter()
+        t_wall = time.time()
+
+        try:
+            self.adc.configure_basic(use_internal_ref=False, gain=int(self.adc_gain))
+        except Exception:
+            pass
+
+        settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
+        raw_code = self.adc.read_raw_single(self.sig_ain, settle_discard=settle_discard)
+
+        return RawSample(
+            sensor_name=self.name,
+            sensor_kind="flow",
+            conversion_type="flow_meter",
+            channel=self.sig_ain,
+            t_monotonic=t_mono,
+            t_wall=t_wall,
+            raw_count=int(raw_code),
+        )
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
-        raise NotImplementedError("FlowMeterSensor is not implemented yet")
+        code = int(raw_sample.raw_count)
+        voltage = _adc_code_to_voltage(code, vref=self.adc_vref, gain=self.adc_gain)
+        if self.v_span == 0:
+            flow_value = self.flow_min
+        else:
+            frac = (voltage - self.v_min) / self.v_span
+            flow_value = self.flow_min + frac * self.flow_span
+        flow_value -= self.offset_flow
+        return Sample(
+            sensor_name=raw_sample.sensor_name,
+            sensor_kind="flow",
+            t_monotonic=raw_sample.t_monotonic,
+            t_wall=raw_sample.t_wall,
+            raw_value=code,
+            value=float(flow_value),
+            units=self.unit,
+            V_diff_1=voltage,
+            source="hardware",
+        )
 
 
 # please clean this up
@@ -963,9 +1145,14 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             if isinstance(sensors_cfg, dict)
             else None
         )
+        flow_cfg = (
+            (sensors_cfg.get("flow_meters") or sensors_cfg.get("flow meters"))
+            if isinstance(sensors_cfg, dict)
+            else None
+        )
 
-        if not isinstance(pt_cfg, dict) or not pt_cfg:
-            raise RuntimeError(f"No pressure transducers configured in {hardware_path}")
+        if not any(isinstance(cfg, dict) and cfg for cfg in (pt_cfg, rtd_cfg, lc_cfg, flow_cfg)):
+            raise RuntimeError(f"No sensors configured in {hardware_path}")
 
         # Configure ADC output data rates based on requested sensor sampling.
         # The producer loop reads sensors sequentially, and each sensor read can
@@ -982,11 +1169,13 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         # conversions per sample depends on implementation details
         pt_conversions = 2.0 if settle_discard else 1.0
+        flow_conversions = 2.0 if settle_discard else 1.0
         rtd_conversions = 3.0 * (2.0 if settle_discard else 1.0)  # lead1 + lead2 + diff
         lc_conversions = 3.0 * (2.0 if settle_discard else 1.0)  # plus + minus + diff
 
         conversions_per_sec_by_adc: dict[str, float] = {k: 0.0 for k in adc_by_id.keys()}
 
+        pt_cfg = pt_cfg if isinstance(pt_cfg, dict) else {}
         for _sid, cfg in pt_cfg.items():
             if not isinstance(cfg, dict) or not bool(cfg.get("enabled", False)):
                 continue
@@ -994,6 +1183,15 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             if not isinstance(adc_id, str) or adc_id not in adc_by_id:
                 continue
             conversions_per_sec_by_adc[adc_id] += _sensor_rate_hz(cfg) * pt_conversions
+
+        if isinstance(flow_cfg, dict):
+            for _sid, cfg in flow_cfg.items():
+                if not isinstance(cfg, dict) or not bool(cfg.get("enabled", False)):
+                    continue
+                adc_id = cfg.get("adc_id")
+                if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                    continue
+                conversions_per_sec_by_adc[adc_id] += _sensor_rate_hz(cfg) * flow_conversions
 
         if isinstance(rtd_cfg, dict):
             for _sid, cfg in rtd_cfg.items():
@@ -1100,6 +1298,44 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 psi_min = float(profile.get("psi_min", default[2]))
                 psi_max = float(profile.get("psi_max", default[3]))
                 return (v_min, v_max, psi_min, psi_max)
+            except Exception:
+                return default
+
+        def _flow_calibration(sensor_id: str) -> tuple[float, float, float, float, str, float]:
+            default = (0.8, 4.0, 0.0, 30.0, "gallons_per_minute", 0.0)
+            cal = conversions_cfg.get("calibration")
+            if not isinstance(cal, dict):
+                return default
+            cal_flow = cal.get("flow_meters")
+            if not isinstance(cal_flow, dict):
+                return default
+            entry = cal_flow.get(sensor_id)
+            if not isinstance(entry, dict):
+                return default
+            profile_id = entry.get("profile")
+            if not isinstance(profile_id, str) or not profile_id:
+                return default
+
+            profiles = conversions_cfg.get("calibration_profiles")
+            if not isinstance(profiles, dict):
+                return default
+            flow_profiles = profiles.get("flow_meters")
+            if not isinstance(flow_profiles, dict):
+                return default
+            profile = flow_profiles.get(profile_id)
+            if not isinstance(profile, dict):
+                return default
+            if str(profile.get("type", "")).lower() != "linear":
+                return default
+
+            try:
+                v_min = float(profile.get("v_min", default[0]))
+                v_max = float(profile.get("v_max", default[1]))
+                flow_min = float(profile.get("flow_min", profile.get("gpm_min", default[2])))
+                flow_max = float(profile.get("flow_max", profile.get("gpm_max", default[3])))
+                unit = str(profile.get("unit", profile.get("units", default[4])))
+                offset = float(profile.get("offset", default[5]))
+                return (v_min, v_max, flow_min, flow_max, unit, offset)
             except Exception:
                 return default
 
@@ -1220,6 +1456,89 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     v_max=v_max,
                     p_min=p_min,
                     p_max=p_max,
+                )
+            )
+
+        flow_cfg = flow_cfg if isinstance(flow_cfg, dict) else {}
+        for sensor_id, cfg in flow_cfg.items():
+            if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+                continue
+            if not bool(cfg.get("enabled", False)):
+                continue
+
+            adc_id = cfg.get("adc_id")
+            if not isinstance(adc_id, str) or adc_id not in adc_by_id:
+                raise RuntimeError(f"Flow meter {sensor_id} references unknown adc_id={adc_id}")
+            ain = cfg.get("ain")
+            if ain is None:
+                raise RuntimeError(f"Flow meter {sensor_id} is enabled but has no 'ain' set")
+
+            v_min, v_max, flow_min, flow_max, unit, offset_flow = _flow_calibration(sensor_id)
+
+            try:
+                sampling_rate_hz = float(cfg.get("sampling_rate_hz")) if cfg.get("sampling_rate_hz") is not None else None
+            except Exception:
+                sampling_rate_hz = None
+
+            try:
+                adc_gain = float(cfg.get("adc_gain")) if cfg.get("adc_gain") is not None else 1.0
+            except Exception:
+                adc_gain = 1.0
+
+            try:
+                if cfg.get("v_min") is not None:
+                    v_min = float(cfg.get("v_min"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("v_max") is not None:
+                    v_max = float(cfg.get("v_max"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("flow_min") is not None:
+                    flow_min = float(cfg.get("flow_min"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("flow_max") is not None:
+                    flow_max = float(cfg.get("flow_max"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("gpm_min") is not None:
+                    flow_min = float(cfg.get("gpm_min"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("gpm_max") is not None:
+                    flow_max = float(cfg.get("gpm_max"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("unit") is not None:
+                    unit = str(cfg.get("unit"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("offset") is not None:
+                    offset_flow = float(cfg.get("offset"))
+            except Exception:
+                pass
+
+            sensors.append(
+                FlowMeterSensor(
+                    name=sensor_id,
+                    adc=adc_by_id[adc_id],
+                    sig_ain=int(ain),
+                    sampling_rate_hz=sampling_rate_hz,
+                    v_min=v_min,
+                    v_max=v_max,
+                    flow_min=flow_min,
+                    flow_max=flow_max,
+                    offset_flow=offset_flow,
+                    unit=unit,
+                    adc_gain=adc_gain,
                 )
             )
 
@@ -1385,6 +1704,15 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             amplitude_n=200.0,
             frequency_hz=0.5,
             seed=2,
+        ),
+        SimulatedFlowMeterSensor(
+            name="FM-FM",
+            sampling_rate_hz=25.0,
+            offset=8.0,
+            amplitude=1.5,
+            frequency_hz=0.08,
+            channel=8,
+            seed=4,
         ),
         SimulatedRTDSensor(
             name="tank_temp",

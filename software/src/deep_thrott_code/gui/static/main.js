@@ -1,4 +1,7 @@
 (() => {
+	if (window.__deepThrottMainLoaded) return;
+	window.__deepThrottMainLoaded = true;
+
 	let _appInitialized = false;
 
 	function initApp() {
