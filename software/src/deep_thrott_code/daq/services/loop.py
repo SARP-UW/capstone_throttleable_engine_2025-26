@@ -59,42 +59,94 @@ class ProducerStats:
         self._lock = threading.Lock()
         self.cycles = 0
         self.samples_enqueued = 0
+        self.samples_read = 0
         self.busy_s = 0.0
+        self.read_s = 0.0
         self.sleep_requested_s = 0.0
         self.sleep_actual_s = 0.0
         self.sleep_overshoot_s = 0.0
         self.overruns = 0
+        self.due_skips = 0
+        self.timeouts = 0
 
     def update(
         self,
         *,
         cycles: int,
         samples: int,
+        samples_read: int,
         busy_s: float,
+        read_s: float,
         sleep_requested_s: float,
         sleep_actual_s: float,
         sleep_overshoot_s: float,
         overruns: int,
+        due_skips: int,
+        timeouts: int,
     ) -> None:
         with self._lock:
             self.cycles += cycles
             self.samples_enqueued += samples
+            self.samples_read += samples_read
             self.busy_s += busy_s
+            self.read_s += read_s
             self.sleep_requested_s += sleep_requested_s
             self.sleep_actual_s += sleep_actual_s
             self.sleep_overshoot_s += sleep_overshoot_s
             self.overruns += overruns
+            self.due_skips += due_skips
+            self.timeouts += timeouts
 
     def snapshot(self) -> dict[str, float]:
         with self._lock:
             return {
                 "cycles": float(self.cycles),
                 "samples_enqueued": float(self.samples_enqueued),
+                "samples_read": float(self.samples_read),
                 "busy_s": float(self.busy_s),
+                "read_s": float(self.read_s),
                 "sleep_requested_s": float(self.sleep_requested_s),
                 "sleep_actual_s": float(self.sleep_actual_s),
                 "sleep_overshoot_s": float(self.sleep_overshoot_s),
                 "overruns": float(self.overruns),
+                "due_skips": float(self.due_skips),
+                "timeouts": float(self.timeouts),
+            }
+
+
+class ConsumerStats:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self.batches = 0
+        self.samples = 0
+        self.convert_s = 0.0
+        self.state_gui_s = 0.0
+        self.log_s = 0.0
+
+    def update(
+        self,
+        *,
+        batches: int,
+        samples: int,
+        convert_s: float,
+        state_gui_s: float,
+        log_s: float,
+    ) -> None:
+        with self._lock:
+            self.batches += batches
+            self.samples += samples
+            self.convert_s += convert_s
+            self.state_gui_s += state_gui_s
+            self.log_s += log_s
+
+    def snapshot(self) -> dict[str, float]:
+        with self._lock:
+            return {
+                "batches": float(self.batches),
+                "samples": float(self.samples),
+                "convert_s": float(self.convert_s),
+                "state_gui_s": float(self.state_gui_s),
+                "log_s": float(self.log_s),
             }
 
 
@@ -131,6 +183,10 @@ def producer_loop(
         t_start = time.perf_counter()
 
         enqueued = 0
+        samples_read = 0
+        read_elapsed = 0.0
+        due_skips = 0
+        timeout_count = 0
 
         for sensor in sensor_list:
             now = time.perf_counter()
@@ -144,11 +200,15 @@ def producer_loop(
                 if due is None:
                     next_due_t[sensor_name] = now
                 elif now < due:
+                    due_skips += 1
                     continue
 
+            read_t0 = time.perf_counter()
             try:
                 sample = sensor.read_raw_sample()
             except TimeoutError as exc:
+                read_elapsed += time.perf_counter() - read_t0
+                timeout_count += 1
                 # Treat ADC DRDY timeouts as a dropped sample for this cycle.
                 # Keep the producer loop alive so other channels can continue.
                 now = time.monotonic()
@@ -161,6 +221,8 @@ def producer_loop(
                 if target_hz > 0:
                     next_due_t[sensor_name] = time.perf_counter() + (1.0 / target_hz)
                 continue
+            read_elapsed += time.perf_counter() - read_t0
+            samples_read += 1
 
             if target_hz > 0:
                 # Schedule from *now* to avoid backlog catch-up storms.
@@ -202,15 +264,19 @@ def producer_loop(
             stats.update(
                 cycles=1,
                 samples=enqueued,
+                samples_read=samples_read,
                 busy_s=elapsed,
+                read_s=read_elapsed,
                 sleep_requested_s=sleep_requested,
                 sleep_actual_s=sleep_actual,
                 sleep_overshoot_s=sleep_overshoot,
                 overruns=overrun,
+                due_skips=due_skips,
+                timeouts=timeout_count,
             )
 
 
-def consumer_loop(sample_queue, gui_queue, store_state, logger, stop_event, sensor_map):
+def consumer_loop(sample_queue, gui_queue, store_state, logger, stop_event, sensor_map, stats: ConsumerStats | None = None):
     while not stop_event.is_set():
         batch = []
         try:
@@ -228,19 +294,34 @@ def consumer_loop(sample_queue, gui_queue, store_state, logger, stop_event, sens
                 continue
 
         processed_samples = []
+        convert_t0 = time.perf_counter()
 
         for raw_sample in batch:
             sensor = sensor_map[raw_sample.sensor_name]
             sample = sensor.convert_raw_sample_to_sample(raw_sample)
             processed_samples.append(sample)
+        convert_elapsed = time.perf_counter() - convert_t0
 
+        state_gui_t0 = time.perf_counter()
         for sample in processed_samples:
             store_state.update_sample(sample)
             _enqueue_gui_sample(gui_queue, sample)
+        state_gui_elapsed = time.perf_counter() - state_gui_t0
 
+        log_t0 = time.perf_counter()
         write_many = getattr(logger, "write_many", None)
         if callable(write_many):
             write_many(processed_samples)
         else:
             for sample in processed_samples:
                 logger.write(sample)
+        log_elapsed = time.perf_counter() - log_t0
+
+        if stats is not None:
+            stats.update(
+                batches=1,
+                samples=len(processed_samples),
+                convert_s=convert_elapsed,
+                state_gui_s=state_gui_elapsed,
+                log_s=log_elapsed,
+            )
