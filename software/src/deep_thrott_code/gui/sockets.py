@@ -75,6 +75,7 @@ def _sample_to_json(sample: Any) -> dict[str, Any]:  # noqa: ANN401
 		"V_diff_1": v1f,
 		"V_diff_2": v2f,
 		"voltage_v": voltage_v,
+		"achieved_rate_hz": getattr(sample, "achieved_rate_hz", None),
 		"status": getattr(sample, "status", ""),
 		"message": getattr(sample, "message", ""),
 	}

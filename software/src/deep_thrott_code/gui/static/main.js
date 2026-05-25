@@ -243,6 +243,7 @@
 	const MAX_POINTS = 300;
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
 	const latestVoltageBySensor = new Map(); // sensorName -> { v: number|null, v1: number|null, v2: number|null }
+	const latestRateBySensor = new Map(); // sensorName -> achieved rate in Hz
 	let knownSensorNames = [];
 	let pendingPlotAutofill = true;
 
@@ -523,6 +524,12 @@
 			if (v !== null || v1 !== null || v2 !== null) {
 				latestVoltageBySensor.set(name, { v, v1, v2 });
 			}
+			const achievedRateHz = typeof state.achieved_rate_hz === 'number' && Number.isFinite(state.achieved_rate_hz)
+				? state.achieved_rate_hz
+				: null;
+			if (achievedRateHz !== null) {
+				latestRateBySensor.set(name, achievedRateHz);
+			}
 
 			const value = state.value;
 			if (typeof value !== 'number') continue;
@@ -685,6 +692,7 @@
 		const latestV = rec.v[rec.v.length - 1];
 		const units = rec.units ? ` ${rec.units}` : '';
 		const vrec = latestVoltageBySensor.get(sensorName);
+		const achievedRateHz = latestRateBySensor.get(sensorName);
 		let vText = '';
 		if (vrec && typeof vrec === 'object') {
 			if (typeof vrec.v === 'number' && Number.isFinite(vrec.v)) {
@@ -700,9 +708,12 @@
 				vText = `  V=${vrec.v1.toFixed(3)}V`;
 			}
 		}
+		const rateText = typeof achievedRateHz === 'number' && Number.isFinite(achievedRateHz)
+			? `  ${achievedRateHz.toFixed(1)} Hz`
+			: '';
 		ctx.fillStyle = '#111111';
 		ctx.font = `${titleFontPx}px Arial`;
-		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}`, left, Math.max(top - 10, Math.floor(h * 0.11)));
+		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}${rateText}`, left, Math.max(top - 10, Math.floor(h * 0.11)));
 	}
 
 	function renderAllPlots() {

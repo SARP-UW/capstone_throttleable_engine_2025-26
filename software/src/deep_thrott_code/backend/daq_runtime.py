@@ -158,6 +158,13 @@ class DaqRuntime:
 		logger = CsvLogger(log_path, header, flush_every=25, fsync_every_flush=False)
 		producer_stats = ProducerStats()
 
+		def _sampling_target_multiplier() -> float:
+			try:
+				mult = float(getattr(daq_config, "DAQ_SENSOR_RATE_TARGET_MULT", 1.0) or 1.0)
+			except Exception:
+				mult = 1.0
+			return mult if mult > 0 else 1.0
+
 		def _compute_producer_loop_hz(sensor_list) -> float:
 			# Prefer an explicit override if present.
 			override = getattr(daq_config, "DAQ_PRODUCER_LOOP_HZ", None)
@@ -169,6 +176,7 @@ class DaqRuntime:
 					pass
 
 			max_sensor_hz = 0.0
+			rate_mult = _sampling_target_multiplier()
 			for sensor in sensor_list:
 				hz = getattr(sensor, "sampling_rate_hz", None)
 				if hz is None:
@@ -177,6 +185,7 @@ class DaqRuntime:
 					hzf = float(hz)
 				except Exception:
 					continue
+				hzf *= rate_mult
 				if hzf > max_sensor_hz:
 					max_sensor_hz = hzf
 
@@ -210,7 +219,10 @@ class DaqRuntime:
 
 		producer_loop_hz = _compute_producer_loop_hz(sensors)
 		try:
-			self._emit_system(f"Producer loop_hz={producer_loop_hz:.1f} (max sensor rate drives this; see sampling_rate_hz in hardware.yml)")
+			rate_mult = _sampling_target_multiplier()
+			self._emit_system(
+				f"Producer loop_hz={producer_loop_hz:.1f} (sampling_rate_hz target x{rate_mult:.2f}; see hardware.yml)"
+			)
 		except Exception:
 			pass
 

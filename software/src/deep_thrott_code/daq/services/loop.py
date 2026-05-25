@@ -3,8 +3,29 @@ import threading
 import time
 from queue import Empty
 
+from .. import config as daq_config
+
 
 _log = logging.getLogger(__name__)
+
+
+def _effective_sampling_rate_hz(sensor) -> float:
+    sampling_rate_hz = getattr(sensor, "sampling_rate_hz", None)
+    if sampling_rate_hz is None:
+        return 0.0
+    try:
+        hz = float(sampling_rate_hz)
+    except Exception:
+        return 0.0
+    if hz <= 0:
+        return 0.0
+    try:
+        mult = float(getattr(daq_config, "DAQ_SENSOR_RATE_TARGET_MULT", 1.0) or 1.0)
+    except Exception:
+        mult = 1.0
+    if mult <= 0:
+        mult = 1.0
+    return hz * mult
 
 
 class ProducerStats:
@@ -68,15 +89,9 @@ def producer_loop(
     # Windows), where trying to sleep at 1ms can collapse effective rates.
     use_due_scheduler = False
     for _s in sensor_list:
-        hz = getattr(_s, "sampling_rate_hz", None)
-        if hz is None:
-            continue
-        try:
-            if float(hz) > 0:
-                use_due_scheduler = True
-                break
-        except Exception:
-            continue
+        if _effective_sampling_rate_hz(_s) > 0:
+            use_due_scheduler = True
+            break
 
     # Optional per-sensor sampling schedule.
     # If a sensor instance defines `sampling_rate_hz`, we only read it when due.
@@ -97,20 +112,14 @@ def producer_loop(
             name = getattr(sensor, "name", None)
             sensor_name = str(name) if name else sensor.__class__.__name__
 
-            sampling_rate_hz = getattr(sensor, "sampling_rate_hz", None)
-            if sampling_rate_hz is not None:
-                try:
-                    hz = float(sampling_rate_hz)
-                except Exception:
-                    hz = 0.0
-
-                if hz > 0:
-                    period_s = 1.0 / hz
-                    due = next_due_t.get(sensor_name)
-                    if due is None:
-                        next_due_t[sensor_name] = now
-                    elif now < due:
-                        continue
+            target_hz = _effective_sampling_rate_hz(sensor)
+            if target_hz > 0:
+                period_s = 1.0 / target_hz
+                due = next_due_t.get(sensor_name)
+                if due is None:
+                    next_due_t[sensor_name] = now
+                elif now < due:
+                    continue
 
             try:
                 sample = sensor.read_raw_sample()
@@ -124,23 +133,13 @@ def producer_loop(
                     last_timeout_log_t[sensor_name] = now
 
                 # Back off until next period (if configured) so we don't hammer a failing channel.
-                if sampling_rate_hz is not None:
-                    try:
-                        hz = float(sampling_rate_hz)
-                    except Exception:
-                        hz = 0.0
-                    if hz > 0:
-                        next_due_t[sensor_name] = time.perf_counter() + (1.0 / hz)
+                if target_hz > 0:
+                    next_due_t[sensor_name] = time.perf_counter() + (1.0 / target_hz)
                 continue
 
-            if sampling_rate_hz is not None:
-                try:
-                    hz = float(sampling_rate_hz)
-                except Exception:
-                    hz = 0.0
-                if hz > 0:
-                    # Schedule from *now* to avoid backlog catch-up storms.
-                    next_due_t[sensor_name] = time.perf_counter() + (1.0 / hz)
+            if target_hz > 0:
+                # Schedule from *now* to avoid backlog catch-up storms.
+                next_due_t[sensor_name] = time.perf_counter() + period_s
 
             sample_queue.put(sample)
             enqueued += 1

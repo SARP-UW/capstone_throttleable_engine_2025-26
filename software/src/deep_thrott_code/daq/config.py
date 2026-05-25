@@ -24,6 +24,18 @@ DAQ_EMIT_RATE_STATS: bool = False
 DAQ_RATE_STATS_PERIOD_S: float = 5.0
 
 
+# Internally oversubscribe per-sensor sampling targets to compensate for
+# scheduler jitter and conversion overhead. A configured sensor rate in
+# hardware.yml is multiplied by this value for producer scheduling and ADC
+# datarate sizing.
+DAQ_SENSOR_RATE_TARGET_MULT: float = 2.0
+
+
+# Number of recent sample timestamps used to estimate achieved per-sensor rate
+# for the GUI.
+DAQ_SENSOR_RATE_ESTIMATE_WINDOW: int = 12
+
+
 # Producer loop pacing.
 #
 # The producer loop iterates quickly and only reads a sensor when it is "due"

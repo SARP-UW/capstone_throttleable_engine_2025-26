@@ -1163,9 +1163,16 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         def _sensor_rate_hz(cfg: dict[str, Any], default_hz: float = 100.0) -> float:
             try:
-                return float(cfg.get("sampling_rate_hz", default_hz))
+                hz = float(cfg.get("sampling_rate_hz", default_hz))
             except Exception:
-                return float(default_hz)
+                hz = float(default_hz)
+            try:
+                mult = float(getattr(config, "DAQ_SENSOR_RATE_TARGET_MULT", 1.0) or 1.0)
+            except Exception:
+                mult = 1.0
+            if mult <= 0:
+                mult = 1.0
+            return hz * mult
 
         # conversions per sample depends on implementation details
         pt_conversions = 2.0 if settle_discard else 1.0

@@ -30,3 +30,4 @@ class Sample:
     message: str = ""
     sequence: Optional[int] = None
     source: str = ""
+    achieved_rate_hz: Optional[float] = None
