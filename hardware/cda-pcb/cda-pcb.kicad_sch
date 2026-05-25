@@ -10273,7 +10273,7 @@
 		(uuid 69a2f4e0-cb60-465d-ba79-99eab1aacd96)
 	)
 	(rectangle
-		(start 254 234.95)
+		(start 248.92 234.95)
 		(end 335.28 273.05)
 		(stroke
 			(width 0)
@@ -12981,7 +12981,7 @@
 	)
 	(wire
 		(pts
-			(xy 557.53 82.55) (xy 560.07 82.55)
+			(xy 565.15 82.55) (xy 567.69 82.55)
 		)
 		(stroke
 			(width 0)
@@ -17631,7 +17631,7 @@
 	)
 	(wire
 		(pts
-			(xy 534.67 82.55) (xy 549.91 82.55)
+			(xy 534.67 82.55) (xy 557.53 82.55)
 		)
 		(stroke
 			(width 0)
@@ -17941,7 +17941,7 @@
 	)
 	(wire
 		(pts
-			(xy 265.43 257.81) (xy 273.05 257.81)
+			(xy 251.46 257.81) (xy 273.05 257.81)
 		)
 		(stroke
 			(width 0)
@@ -19687,7 +19687,7 @@
 		)
 		(uuid "4354ce67-790c-4f01-a669-46791197dd57")
 	)
-	(label "GPIO19"
+	(label "GPIO19 - OTFV{slash}FTFV"
 		(at 542.29 80.01 0)
 		(effects
 			(font
@@ -20112,8 +20112,8 @@
 		)
 		(uuid "85eff128-40fc-441f-9cac-e9db0a9b0126")
 	)
-	(label "GPIO19"
-		(at 265.43 257.81 0)
+	(label "GPIO19 - OTFV{slash}FTFV"
+		(at 251.46 257.81 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -28752,7 +28752,7 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
-		(at 560.07 82.55 0)
+		(at 567.69 82.55 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -28760,7 +28760,7 @@
 		(dnp no)
 		(uuid "48f85862-ff37-42ec-afb7-8fbb285ddb40")
 		(property "Reference" "#PWR066"
-			(at 560.07 86.36 0)
+			(at 567.69 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28769,7 +28769,7 @@
 			)
 		)
 		(property "Value" "+3.3V"
-			(at 559.816 78.74 0)
+			(at 567.436 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28777,7 +28777,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 560.07 82.55 0)
+			(at 567.69 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28786,7 +28786,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 560.07 82.55 0)
+			(at 567.69 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28795,7 +28795,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 560.07 82.55 0)
+			(at 567.69 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -37295,7 +37295,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 553.72 82.55 90)
+		(at 561.34 82.55 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -37303,7 +37303,7 @@
 		(dnp no)
 		(uuid "97ceb9de-e20c-4ff2-8726-92d57a5fc841")
 		(property "Reference" "R43"
-			(at 553.466 80.518 90)
+			(at 561.086 80.518 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -37311,7 +37311,7 @@
 			)
 		)
 		(property "Value" "20K"
-			(at 553.466 84.582 90)
+			(at 561.086 84.582 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -37319,7 +37319,7 @@
 			)
 		)
 		(property "Footprint" "CRCW060320K0FKEA:RESC1508X50N"
-			(at 553.72 84.328 90)
+			(at 561.34 84.328 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -37328,7 +37328,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 553.72 82.55 0)
+			(at 561.34 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -37337,7 +37337,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 553.72 82.55 0)
+			(at 561.34 82.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
