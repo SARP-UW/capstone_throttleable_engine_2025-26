@@ -629,31 +629,10 @@ class Controller:
 
     def _return_to_nominal(self):
         for valve in self.actuator_list.values():
-            try:
-                nominal_angle = getattr(valve, "nominal_angle", None)
-                nominal_time_s = float(getattr(valve, "nominal_time_s", 0.5) or 0.5)
-                if isinstance(valve, ThrottleValve):
-                    if nominal_angle is not None:
-                        valve.throttle(float(nominal_angle), nominal_time_s)
-                        nominal_state = getattr(valve, "nominal_state", None)
-                        if isinstance(nominal_state, ValveState):
-                            valve.state = nominal_state
-                        elif float(nominal_angle) <= 0:
-                            valve.state = ValveState.CLOSED
-                        else:
-                            valve.state = ValveState.OPEN
-                    else:
-                        nominal_state = getattr(valve, "nominal_state", None)
-                        if isinstance(nominal_state, ValveState):
-                            valve.set_state(nominal_state)
-                else:
-                    nominal_state = getattr(valve, "nominal_state", None)
-                    if not isinstance(nominal_state, ValveState):
-                        nominal_state = getattr(valve, "default_state", None)
-                    if isinstance(nominal_state, ValveState):
-                        valve.set_state(nominal_state)
-            except Exception as exc:
-                print(f"Failed to return {getattr(valve, 'valve_id', '?')} to nominal: {exc}")
+            if valve.is_normally_closed():
+                valve.set_state(ValveState.CLOSED)
+            else:
+                valve.set_state(ValveState.OPEN)
 
     @staticmethod
     def _build_transitions() -> dict[tuple[State, TransitionAction], State]:
@@ -721,11 +700,7 @@ class Controller:
                     actuator_list[str(valve_id)] = valve
                 else:
                     # throttle valves
-                    valve = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle)
-                    valve.nominal_state = self._return_to_nominal_state(actuator_info.get("nominal_state")) or valve.state
-                    angle = actuator_info.get("nominal_angle")
-                    valve.nominal_angle = float(angle) if angle is not None else None
-                    valve.nominal_time_s = float(actuator_info.get("nominal_time_s", 0.5) or 0.5)
+                    valve = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle, bool(actuator_info.get("normally_closed")))
                     actuator_list[str(valve_id)] = valve
         return actuator_list
 

@@ -72,6 +72,9 @@ class Valve:
     def get_state(self) -> ValveState:
         return self.state
 
+    def is_normally_closed(self) -> bool:
+        return self.normally_closed
+
     def set_state(self, new_state: ValveState):
         if self.state != new_state:
             self.state = new_state
@@ -131,15 +134,19 @@ class ThrottleValve():
     SERVO_ANGLE_DEG = 240
     SERVO_ANGLE_PARAM = 1000
 
-    def __init__(self, valve_id: str, uart_id: int, serial_handle):
+    def __init__(self, valve_id: str, uart_id: int, serial_handle, normally_closed: bool):
         self.valve_id = valve_id
         self.uart_id = uart_id
         self.serial_handle = serial_handle
         self.load_motor()
         self.checksum_found = False
         self.state = ValveState.OPEN
+        self.normally_closed = normally_closed
 
-    # do we want this, or is throttle enough?
+
+    def is_normally_closed(self) -> bool:
+        return self.normally_closed()
+
     def set_state(self, new_state: ValveState, theta: float | None = None):
         actuation_time = 0.5
         if self.state != new_state:
