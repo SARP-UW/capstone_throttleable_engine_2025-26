@@ -207,15 +207,15 @@ def main() -> None:
 	logging.getLogger("engineio").setLevel(logging.ERROR)
 	logging.getLogger("socketio").setLevel(logging.ERROR)
 
-	run_kwargs: dict[str, Any] = dict(
-		app,
-		host=cfg.host,
-		port=cfg.port,
-		debug=cfg.debug,
-		use_reloader=False,
-		allow_unsafe_werkzeug=True,
-		log_output=True,
-	)
+	run_kwargs: dict[str, Any] = {
+		'app': app,
+		'host': cfg.host,
+		'port': cfg.port,
+		'debug': cfg.debug,
+		'use_reloader': False,
+		'allow_unsafe_werkzeug': True,
+		'log_output': True,
+	}
 	if getattr(socketio, 'async_mode', '') == 'threading':
 		run_kwargs['request_handler'] = _QuietDisconnectWSGIRequestHandler
 
