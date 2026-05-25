@@ -170,7 +170,9 @@ class ThrottleValve():
             angle_param & 0xFF, (angle_param >> 8) & 0xFF,
             time_ms & 0xFF, (time_ms >> 8) & 0xFF
         ]
-        self.send_packet(self.build_packet(self.SERVO_MOVE_TIME_WRITE_CMD, params))
+        packet = self.build_packet(self.SERVO_MOVE_TIME_WRITE_CMD, params)
+        print(f"Packet bytes: {list(packet)}")
+        self.send_packet(packet)
 
     def read_pos(self):
         # build packet to request angle encoder data
