@@ -147,7 +147,8 @@ time.sleep(0.1)
 # initialize test throttle valve
 # test_valve_naked1 = ThrottleValve("test_valve", 2, serial_handle, False)
 # test_valve_naked2 = ThrottleValve("test_valve2", 3, serial_handle, False)
-test_valve_decent = ThrottleValve("test_valve3", 1, serial_handle, False)
+# test_valve_decent = ThrottleValve("test_valve3", 1, serial_handle, False)
+test_valve_decent = ThrottleValve("test_valve3", 254, serial_handle, False)
 
 while True:
     # test open and close servo to 90 deg
