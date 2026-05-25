@@ -172,30 +172,30 @@ def throttle(servo_id, angle_deg: float, time_s):
 # test_valve_decent = ThrottleValve("test_valve3", 1, serial_handle, False)
 
 
-# print("Initializing test valve...")
-# test_valve_decent = ThrottleValve("test_valve3", 254, serial_handle, False)
+print("Initializing test valve...")
+test_valve_decent = ThrottleValve("test_valve3", 254, serial_handle, False)
 
-# while True:
-#     # test open and close servo to 90 deg
-#     # test_valve_naked.throttle(90, 2)
-#     print("Throttling to 90 degrees...")
-#     test_valve_decent.throttle(90, 2)
-#     time.sleep(2)
-#     # print("Valve angle:", test_valve_naked.read_pos())
-#     time.sleep(3)
-#     # test_valve_naked.throttle(0, 2)
-#     print("Throttling to 0 degrees...")
-#     test_valve_decent.throttle(0, 2)
-#     time.sleep(2)
-#     # print("Valve angle:", test_valve_naked.read_pos())
-#     time.sleep(3)
+while True:
+    # test open and close servo to 90 deg
+    # test_valve_naked.throttle(90, 2)
+    print("Throttling to 90 degrees...")
+    test_valve_decent.throttle(90, 2)
+    time.sleep(2)
+    # print("Valve angle:", test_valve_naked.read_pos())
+    time.sleep(3)
+    # test_valve_naked.throttle(0, 2)
+    print("Throttling to 0 degrees...")
+    test_valve_decent.throttle(0, 2)
+    time.sleep(2)
+    # print("Valve angle:", test_valve_naked.read_pos())
+    time.sleep(3)
 
-servo_id = 254
-angle = 90
-duration = 2
+# servo_id = 254
+# angle = 90
+# duration = 2
 
-print("Sending sum shiz...")
-throttle(servo_id, angle, duration)
+# print("Sending sum shiz...")
+# throttle(servo_id, angle, duration)
 
 pi.serial_close(serial_handle)
 pi.stop()

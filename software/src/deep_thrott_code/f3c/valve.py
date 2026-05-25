@@ -138,7 +138,7 @@ class ThrottleValve():
         self.valve_id = valve_id
         self.uart_id = uart_id
         self.serial_handle = serial_handle
-        self.load_motor()
+        # self.load_motor()
         self.checksum_found = False
         self.state = ValveState.OPEN
         self.normally_closed = normally_closed
