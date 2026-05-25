@@ -20,7 +20,7 @@ ADC_DATARATE_HEADROOM: float = 1.5
 
 
 # Optional producer rate instrumentation.
-DAQ_EMIT_RATE_STATS: bool = False
+DAQ_EMIT_RATE_STATS: bool = True
 DAQ_RATE_STATS_PERIOD_S: float = 5.0
 
 
