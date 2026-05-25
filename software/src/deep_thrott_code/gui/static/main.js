@@ -1,4 +1,23 @@
 (() => {
+	let _appInitialized = false;
+
+	function initApp() {
+		if (_appInitialized) return;
+		_appInitialized = true;
+
+		simulationEnabled = getSavedSimulationEnabled();
+		selectedTest = getSavedSelectedTest();
+		applyTheme(getSavedTheme());
+		updateSimulationTicks(simulationEnabled);
+		updateTestTicks(selectedTest);
+		resetAllSensorBoxes();
+		initSettingsMenu();
+		initDaqControls();
+		initTestButtons();
+		initValveControls();
+		connectSocket();
+	}
+
 	function setSystemMessage(text) {
 		const el = document.getElementById('systemMessage');
 		if (el) el.textContent = text;
@@ -971,17 +990,9 @@
 		});
 	}
 
-	window.addEventListener('load', () => {
-		simulationEnabled = getSavedSimulationEnabled();
-		selectedTest = getSavedSelectedTest();
-		applyTheme(getSavedTheme());
-		updateSimulationTicks(simulationEnabled);
-		updateTestTicks(selectedTest);
-		resetAllSensorBoxes();
-		initSettingsMenu();
-		initDaqControls();
-		initTestButtons();
-		initValveControls();
-		connectSocket();
-	});
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initApp, { once: true });
+	} else {
+		initApp();
+	}
 })();

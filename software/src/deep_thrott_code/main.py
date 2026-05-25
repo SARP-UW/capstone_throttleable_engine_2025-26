@@ -6,6 +6,7 @@ import queue
 import threading
 from pathlib import Path
 from typing import Any
+from werkzeug.serving import WSGIRequestHandler
 
 from deep_thrott_code.backend.app_factory import parse_args
 from deep_thrott_code.backend.daq_runtime import DaqRuntime, drain_queue, emit_system as _emit_system
@@ -55,6 +56,20 @@ class _WerkzeugRequestNoiseFilter(logging.Filter):
 		if msg.startswith('127.0.0.1 ') or msg.startswith('::1 '):
 			return False
 		return True
+
+
+class _QuietDisconnectWSGIRequestHandler(WSGIRequestHandler):
+	"""Suppress known dev-server disconnect assertions from aborted refreshes."""
+
+	def run_wsgi(self) -> None:
+		try:
+			super().run_wsgi()
+		except AssertionError as exc:
+			if str(exc) == 'write() before start_response':
+				return
+			raise
+		except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+			return
 
 
 def pin_current_thread_to_cpu(cpu_index: int) -> None:
@@ -192,7 +207,7 @@ def main() -> None:
 	logging.getLogger("engineio").setLevel(logging.ERROR)
 	logging.getLogger("socketio").setLevel(logging.ERROR)
 
-	socketio.run(
+	run_kwargs: dict[str, Any] = dict(
 		app,
 		host=cfg.host,
 		port=cfg.port,
@@ -201,6 +216,10 @@ def main() -> None:
 		allow_unsafe_werkzeug=True,
 		log_output=True,
 	)
+	if getattr(socketio, 'async_mode', '') == 'threading':
+		run_kwargs['request_handler'] = _QuietDisconnectWSGIRequestHandler
+
+	socketio.run(**run_kwargs)
 
 if __name__ == "__main__":
 	main()
