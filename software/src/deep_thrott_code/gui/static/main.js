@@ -230,6 +230,9 @@
 		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'CC-PT' },
 		{ canvasId: 'daqPlot5', selectId: 'daqSelect5', defaultSensor: '' },
 		{ canvasId: 'daqPlot6', selectId: 'daqSelect6', defaultSensor: '' },
+		{ canvasId: 'daqPlot7', selectId: 'daqSelect7', defaultSensor: '' },
+		{ canvasId: 'daqPlot8', selectId: 'daqSelect8', defaultSensor: '' },
+		{ canvasId: 'daqPlot9', selectId: 'daqSelect9', defaultSensor: '' },
 	];
 
 	const bindings = [
@@ -503,6 +506,12 @@
 
 		const w = canvas.width;
 		const h = canvas.height;
+		const titleFontPx = Math.max(11, Math.floor(h * 0.08));
+		const axisFontPx = Math.max(10, Math.floor(h * 0.07));
+		const leftPad = Math.max(34, Math.floor(w * 0.14));
+		const rightPad = Math.max(12, Math.floor(w * 0.05));
+		const topPad = Math.max(24, Math.floor(h * 0.18));
+		const bottomPad = Math.max(28, Math.floor(h * 0.18));
 
 		// Background
 		ctx.fillStyle = '#ffffff';
@@ -513,7 +522,7 @@
 
 		if (!sensorName) {
 			ctx.fillStyle = '#111111';
-			ctx.font = `${Math.max(12, Math.floor(h * 0.08))}px Arial`;
+			ctx.font = `${titleFontPx}px Arial`;
 			ctx.fillText('Select a signal', Math.floor(w * 0.05), Math.floor(h * 0.18));
 			return;
 		}
@@ -521,16 +530,15 @@
 		const rec = historyBySensor.get(sensorName);
 		if (!rec || rec.t.length < 2) {
 			ctx.fillStyle = '#111111';
-			ctx.font = `${Math.max(12, Math.floor(h * 0.08))}px Arial`;
+			ctx.font = `${titleFontPx}px Arial`;
 			ctx.fillText(`${sensorName}: waiting for data...`, Math.floor(w * 0.05), Math.floor(h * 0.18));
 			return;
 		}
 
-		const pad = Math.max(10, Math.floor(Math.min(w, h) * 0.08));
-		const left = pad;
-		const right = w - pad;
-		const top = pad;
-		const bottom = h - pad;
+		const left = leftPad;
+		const right = w - rightPad;
+		const top = topPad;
+		const bottom = h - bottomPad;
 
 		let minV = Infinity;
 		let maxV = -Infinity;
@@ -557,6 +565,18 @@
 		ctx.lineTo(left, bottom);
 		ctx.lineTo(right, bottom);
 		ctx.stroke();
+
+		const yUnits = rec.units || 'value';
+		ctx.fillStyle = '#111111';
+		ctx.font = `${axisFontPx}px Arial`;
+		ctx.textAlign = 'center';
+		ctx.fillText('Time (s)', Math.floor((left + right) / 2), h - Math.max(8, Math.floor(bottomPad * 0.25)));
+		ctx.save();
+		ctx.translate(Math.max(14, Math.floor(leftPad * 0.38)), Math.floor((top + bottom) / 2));
+		ctx.rotate(-Math.PI / 2);
+		ctx.fillText(yUnits, 0, 0);
+		ctx.restore();
+		ctx.textAlign = 'left';
 
 		// Line
 		ctx.strokeStyle = '#2957ff';
@@ -591,7 +611,7 @@
 			}
 		}
 		ctx.fillStyle = '#111111';
-		ctx.font = `${Math.max(12, Math.floor(h * 0.08))}px Arial`;
+		ctx.font = `${titleFontPx}px Arial`;
 		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}`, left, Math.max(top - 6, Math.floor(h * 0.12)));
 	}
 
