@@ -316,9 +316,9 @@ class SimulatedRTDSensor(Sensor):
         step_at_s: float = 5.0,
         step_c: float = 0.0,
         r0_ohms: float = 1000.0,
+        rref_ohms: float = 5600.0,
         alpha: float = 0.00385,
         idac_current_ua: float = 50.0,
-        vref_internal: float = 2.5,
         noise_std_c: float = 0.1,
         seed: int = 2,
         channel: int = 0,
@@ -339,9 +339,9 @@ class SimulatedRTDSensor(Sensor):
         self._rng = random.Random(int(seed))
 
         self.r0_ohms = float(r0_ohms)
+        self.rref_ohms = float(rref_ohms)
         self.alpha = float(alpha)
         self.idac_current_ua = float(idac_current_ua)
-        self.vref_internal = float(vref_internal)
 
         self._t0 = time.perf_counter()
 
@@ -364,15 +364,19 @@ class SimulatedRTDSensor(Sensor):
             return 0.0
         return (resistance_ohm / self.r0_ohms - 1.0) / self.alpha
 
-    def _v_to_code(self, voltage_v: float) -> int:
+    def _resistance_to_code(self, resistance_ohm: float) -> int:
         fs_code = (1 << 23) - 1
-        voltage_v = max(-self.vref_internal, min(self.vref_internal, voltage_v))
-        code = int(round((voltage_v / self.vref_internal) * fs_code))
+        if self.rref_ohms <= 0:
+            return 0
+        ratio = max(-1.0, min(1.0, float(resistance_ohm) / self.rref_ohms))
+        code = int(round(ratio * fs_code))
         return max(-(1 << 23), min((1 << 23) - 1, code))
 
-    def _code_to_v(self, code: int) -> float:
+    def _code_to_resistance(self, code: int) -> float:
         fs_code = (1 << 23) - 1
-        return (float(code) / fs_code) * self.vref_internal
+        if self.rref_ohms <= 0:
+            return 0.0
+        return (float(code) / fs_code) * self.rref_ohms
 
     def _convert_unit(self, temp_c: float) -> float:
         if self.unit == "°F":
@@ -387,13 +391,11 @@ class SimulatedRTDSensor(Sensor):
 
         temp_c = self.temperature_profile_c(self._t(t_mono))
         res_ohm = self.temp_c_to_resistance(temp_c)
-        i_idac = self.idac_current_ua * 1e-6
-        v_rtd = res_ohm * i_idac
-        code = self._v_to_code(v_rtd)
+        code = self._resistance_to_code(res_ohm)
 
         # Provide single-ended "lead" codes for debugging parity with the real RTD sensor.
-        code_lead1 = self._v_to_code(v_rtd / 2.0)
-        code_lead2 = self._v_to_code(-v_rtd / 2.0)
+        code_lead1 = self._resistance_to_code(res_ohm / 2.0)
+        code_lead2 = self._resistance_to_code(-res_ohm / 2.0)
 
         return RawSample(
             sensor_name=self.name,
@@ -409,14 +411,9 @@ class SimulatedRTDSensor(Sensor):
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
         code = int(raw_sample.raw_count)
-        v_rtd = self._code_to_v(code)
-        i_idac = self.idac_current_ua * 1e-6
-        res_ohm = (v_rtd / i_idac) if i_idac else 0.0
+        res_ohm = self._code_to_resistance(code)
         temp_c = self.resistance_to_temp_c(res_ohm)
         temp_disp = self._convert_unit(temp_c)
-
-        v_diff_1 = self._code_to_v(int(raw_sample.raw_diff_1)) if raw_sample.raw_diff_1 is not None else None
-        v_diff_2 = self._code_to_v(int(raw_sample.raw_diff_2)) if raw_sample.raw_diff_2 is not None else None
 
         return Sample(
             sensor_name=raw_sample.sensor_name,
@@ -426,8 +423,6 @@ class SimulatedRTDSensor(Sensor):
             raw_value=code,
             value=float(temp_disp),
             units=self.unit,
-            V_diff_1=v_diff_1,
-            V_diff_2=v_diff_2,
             source="simulated",
         )
 
@@ -594,9 +589,8 @@ class PressureTransducerSensor(Sensor):
 
 
 class RTDSensor(Sensor):
-    """Hardware RTD sensor using ADC RTD mode (IDAC + internal ref)."""
+    """Hardware RTD sensor using ADS124S08 ratiometric RTD mode."""
 
-    _VREF_INTERNAL = 2.5
     _FS = (1 << 23) - 1
 
     _CVD_A = 3.9083e-3
@@ -614,6 +608,7 @@ class RTDSensor(Sensor):
         idac2_ain: int,
         sampling_rate_hz: float | None = None,
         r0_ohms: float = 1000.0,
+        rref_ohms: float = 5600.0,
         idac_current_ua: float = 50.0,
         unit: str = "°C",
         offset: float = 0.0,
@@ -624,6 +619,7 @@ class RTDSensor(Sensor):
         self.lead2_ain = int(lead2_ain)
         self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
         self.r0_ohms = float(r0_ohms)
+        self.rref_ohms = float(rref_ohms)
         self.idac_current_ua = float(idac_current_ua)
         self.idac1_ain = int(idac1_ain)
         self.idac2_ain = int(idac2_ain)
@@ -667,9 +663,9 @@ class RTDSensor(Sensor):
         )
 
     def _code_to_resistance(self, code_rtd: int) -> float:
-        v_rtd = (float(code_rtd) / self._FS) * self._VREF_INTERNAL
-        i_idac = self.idac_current_ua * 1e-6
-        return (v_rtd / i_idac) if i_idac else 0.0
+        if self.rref_ohms <= 0:
+            return 0.0
+        return (float(code_rtd) / self._FS) * self.rref_ohms
 
     def _resistance_to_temperature_c(self, resistance: float) -> float:
         r_ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
@@ -1146,6 +1142,46 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 return default
 
+        def _rtd_calibration(sensor_id: str) -> tuple[float, float, float, str, float]:
+            """Return (r0_ohms, rref_ohms, idac_current_ua, unit, offset)."""
+
+            default = (1000.0, 5600.0, 50.0, "°C", 0.0)
+
+            cal = conversions_cfg.get("calibration")
+            if not isinstance(cal, dict):
+                return default
+            cal_rtd = cal.get("rtds")
+            if not isinstance(cal_rtd, dict):
+                return default
+            entry = cal_rtd.get(sensor_id)
+            if not isinstance(entry, dict):
+                return default
+            profile_id = entry.get("profile")
+            if not isinstance(profile_id, str) or not profile_id:
+                return default
+
+            profiles = conversions_cfg.get("calibration_profiles")
+            if not isinstance(profiles, dict):
+                return default
+            rtd_profiles = profiles.get("rtds")
+            if not isinstance(rtd_profiles, dict):
+                return default
+            profile = rtd_profiles.get(profile_id)
+            if not isinstance(profile, dict):
+                return default
+            if str(profile.get("type", "")).lower() != "rtd_callendar_van_dusen":
+                return default
+
+            try:
+                r0_ohms = float(profile.get("r0_ohms", default[0]))
+                rref_ohms = float(profile.get("rref_ohms", default[1]))
+                idac_current_ua = float(profile.get("idac_current_ua", default[2]))
+                unit = str(profile.get("unit", default[3]))
+                offset = float(profile.get("offset", default[4]))
+                return (r0_ohms, rref_ohms, idac_current_ua, unit, offset)
+            except Exception:
+                return default
+
         sensors: list[Sensor] = []
         for sensor_id, cfg in pt_cfg.items():
             if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
@@ -1209,6 +1245,34 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 sampling_rate_hz = None
 
+            r0_ohms, rref_ohms, idac_current_ua, unit, offset = _rtd_calibration(sensor_id)
+
+            try:
+                if cfg.get("r0_ohms") is not None:
+                    r0_ohms = float(cfg.get("r0_ohms"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("rref_ohms") is not None:
+                    rref_ohms = float(cfg.get("rref_ohms"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("idac_current_ua") is not None:
+                    idac_current_ua = float(cfg.get("idac_current_ua"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("unit") is not None:
+                    unit = str(cfg.get("unit"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("offset") is not None:
+                    offset = float(cfg.get("offset"))
+            except Exception:
+                pass
+
             sensors.append(
                 RTDSensor(
                     name=sensor_id,
@@ -1218,6 +1282,11 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     idac1_ain=int(idac1_ain),
                     idac2_ain=int(idac2_ain),
                     sampling_rate_hz=sampling_rate_hz,
+                    r0_ohms=r0_ohms,
+                    rref_ohms=rref_ohms,
+                    idac_current_ua=idac_current_ua,
+                    unit=unit,
+                    offset=offset,
                 )
             )
 
@@ -1323,6 +1392,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             offset_c=20.0,
             amplitude_c=2.0,
             frequency_hz=0.02,
+            rref_ohms=5600.0,
             seed=3,
         ),
     ]

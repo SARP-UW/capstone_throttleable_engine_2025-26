@@ -24,7 +24,6 @@ class ADS124S08:
     CMD_SFOCAL = 0x19
 
     AINCOM_CODE = 0x0C
-    RREF_OHMS = 5600.0
 
     _IDAC_CURRENT_MAP_UA = {
         10: 0x01,
