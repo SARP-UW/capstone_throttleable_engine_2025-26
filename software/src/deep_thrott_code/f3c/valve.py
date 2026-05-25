@@ -286,7 +286,7 @@ class WaterValvePWM:
         
         if GPIO_AVAILABLE:
             try:
-                pi.gpioHardwarePWM(self.pin, self.PWM_FREQUENCY, 0)
+                pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, 0)
                 print(f"WaterValvePWM {self.valve_id}: initialized on pin {self.pin}")
             except Exception as exc:
                 print(f"WaterValvePWM {self.valve_id}: PWM setup failed: {exc!r}")
