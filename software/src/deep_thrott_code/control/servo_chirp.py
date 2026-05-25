@@ -194,6 +194,8 @@ while True:
 # angle = 90
 # duration = 2
 
+# oop
+
 # print("Sending sum shiz...")
 # throttle(servo_id, angle, duration)
 
