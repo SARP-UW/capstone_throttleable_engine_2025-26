@@ -244,6 +244,7 @@
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
 	const latestVoltageBySensor = new Map(); // sensorName -> { v: number|null, v1: number|null, v2: number|null }
 	let knownSensorNames = [];
+	let pendingPlotAutofill = true;
 
 	const plotWidgets = [
 		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'thrust' },
@@ -288,6 +289,29 @@
 		historyBySensor.clear();
 		prevPressureBySensor.clear();
 		renderAllPlots();
+	}
+
+	function autoPopulatePlotSelections(forceReset = false) {
+		const assigned = new Set();
+		for (const w of plotWidgets) {
+			const selectEl = document.getElementById(w.selectId);
+			if (!selectEl) continue;
+			const current = selectEl.value;
+			if (!forceReset && current && knownSensorNames.includes(current)) {
+				assigned.add(current);
+				continue;
+			}
+
+			let nextValue = '';
+			if (w.defaultSensor && knownSensorNames.includes(w.defaultSensor) && !assigned.has(w.defaultSensor)) {
+				nextValue = w.defaultSensor;
+			} else {
+				nextValue = knownSensorNames.find((name) => !assigned.has(name)) || '';
+			}
+
+			selectEl.value = nextValue;
+			if (nextValue) assigned.add(nextValue);
+		}
 	}
 
 	function setValveUiState(valveName, state) {
@@ -468,15 +492,14 @@
 
 	function updateAllSelectOptionsIfNeeded(sensorNames) {
 		const same = sensorNames.length === knownSensorNames.length && sensorNames.every((v, i) => v === knownSensorNames[i]);
-		if (same) return;
+		if (same && !pendingPlotAutofill) return;
 		knownSensorNames = sensorNames;
 		for (const w of plotWidgets) {
 			const selectEl = document.getElementById(w.selectId);
 			setSelectOptions(selectEl, knownSensorNames);
-			if (w.defaultSensor && selectEl && (!selectEl.value || selectEl.value === '')) {
-				if (knownSensorNames.includes(w.defaultSensor)) selectEl.value = w.defaultSensor;
-			}
 		}
+		autoPopulatePlotSelections(pendingPlotAutofill);
+		pendingPlotAutofill = false;
 	}
 
 	function ingestPacketForPlots(packet) {
@@ -566,8 +589,7 @@
 		const h = canvas.height;
 		const titleFontPx = Math.max(13, Math.floor(h * 0.09));
 		const axisFontPx = Math.max(12, Math.floor(h * 0.075));
-		const tickFontPx = Math.max(11, Math.floor(h * 0.07));
-		const leftPad = Math.max(56, Math.floor(w * 0.19));
+		const leftPad = Math.max(50, Math.floor(w * 0.17));
 		const rightPad = Math.max(14, Math.floor(w * 0.04));
 		const topPad = Math.max(34, Math.floor(h * 0.22));
 		const bottomPad = Math.max(14, Math.floor(h * 0.09));
@@ -594,6 +616,7 @@
 			return;
 		}
 
+		const axisX = 1;
 		const left = leftPad;
 		const right = w - rightPad;
 		const top = topPad;
@@ -621,13 +644,11 @@
 		ctx.strokeStyle = '#666666';
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.moveTo(left, top);
-		ctx.lineTo(left, bottom);
+		ctx.moveTo(axisX, top);
+		ctx.lineTo(axisX, bottom);
 		ctx.lineTo(right, bottom);
 		ctx.stroke();
 
-		const yUnits = rec.units || 'value';
-		ctx.fillStyle = '#111111';
 		ctx.font = `${axisFontPx}px Arial`;
 		ctx.textBaseline = 'middle';
 		ctx.textAlign = 'right';
@@ -638,19 +659,11 @@
 			const yNorm = (tickValue - yAxisMin) / Math.max(1e-12, yAxisMax - yAxisMin);
 			const y = bottom - yNorm * (bottom - top);
 			ctx.beginPath();
-			ctx.moveTo(left, y);
+			ctx.moveTo(axisX, y);
 			ctx.lineTo(right, y);
 			ctx.stroke();
-			ctx.fillText(formatAxisTick(tickValue), left - 8, y);
+			ctx.fillText(formatAxisTick(tickValue), left - 6, y);
 		}
-
-		ctx.fillStyle = '#111111';
-		ctx.textAlign = 'center';
-		ctx.save();
-		ctx.translate(Math.max(18, Math.floor(leftPad * 0.34)), Math.floor((top + bottom) / 2));
-		ctx.rotate(-Math.PI / 2);
-		ctx.fillText(yUnits, 0, 0);
-		ctx.restore();
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'alphabetic';
 
@@ -909,6 +922,9 @@
 		if (startBtn) {
 			startBtn.addEventListener('click', () => {
 				telemetryFrozen = false;
+				pendingPlotAutofill = true;
+				autoPopulatePlotSelections(true);
+				renderAllPlots();
 				emitGuiCommand({ name: 'start_log' });
 			});
 		}
