@@ -5,7 +5,7 @@
 
 # If True, discard the first conversion after each input MUX change.
 # This improves settling behavior when scanning multiple channels.
-ADC_SETTLE_DISCARD: bool = True
+ADC_SETTLE_DISCARD: bool = False
 
 
 # If True, force ADS124S08 DATARATE.DR to max (4000 SPS) at startup.
