@@ -10992,12 +10992,6 @@
 		(uuid "5348bd7d-de8d-40ec-962e-f44bea6c0e24")
 	)
 	(junction
-		(at 66.04 128.27)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "554f8b1f-18fa-4bb1-8b79-4eea7f618fed")
-	)
-	(junction
 		(at 133.35 154.94)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -11410,12 +11404,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "ad8d2e68-03f5-445e-a5b8-2dbb34611143")
-	)
-	(junction
-		(at 66.04 120.65)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b291fd93-18c3-43df-adb0-425afe55b537")
 	)
 	(junction
 		(at 90.17 104.14)
@@ -15303,7 +15291,7 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 128.27) (xy 66.04 128.27)
+			(xy 62.23 128.27) (xy 86.36 128.27)
 		)
 		(stroke
 			(width 0)
@@ -18503,16 +18491,6 @@
 	)
 	(wire
 		(pts
-			(xy 62.23 128.27) (xy 66.04 128.27)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e9d29cf3-59e6-40f3-8bbc-5ec73cdf229c")
-	)
-	(wire
-		(pts
 			(xy 416.56 354.33) (xy 426.72 354.33)
 		)
 		(stroke
@@ -19506,7 +19484,7 @@
 		)
 		(uuid "2ad75fa6-6420-44f3-8617-62d69c7f28bf")
 	)
-	(label "LS3_SIG-"
+	(label "FM2_SIG"
 		(at 41.91 128.27 0)
 		(effects
 			(font
@@ -19668,7 +19646,7 @@
 		)
 		(uuid "3fc6470f-7530-43fe-ae24-14ae92159f59")
 	)
-	(label "LS3_SIG-"
+	(label "FM2_SIG"
 		(at 400.05 344.17 0)
 		(effects
 			(font
@@ -20629,7 +20607,7 @@
 		)
 		(uuid "c8a7aaf4-1188-4d5d-bd0c-b0333b772d4d")
 	)
-	(label "LS3_SIG+"
+	(label "FM1_SIG"
 		(at 41.91 120.65 0)
 		(effects
 			(font
@@ -20880,7 +20858,7 @@
 		)
 		(uuid "e3b989fc-6eea-438b-8509-54526d380f4d")
 	)
-	(label "LS3_SIG+"
+	(label "FM1_SIG"
 		(at 364.49 359.41 0)
 		(effects
 			(font
@@ -50051,75 +50029,6 @@
 			(project ""
 				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
 					(reference "U6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C")
-		(at 66.04 124.46 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ff38d178-8dab-4044-81da-3286f5db9927")
-		(property "Reference" "C9"
-			(at 68.834 123.19 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "3.3nF"
-			(at 68.326 124.968 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 67.0052 128.27 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 66.04 124.46 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Unpolarized capacitor"
-			(at 66.04 124.46 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "4297bf66-1c61-465e-bce6-d2bd4e951775")
-		)
-		(pin "2"
-			(uuid "21cb2577-eeca-409e-bea6-2fff1bea8faa")
-		)
-		(instances
-			(project "DAQ"
-				(path "/98ce85a8-ddff-4ecb-9668-dd271ba07a43"
-					(reference "C9")
 					(unit 1)
 				)
 			)
