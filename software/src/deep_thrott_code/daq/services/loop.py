@@ -104,11 +104,10 @@ def producer_loop(
     while not stop_event.is_set():
         t_start = time.perf_counter()
 
-        now = t_start
-
         enqueued = 0
 
         for sensor in sensor_list:
+            now = time.perf_counter()
             name = getattr(sensor, "name", None)
             sensor_name = str(name) if name else sensor.__class__.__name__
 
