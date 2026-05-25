@@ -30,10 +30,10 @@ except Exception as exc:  # pragma: no cover
 # CPU pinning notes (Raspberry Pi / Linux)
 # ---------------------------------------------------------------------
 
-# - Core 0: OS + GUI server
-# - Core 1: DAQ producer / throttle placeholder
-# - Core 2: DAQ producer
-# - Core 3: DAQ consumer + F3C loop (placeholder)
+	# - Core 0: OS + GUI server (can also host one DAQ producer when read path is saturated)
+	# - Core 1: DAQ producer / throttle placeholder
+	# - Core 2: DAQ producer
+	# - Core 3: DAQ consumer + F3C loop (placeholder)
 
 CPU_CORE_0_OS_AND_GUI = 0
 CPU_CORE_1_THROTTLE = 1
@@ -150,7 +150,7 @@ def main() -> None:
 		drain_queue_fn=drain_queue,
 		pin_thread_to_cpu=pin_current_thread_to_cpu,
 		producer_cpu=CPU_CORE_2_DAQ_PRODUCER,
-		producer_cpus=(CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER),
+		producer_cpus=(CPU_CORE_0_OS_AND_GUI, CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER),
 		consumer_cpu=CPU_CORE_3_DAQ_CONSUMER_AND_F3,
 	)
 
