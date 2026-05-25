@@ -1,12 +1,38 @@
 import logging
 import threading
 import time
-from queue import Empty
+from queue import Empty, Full
 
 from .. import config as daq_config
 
 
 _log = logging.getLogger(__name__)
+
+
+def _enqueue_gui_sample(gui_queue, sample) -> None:
+    try:
+        gui_queue.put_nowait(sample)
+        return
+    except Full:
+        pass
+
+    # The GUI queue should never throttle DAQ. If it fills, drop one stale
+    # sample and try once more so the browser sees recent data without
+    # backpressuring the consumer loop.
+    try:
+        gui_queue.get_nowait()
+    except Empty:
+        return
+    else:
+        try:
+            gui_queue.task_done()
+        except Exception:
+            pass
+
+    try:
+        gui_queue.put_nowait(sample)
+    except Full:
+        pass
 
 
 def _effective_sampling_rate_hz(sensor) -> float:
@@ -210,5 +236,11 @@ def consumer_loop(sample_queue, gui_queue, store_state, logger, stop_event, sens
 
         for sample in processed_samples:
             store_state.update_sample(sample)
-            gui_queue.put(sample)
-            logger.write(sample)
+            _enqueue_gui_sample(gui_queue, sample)
+
+        write_many = getattr(logger, "write_many", None)
+        if callable(write_many):
+            write_many(processed_samples)
+        else:
+            for sample in processed_samples:
+                logger.write(sample)
