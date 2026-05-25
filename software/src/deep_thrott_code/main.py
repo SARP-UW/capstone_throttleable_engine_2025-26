@@ -127,7 +127,6 @@ def main() -> None:
 		)
 
 	if f3_controller is not None:
-		# TODO: don't start controller until start log is pressed,
 		# bring daqruntime back out to main
 		loop_forever = getattr(f3_controller, "loop_forever", None)
 		if callable(loop_forever):
