@@ -267,3 +267,69 @@ class ThrottleValve():
             print("Timed out - no response received.")
             return None
         return serial_response
+    
+
+class WaterValvePWM:
+    """
+    Simple PWM-controlled servo valve.
+    Maps 500-2500us pulse width to 0°-180° angle.
+    """
+    PWM_FREQUENCY = 50  # Hz (20ms period for standard RC servo)
+    MIN_PULSE_US = 500
+    MAX_PULSE_US = 2500
+    MAX_ANGLE_DEG = 180
+    
+    def __init__(self, valve_id: str, pin: int):
+        self.valve_id = valve_id
+        self.pin = pin
+        self.current_angle = 0.0
+        
+        if GPIO_AVAILABLE:
+            try:
+                pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, 0)
+                print(f"WaterValvePWM {self.valve_id}: initialized on pin {self.pin}")
+            except Exception as exc:
+                print(f"WaterValvePWM {self.valve_id}: PWM setup failed: {exc!r}")
+        else:
+            print(f"WaterValvePWM {self.valve_id}: running in simulation mode")
+    
+    def set_angle(self, angle_deg: float):
+        """Set servo angle (0-180 degrees)."""
+
+        angle_deg = max(0.0, min(self.MAX_ANGLE_DEG, angle_deg))
+        self.current_angle = angle_deg
+        
+        # Calculate pulse width: linear interpolation from MIN to MAX
+        pulse_us = self.MIN_PULSE_US + (angle_deg / self.MAX_ANGLE_DEG) * (self.MAX_PULSE_US - self.MIN_PULSE_US)
+        
+        # Convert to duty cycle (0-1000000 for pigpio hardware_PWM)
+        period_us = 1_000_000 / self.PWM_FREQUENCY
+        duty_cycle = int((pulse_us / period_us) * 1_000_000)
+        
+        if GPIO_AVAILABLE:
+            try:
+                pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, duty_cycle)
+            except Exception as exc:
+                print(f"WaterValvePWM {self.valve_id}: PWM write failed: {exc!r}")
+        else:
+            print(f"WaterValvePWM {self.valve_id}: set to {angle_deg:.1f}° ({pulse_us:.0f}us)")
+
+    def open(self):
+        self.set_angle(90.0)
+
+    def close(self):
+        self.set_angle(0.0)
+
+
+if __name__ == "main":
+    PWM_PIN = 12
+    print("Testing WaterValvePWM class")
+    print(f"Using pin: {PWM_PIN}")
+    water_valve = WaterValvePWM("water_valve", PWM_PIN)
+    time.sleep(1)
+
+    while True:
+        water_valve.open()
+        time.sleep(5)
+        water_valve.close()
+        time.sleep(5)
