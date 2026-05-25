@@ -72,6 +72,9 @@ class ADS124S08:
 
         self._ref_reg_backup = None
         self._idac_enabled = False
+        self._cached_pga_reg = None
+        self._cached_ref_reg = None
+        self._cached_datarate_reg = None
 
         self._deselect_all()
         time.sleep(0.01)
@@ -179,8 +182,9 @@ class ADS124S08:
         gain: int = 1,
         data_rate=None,
     ) -> None:
+        desired_pga = 0x00
         if gain == 1:
-            self.wreg(self.REG_PGA, [0x00])
+            desired_pga = 0x00
         else:
             gain_map = {
                 1: 0,
@@ -196,13 +200,23 @@ class ADS124S08:
             if gain not in gain_map:
                 raise ValueError("gain must be one of 1,2,4,8,16,32,64,128")
 
-            self.wreg(self.REG_PGA, [(1 << 3) | gain_map[gain]])
+            desired_pga = (1 << 3) | gain_map[gain]
+
+        if self._cached_pga_reg != desired_pga:
+            self.wreg(self.REG_PGA, [desired_pga])
+            self._cached_pga_reg = desired_pga
 
         if use_internal_ref:
-            self.wreg(self.REG_REF, [0x39])
+            desired_ref = 0x39
+            if self._cached_ref_reg != desired_ref:
+                self.wreg(self.REG_REF, [desired_ref])
+                self._cached_ref_reg = desired_ref
 
         if data_rate is not None:
-            self.wreg(self.REG_DATARATE, [data_rate])
+            desired_datarate = int(data_rate) & 0xFF
+            if self._cached_datarate_reg != desired_datarate:
+                self.wreg(self.REG_DATARATE, [desired_datarate])
+                self._cached_datarate_reg = desired_datarate
 
     def _idac_current_code(self, current_ua: int) -> int:
         current_ua = int(round(current_ua))
@@ -218,6 +232,7 @@ class ADS124S08:
 
     def _set_ref_for_rtd(self) -> None:
         cur = self.rreg(self.REG_REF, 1)[0]
+        self._cached_ref_reg = cur
 
         if self._ref_reg_backup is None:
             self._ref_reg_backup = cur
@@ -226,6 +241,7 @@ class ADS124S08:
         cur = (cur & ~0x03) | 0x01
 
         self.wreg(self.REG_REF, [cur])
+        self._cached_ref_reg = cur
 
     def configure_idac_outputs(
         self,
@@ -271,6 +287,7 @@ class ADS124S08:
 
         if self._ref_reg_backup is not None:
             self.wreg(self.REG_REF, [self._ref_reg_backup])
+            self._cached_ref_reg = self._ref_reg_backup
             self._ref_reg_backup = None
 
     def set_inpmux_single(self, ainp: int) -> None:
