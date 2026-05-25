@@ -713,7 +713,9 @@
 
 		const socketOpts = {
 			path: '/socket.io',
-			transports: ['websocket', 'polling'],
+			// Polling requests are what trigger noisy Werkzeug assertion traces
+			// when the browser refreshes or closes the tab on the dev server.
+			transports: ['websocket'],
 			timeout: 5000,
 		};
 		const socket = socketUrl ? window.io(socketUrl, socketOpts) : window.io(socketOpts);

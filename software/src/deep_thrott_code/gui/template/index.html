@@ -247,7 +247,7 @@
 
     .pid-stage {
       position: absolute;
-      inset: 12px;
+      inset: 0px;
       overflow: hidden;
       padding: 12px;
       border: none;
@@ -303,19 +303,20 @@
     .daq-select {
       border-top: 1px solid var(--border);
       background: var(--muted);
-      padding: 6px 8px;
+      padding: 4px 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 0.95rem;
+      font-size: 0.8rem;
     }
 
     .daq-select select {
       width: 100%;
-      max-width: 240px;
-      font-size: 0.95rem;
-      padding: 4px 6px;
+      max-width: 180px;
+      font-size: 0.78rem;
+      padding: 2px 4px;
+      min-height: 24px;
       border: 1px solid var(--border);
       background: white;
     }
@@ -667,6 +668,8 @@
       grid-template-columns: 1fr 220px;
       gap: 10px;
       min-height: 0;
+      position: relative;
+      z-index: 10;
     }
 
     .settings-panel {
@@ -674,6 +677,7 @@
       padding: 6px;
       display: flex;
       align-items: center;
+      z-index: 20;
     }
 
     .settings-toggle {
