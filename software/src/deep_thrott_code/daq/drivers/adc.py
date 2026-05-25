@@ -155,12 +155,18 @@ class ADS124S08:
             return True
 
         t0 = time.perf_counter()
+        # The ADS124S08 can convert as fast as 2000-4000 SPS, so a coarse
+        # 500 us polling sleep can miss entire ready windows and crush
+        # effective throughput. Keep the loop tight and only yield briefly.
+        spin_budget_s = 0.0002
+        poll_sleep_s = 0.00002
 
         while (time.perf_counter() - t0) < timeout_s:
             if GPIO.input(self.drdy_pin) == GPIO.LOW:
                 return True
 
-            time.sleep(0.0005)
+            if (time.perf_counter() - t0) >= spin_budget_s:
+                time.sleep(poll_sleep_s)
 
         return False
 
