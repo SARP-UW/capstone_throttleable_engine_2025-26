@@ -122,6 +122,28 @@ def read_response(packet_checksum, expected_length):
         return None
     return serial_response
 
+
+SERVO_ANGLE_DEG_TO_PARAM = 240 / 1000
+SERVO_MOVE_TIME_WRITE_CMD = 1
+
+def throttle(servo_id, angle_deg: float, time_s):
+        """
+            Move servo to angle (0-1000 => 0-240°) over time_ms (0-30000ms).
+            Moves immediately on receipt.
+            Implementation of SERVO_MOVE_TIME_WRITE
+            """
+        time_ms = int(time_s * 1000)
+        angle_param = int(angle_deg * SERVO_ANGLE_DEG_TO_PARAM)
+        angle_param = max(0, min(1000, angle_param)) # clip between 0 and 1000
+        time_ms = max(0, min(30000, time_ms)) # clip between 0 and 30000ms
+        params = [
+            angle_param & 0xFF, (angle_param >> 8) & 0xFF,
+            time_ms & 0xFF, (time_ms >> 8) & 0xFF
+        ]
+        packet =build_packet(servo_id, SERVO_MOVE_TIME_WRITE_CMD, params)
+        print(f"Packet bytes: {list(packet)}")
+        send_packet(packet)
+
 # valve_id_assignment_packet = build_packet(1, 13, [3])
 # send_packet(valve_id_assignment_packet)
 
@@ -149,23 +171,31 @@ def read_response(packet_checksum, expected_length):
 # test_valve_naked2 = ThrottleValve("test_valve2", 3, serial_handle, False)
 # test_valve_decent = ThrottleValve("test_valve3", 1, serial_handle, False)
 
-print("Initializing test valve...")
-test_valve_decent = ThrottleValve("test_valve3", 254, serial_handle, False)
 
-while True:
-    # test open and close servo to 90 deg
-    # test_valve_naked.throttle(90, 2)
-    print("Throttling to 90 degrees...")
-    test_valve_decent.throttle(90, 2)
-    time.sleep(2)
-    # print("Valve angle:", test_valve_naked.read_pos())
-    time.sleep(3)
-    # test_valve_naked.throttle(0, 2)
-    print("Throttling to 0 degrees...")
-    test_valve_decent.throttle(0, 2)
-    time.sleep(2)
-    # print("Valve angle:", test_valve_naked.read_pos())
-    time.sleep(3)
+# print("Initializing test valve...")
+# test_valve_decent = ThrottleValve("test_valve3", 254, serial_handle, False)
+
+# while True:
+#     # test open and close servo to 90 deg
+#     # test_valve_naked.throttle(90, 2)
+#     print("Throttling to 90 degrees...")
+#     test_valve_decent.throttle(90, 2)
+#     time.sleep(2)
+#     # print("Valve angle:", test_valve_naked.read_pos())
+#     time.sleep(3)
+#     # test_valve_naked.throttle(0, 2)
+#     print("Throttling to 0 degrees...")
+#     test_valve_decent.throttle(0, 2)
+#     time.sleep(2)
+#     # print("Valve angle:", test_valve_naked.read_pos())
+#     time.sleep(3)
+
+servo_id = 254
+angle = 90
+duration = 2
+
+print("Sending sum shiz...")
+throttle(servo_id, angle, duration)
 
 pi.serial_close(serial_handle)
 pi.stop()
