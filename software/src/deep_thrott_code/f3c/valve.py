@@ -164,8 +164,8 @@ class ThrottleValve():
             """
         time_ms = int(time_s * 1000)
         angle_param = int(angle_deg * self.SERVO_ANGLE_PARAM / self.SERVO_ANGLE_DEG)
-        angle_param = max(0, min(1000, angle_param))
-        time_ms = max(0, min(30000, time_ms))
+        angle_param = max(0, min(1000, angle_param)) # clip between 0 and 1000
+        time_ms = max(0, min(30000, time_ms)) # clip between 0 and 30000ms
         params = [
             angle_param & 0xFF, (angle_param >> 8) & 0xFF,
             time_ms & 0xFF, (time_ms >> 8) & 0xFF
