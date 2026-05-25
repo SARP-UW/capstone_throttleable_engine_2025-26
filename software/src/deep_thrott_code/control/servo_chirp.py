@@ -127,7 +127,7 @@ def read_response(packet_checksum, expected_length):
 
 # get valve id
 print("Sending valve id request...")
-packet = build_packet(3, 14)
+packet = build_packet(2, 14)
 print(f"Packet bytes: {list(packet)}")
 send_packet(packet)
 time.sleep(0.1)
@@ -145,7 +145,7 @@ time.sleep(0.1)
 # print(f"Valve ID: {valve_id}")
 
 # initialize test throttle valve
-test_valve_naked1 = ThrottleValve("test_valve", 2, serial_handle)
+test_valve_naked1 = ThrottleValve("test_valve", 2, serial_handle, False)
 # test_valve_naked2 = ThrottleValve("test_valve2", 3, serial_handle)
 # test_valve_decent = ThrottleValve("test_valve3", 1, serial_handle)
 
