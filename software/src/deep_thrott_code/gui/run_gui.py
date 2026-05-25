@@ -51,6 +51,16 @@ def main() -> None:
         browser_host = "127.0.0.1"
     print(f"GUI running. Open: http://{browser_host}:{int(args.port)}/")
 
+    # Prefer a production-grade WSGI server when available. This avoids
+    # noisy Werkzeug dev-server assertion traces on abrupt browser refresh/close.
+    try:
+        from waitress import serve  # type: ignore
+
+        serve(app, host=str(args.host), port=int(args.port))
+        return
+    except ImportError:
+        pass
+
     app.run(host=str(args.host), port=int(args.port), debug=bool(args.debug), use_reloader=False)
 
 
