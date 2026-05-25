@@ -248,8 +248,8 @@
 	let pendingPlotAutofill = true;
 
 	const plotWidgets = [
-		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'thrust' },
-		{ canvasId: 'daqPlot2', selectId: 'daqSelect2', defaultSensor: 'tank_temp' },
+		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'FI-PT' },
+		{ canvasId: 'daqPlot2', selectId: 'daqSelect2', defaultSensor: 'CC-PT' },
 		{ canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'FI-PT' },
 		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'CC-PT' },
 		{ canvasId: 'daqPlot5', selectId: 'daqSelect5', defaultSensor: '' },

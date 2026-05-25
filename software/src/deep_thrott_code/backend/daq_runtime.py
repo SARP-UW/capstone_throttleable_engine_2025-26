@@ -63,6 +63,7 @@ class DaqRuntime:
 		drain_queue_fn: Callable[[queue.Queue], None],
 		pin_thread_to_cpu: Callable[[int], None],
 		producer_cpu: int,
+		producer_cpus: tuple[int, ...] | None = None,
 		consumer_cpu: int,
 		log_path: str = "daq_backend_log.csv",
 	) -> None:
@@ -74,6 +75,7 @@ class DaqRuntime:
 		self._pin_thread_to_cpu = pin_thread_to_cpu
 
 		self._producer_cpu = int(producer_cpu)
+		self._producer_cpus = tuple(int(cpu) for cpu in producer_cpus) if producer_cpus else (int(producer_cpu),)
 		self._consumer_cpu = int(consumer_cpu)
 
 		self._log_path = _build_log_path()
@@ -236,19 +238,20 @@ class DaqRuntime:
 				key = adc if adc is not None else "__no_adc__"
 				groups.setdefault(key, []).append(s)
 
-			def _group_loop(sensor_group, group_loop_hz: float) -> None:
+			def _group_loop(sensor_group, group_loop_hz: float, cpu_index: int) -> None:
 				try:
-					self._pin_thread_to_cpu(self._producer_cpu)
+					self._pin_thread_to_cpu(cpu_index)
 				except Exception:
 					pass
 				producer_loop(sensor_group, self._sample_queue, stop_event, group_loop_hz, stats=producer_stats)
 
 			threads: list[threading.Thread] = []
-			for _key, sensor_group in groups.items():
+			for group_index, (_key, sensor_group) in enumerate(groups.items()):
 				group_loop_hz = _compute_producer_loop_hz(sensor_group)
+				cpu_index = self._producer_cpus[group_index % len(self._producer_cpus)] if self._producer_cpus else self._producer_cpu
 				thr = threading.Thread(
 					target=_group_loop,
-					args=(sensor_group, group_loop_hz),
+					args=(sensor_group, group_loop_hz, cpu_index),
 					daemon=True,
 					name="producer",
 				)

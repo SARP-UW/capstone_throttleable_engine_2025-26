@@ -26,12 +26,14 @@ class GuiCommandHandler:
 		start_log: Callable[[bool, str | None], None],
 		stop_log: Callable[[], None],
 		is_running: Callable[[], bool],
+		clear_daq_state: Callable[[], None] | None = None,
 	) -> None:
 		self._control_queue = control_queue
 		self._emit_system = emit_system
 		self._start_log = start_log
 		self._stop_log = stop_log
 		self._is_running = is_running
+		self._clear_daq_state = clear_daq_state
 
 		self._lock = threading.Lock()
 		# "Simulation Mode" is a latched setting that applies to the next Start Log.
@@ -42,6 +44,13 @@ class GuiCommandHandler:
 	def _emit(self, text: str) -> None:
 		try:
 			self._emit_system(text)
+		except Exception:
+			pass
+
+	def _clear_latest_daq_state(self) -> None:
+		try:
+			if callable(self._clear_daq_state):
+				self._clear_daq_state()
 		except Exception:
 			pass
 
@@ -86,6 +95,7 @@ class GuiCommandHandler:
 			self._stop_log()
 		except Exception:
 			pass
+		self._clear_latest_daq_state()
 		try:
 			self._start_log(simulation, normalized)
 		except Exception:
@@ -113,9 +123,11 @@ class GuiCommandHandler:
 					with self._lock:
 						simulation = bool(self._simulation_enabled)
 						test_name = self._test_name
+					self._clear_latest_daq_state()
 					self._start_log(simulation, test_name)
 				elif name == "stop_log":
 					self._stop_log()
+					self._clear_latest_daq_state()
 				else:
 					self._emit(f"Unknown command: {name}")
 			finally:

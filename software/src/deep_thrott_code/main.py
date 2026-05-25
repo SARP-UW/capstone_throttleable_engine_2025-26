@@ -31,7 +31,7 @@ except Exception as exc:  # pragma: no cover
 # ---------------------------------------------------------------------
 
 # - Core 0: OS + GUI server
-# - Core 1: throttle control loop (placeholder)
+# - Core 1: DAQ producer / throttle placeholder
 # - Core 2: DAQ producer
 # - Core 3: DAQ consumer + F3C loop (placeholder)
 
@@ -150,6 +150,7 @@ def main() -> None:
 		drain_queue_fn=drain_queue,
 		pin_thread_to_cpu=pin_current_thread_to_cpu,
 		producer_cpu=CPU_CORE_2_DAQ_PRODUCER,
+		producer_cpus=(CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER),
 		consumer_cpu=CPU_CORE_3_DAQ_CONSUMER_AND_F3,
 	)
 
@@ -187,6 +188,7 @@ def main() -> None:
 		start_log=daq.start,
 		stop_log=daq.stop,
 		is_running=daq.is_running,
+		clear_daq_state=app.config.get("CLEAR_LATEST_STATES"),
 	)
 
 	controller.set_simulation_enabled(cfg.simulation)
