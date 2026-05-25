@@ -12,7 +12,7 @@ import sys
 import os
 import os
 
-computer_sim = True
+computer_sim = False
 
 if not computer_sim:
     import pigpio
