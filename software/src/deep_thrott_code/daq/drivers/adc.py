@@ -5,6 +5,21 @@ import threading
 import RPi.GPIO as GPIO  # type: ignore
 
 
+def _delay_s(duration_s: float) -> None:
+    """Use a spin wait for very short delays; time.sleep() oversleeps badly there."""
+
+    duration_s = float(duration_s)
+    if duration_s <= 0:
+        return
+    if duration_s >= 0.001:
+        time.sleep(duration_s)
+        return
+
+    target = time.perf_counter() + duration_s
+    while time.perf_counter() < target:
+        pass
+
+
 class ADS124S08:
     """ADS124S08 driver using caller-managed shared SPI + manual GPIO chip select."""
 
@@ -84,6 +99,8 @@ class ADS124S08:
             GPIO.output(pin, GPIO.HIGH)
 
     def _chip_select_asserted(self):
+        cs_setup_delay_s = 5e-6
+
         class _CS:
             def __init__(self, outer: "ADS124S08"):
                 self.o = outer
@@ -92,17 +109,17 @@ class ADS124S08:
                 self.o._spi_lock.acquire()
 
                 self.o._deselect_all()
-                time.sleep(5e-6)
+                _delay_s(cs_setup_delay_s)
 
                 GPIO.output(self.o.cs_pin, GPIO.LOW)
-                time.sleep(5e-6)
+                _delay_s(cs_setup_delay_s)
 
                 return self
 
             def __exit__(self, exc_type, exc, tb):
-                time.sleep(5e-6)
+                _delay_s(cs_setup_delay_s)
                 GPIO.output(self.o.cs_pin, GPIO.HIGH)
-                time.sleep(5e-6)
+                _delay_s(cs_setup_delay_s)
 
                 self.o._spi_lock.release()
                 return False
@@ -155,18 +172,10 @@ class ADS124S08:
             return True
 
         t0 = time.perf_counter()
-        # The ADS124S08 can convert as fast as 2000-4000 SPS, so a coarse
-        # 500 us polling sleep can miss entire ready windows and crush
-        # effective throughput. Keep the loop tight and only yield briefly.
-        spin_budget_s = 0.0002
-        poll_sleep_s = 0.00002
 
         while (time.perf_counter() - t0) < timeout_s:
             if GPIO.input(self.drdy_pin) == GPIO.LOW:
                 return True
-
-            if (time.perf_counter() - t0) >= spin_budget_s:
-                time.sleep(poll_sleep_s)
 
         return False
 
