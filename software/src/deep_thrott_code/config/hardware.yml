@@ -100,7 +100,7 @@ sensors:
 
       CC-PT:
         enabled: true
-        adc_id: ADC3
+        adc_id: ADC1
         signal_mode: single_ended
         ain: 8
         pt_num: 6
@@ -219,7 +219,7 @@ sensors:
 
       OM-FM:
         enabled: true
-        adc_id: ADC1
+        adc_id: ADC3
         signal_mode: single_ended
         ain: 8
         sampling_rate_hz: 100
