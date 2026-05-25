@@ -211,7 +211,7 @@ sensors:
     flow meters:
       FM-FM:
         enabled: false
-        adc_id: ADC1
+        adc_id: ADC2
         signal_mode: single_ended
         ain: 8
         sampling_rate_hz: 100
@@ -221,7 +221,7 @@ sensors:
         enabled: false
         adc_id: ADC1
         signal_mode: single_ended
-        ain: null
+        ain: 8
         sampling_rate_hz: 100
         notes: "Oxidizer main flow meter"
 

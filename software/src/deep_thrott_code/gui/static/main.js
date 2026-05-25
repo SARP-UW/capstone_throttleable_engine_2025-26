@@ -520,6 +520,42 @@
 		}
 	}
 
+	function niceStep(rawStep) {
+		const value = Math.abs(Number(rawStep) || 0);
+		if (!Number.isFinite(value) || value === 0) return 1;
+		const exponent = Math.floor(Math.log10(value));
+		const fraction = value / (10 ** exponent);
+		let niceFraction = 1;
+		if (fraction <= 1) niceFraction = 1;
+		else if (fraction <= 2) niceFraction = 2;
+		else if (fraction <= 5) niceFraction = 5;
+		else niceFraction = 10;
+		return niceFraction * (10 ** exponent);
+	}
+
+	function buildYAxisTicks(minValue, maxValue, targetTickCount = 5) {
+		if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) return [];
+		if (minValue === maxValue) return [minValue];
+		const span = maxValue - minValue;
+		const step = niceStep(span / Math.max(1, targetTickCount - 1));
+		const start = Math.floor(minValue / step) * step;
+		const end = Math.ceil(maxValue / step) * step;
+		const ticks = [];
+		for (let value = start; value <= end + step * 0.5; value += step) {
+			ticks.push(Number(value.toPrecision(12)));
+		}
+		return ticks;
+	}
+
+	function formatAxisTick(value) {
+		const absValue = Math.abs(value);
+		if (absValue >= 1000 || (absValue > 0 && absValue < 0.01)) return value.toExponential(1);
+		if (absValue >= 100) return value.toFixed(0);
+		if (absValue >= 10) return value.toFixed(1);
+		if (absValue >= 1) return value.toFixed(2);
+		return value.toFixed(3);
+	}
+
 	function drawPlot(canvas, sensorName) {
 		if (!canvas) return;
 		resizeCanvasToDisplaySize(canvas);
@@ -528,12 +564,13 @@
 
 		const w = canvas.width;
 		const h = canvas.height;
-		const titleFontPx = Math.max(11, Math.floor(h * 0.08));
-		const axisFontPx = Math.max(10, Math.floor(h * 0.07));
-		const leftPad = Math.max(34, Math.floor(w * 0.14));
-		const rightPad = Math.max(12, Math.floor(w * 0.05));
-		const topPad = Math.max(24, Math.floor(h * 0.18));
-		const bottomPad = Math.max(28, Math.floor(h * 0.18));
+		const titleFontPx = Math.max(13, Math.floor(h * 0.09));
+		const axisFontPx = Math.max(12, Math.floor(h * 0.075));
+		const tickFontPx = Math.max(11, Math.floor(h * 0.07));
+		const leftPad = Math.max(56, Math.floor(w * 0.19));
+		const rightPad = Math.max(14, Math.floor(w * 0.04));
+		const topPad = Math.max(34, Math.floor(h * 0.22));
+		const bottomPad = Math.max(14, Math.floor(h * 0.09));
 
 		// Background
 		ctx.fillStyle = '#ffffff';
@@ -575,9 +612,10 @@
 			maxV += bump;
 		}
 
-		const t0 = rec.t[0];
-		const t1 = rec.t[rec.t.length - 1];
-		const dt = t1 - t0 || 1;
+		const yTicks = buildYAxisTicks(minV, maxV, 5);
+		const yAxisMin = yTicks.length ? yTicks[0] : minV;
+		const yAxisMax = yTicks.length ? yTicks[yTicks.length - 1] : maxV;
+		const xDenom = Math.max(1, rec.v.length - 1);
 
 		// Axes
 		ctx.strokeStyle = '#666666';
@@ -591,22 +629,38 @@
 		const yUnits = rec.units || 'value';
 		ctx.fillStyle = '#111111';
 		ctx.font = `${axisFontPx}px Arial`;
+		ctx.textBaseline = 'middle';
+		ctx.textAlign = 'right';
+		ctx.strokeStyle = '#d2d2d2';
+		ctx.fillStyle = '#444444';
+		ctx.lineWidth = 1;
+		for (const tickValue of yTicks) {
+			const yNorm = (tickValue - yAxisMin) / Math.max(1e-12, yAxisMax - yAxisMin);
+			const y = bottom - yNorm * (bottom - top);
+			ctx.beginPath();
+			ctx.moveTo(left, y);
+			ctx.lineTo(right, y);
+			ctx.stroke();
+			ctx.fillText(formatAxisTick(tickValue), left - 8, y);
+		}
+
+		ctx.fillStyle = '#111111';
 		ctx.textAlign = 'center';
-		ctx.fillText('Time (s)', Math.floor((left + right) / 2), h - Math.max(8, Math.floor(bottomPad * 0.25)));
 		ctx.save();
-		ctx.translate(Math.max(14, Math.floor(leftPad * 0.38)), Math.floor((top + bottom) / 2));
+		ctx.translate(Math.max(18, Math.floor(leftPad * 0.34)), Math.floor((top + bottom) / 2));
 		ctx.rotate(-Math.PI / 2);
 		ctx.fillText(yUnits, 0, 0);
 		ctx.restore();
 		ctx.textAlign = 'left';
+		ctx.textBaseline = 'alphabetic';
 
 		// Line
 		ctx.strokeStyle = '#2957ff';
-		ctx.lineWidth = 2;
+		ctx.lineWidth = Math.max(2, Math.floor(h * 0.015));
 		ctx.beginPath();
 		for (let i = 0; i < rec.t.length; i++) {
-			const x = left + ((rec.t[i] - t0) / dt) * (right - left);
-			const yNorm = (rec.v[i] - minV) / (maxV - minV);
+			const x = left + (i / xDenom) * (right - left);
+			const yNorm = (rec.v[i] - yAxisMin) / Math.max(1e-12, yAxisMax - yAxisMin);
 			const y = bottom - yNorm * (bottom - top);
 			if (i === 0) ctx.moveTo(x, y);
 			else ctx.lineTo(x, y);
@@ -634,7 +688,7 @@
 		}
 		ctx.fillStyle = '#111111';
 		ctx.font = `${titleFontPx}px Arial`;
-		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}`, left, Math.max(top - 6, Math.floor(h * 0.12)));
+		ctx.fillText(`${sensorName}: ${latestV.toFixed(2)}${units}${vText}`, left, Math.max(top - 10, Math.floor(h * 0.11)));
 	}
 
 	function renderAllPlots() {

@@ -283,12 +283,12 @@
       border: 1px solid var(--border);
       background: var(--surface);
       display: grid;
-      grid-template-rows: 1fr auto;
+      grid-template-rows: minmax(0, 1fr) auto;
       min-height: 0;
     }
 
     .daq-canvas-wrap {
-      padding: 8px;
+      padding: 4px;
       min-height: 0;
     }
 
@@ -303,20 +303,20 @@
     .daq-select {
       border-top: 1px solid var(--border);
       background: var(--muted);
-      padding: 4px 6px;
+      padding: 2px 4px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
     }
 
     .daq-select select {
       width: 100%;
       max-width: 240px;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       padding: 2px 4px;
-      min-height: 18px;
+      min-height: 16px;
       border: 1px solid var(--border);
       background: white;
     }
