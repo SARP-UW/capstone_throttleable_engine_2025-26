@@ -166,7 +166,7 @@ sensors:
 
       WO-RTD:
         enabled: false
-        adc_id: ADC2
+        adc_id: ADC3
         signal_mode: rtd_3_wire
         lead1_ain: 4
         lead2_ain: 2
@@ -174,6 +174,17 @@ sensors:
         idac2_ain: 3
         sampling_rate_hz: 10
         notes: "Water outlet RTD"
+
+      NT-RTD:
+        enabled: false
+        adc_id: ADC2
+        signal_mode: rtd_3_wire
+        lead1_ain: 4
+        lead2_ain: 2
+        idac1_ain: 5
+        idac2_ain: 3
+        sampling_rate_hz: 10
+        notes: "Nitrous tank RTD"
 
     load cells:
       N-LC:

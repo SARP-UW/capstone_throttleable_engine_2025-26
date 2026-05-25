@@ -34,7 +34,7 @@ calibration_profiles:
       units: C
       type: rtd_callendar_van_dusen
       r0_ohms: 1000.0
-      rref_ohms: 5600.0
+      rref_ohms: 5576.0
       idac_current_ua: 50.0
       unit: "°C"
       offset: 0.0
@@ -43,7 +43,7 @@ calibration_profiles:
       units: C
       type: rtd_callendar_van_dusen
       r0_ohms: 1000.0
-      rref_ohms: 5600.0
+      rref_ohms: 5590.0
       idac_current_ua: 50.0
       unit: "°C"
       offset: 0.0
@@ -52,7 +52,7 @@ calibration_profiles:
     units: C
     type: rtd_callendar_van_dusen
     r0_ohms: 1000.0
-    rref_ohms: 5600.0
+    rref_ohms: 5587.0
     idac_current_ua: 50.0
     unit: "°C"
     offset: 0.0
