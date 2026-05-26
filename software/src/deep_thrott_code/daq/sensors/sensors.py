@@ -771,6 +771,13 @@ class RTDSensor(Sensor):
         )
 
         try:
+            try:
+                rtd_mode_settle_s = float(getattr(config, "RTD_MODE_SETTLE_S", 0.0) or 0.0)
+            except Exception:
+                rtd_mode_settle_s = 0.0
+            if rtd_mode_settle_s > 0:
+                time.sleep(rtd_mode_settle_s)
+
             settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
             raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
             raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)

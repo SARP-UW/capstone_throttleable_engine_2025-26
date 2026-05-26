@@ -11,7 +11,12 @@ ADC_SETTLE_DISCARD: bool = True
 # Extra conversions to discard after entering or leaving RTD mode. RTD reads
 # change the ADS124S08 reference and IDAC routing, which can leave the next
 # conversion on that ADC partially unsettled even after the usual MUX discard.
-ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH: int = 1
+ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH: int = 4
+
+
+# Time to hold RTD mode active before taking the first reading. This gives the
+# IDAC/reference path a chance to settle before we touch the MUX.
+RTD_MODE_SETTLE_S: float = 0.02
 
 
 # If True, force ADS124S08 DATARATE.DR to max (4000 SPS) at startup.
