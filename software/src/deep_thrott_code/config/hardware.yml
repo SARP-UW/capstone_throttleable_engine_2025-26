@@ -280,8 +280,8 @@ actuators:
   valves:
     wmv:
        enabled: true
-       mode: throttle
-       uart_id: 1
+       mode: pwm
+       pin: 12
        normally_closed: true
        notes: "Water main valve"
 
