@@ -195,7 +195,11 @@ angle = 90
 duration = 2
 
 print("Sending sum shiz...")
-throttle(servo_id, angle, duration)
+while True:
+    throttle(servo_id, angle, duration)
+    time.sleep(duration)
+    throttle(servo_id, 0, duration)
+    time.sleep(duration)
 
 pi.serial_close(serial_handle)
 pi.stop()
