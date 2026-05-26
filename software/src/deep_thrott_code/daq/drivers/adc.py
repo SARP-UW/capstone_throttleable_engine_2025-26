@@ -308,6 +308,9 @@ class ADS124S08:
         idac1_ain: int = 5,
         idac2_ain: int = 3,
     ) -> None:
+        if self._conversion_started:
+            self.stop()
+
         self._set_ref_for_rtd()
 
         self.configure_idac_outputs(
@@ -320,6 +323,9 @@ class ADS124S08:
         self._queue_settle_discards(extra_discards)
 
     def disable_rtd_mode(self) -> None:
+        if self._conversion_started:
+            self.stop()
+
         self.wreg(self.REG_IDACMAG, [0x00])
         self.wreg(self.REG_IDACMUX, [0xFF])
 
