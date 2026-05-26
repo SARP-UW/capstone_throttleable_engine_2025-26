@@ -762,8 +762,6 @@ class RTDSensor(Sensor):
 
         try:
             settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
-            raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
-            raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)
             code_rtd = self.adc.read_raw_diff(self.lead1_ain, self.lead2_ain, settle_discard=settle_discard)
         finally:
             self.adc.disable_rtd_mode()
@@ -776,8 +774,6 @@ class RTDSensor(Sensor):
             t_monotonic=t_mono,
             t_wall=t_wall,
             raw_count=int(code_rtd),
-            raw_diff_1=int(raw_lead1),
-            raw_diff_2=int(raw_lead2),
         )
 
     def _code_to_resistance(self, code_rtd: int) -> float:
@@ -1177,7 +1173,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
         # conversions per sample depends on implementation details
         pt_conversions = 2.0 if settle_discard else 1.0
         flow_conversions = 2.0 if settle_discard else 1.0
-        rtd_conversions = 3.0 * (2.0 if settle_discard else 1.0)  # lead1 + lead2 + diff
+        rtd_conversions = 1.0 * (2.0 if settle_discard else 1.0)  # differential RTD reading only
         lc_conversions = 3.0 * (2.0 if settle_discard else 1.0)  # plus + minus + diff
 
         conversions_per_sec_by_adc: dict[str, float] = {k: 0.0 for k in adc_by_id.keys()}
