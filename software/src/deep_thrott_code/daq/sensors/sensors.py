@@ -727,6 +727,7 @@ class RTDSensor(Sensor):
         sampling_rate_hz: float | None = None,
         r0_ohms: float = 1000.0,
         rref_ohms: float = 5600.0,
+        adc_gain: float = 1.0,
         reference_factor: float = 1.0,
         idac_current_ua: float = 50.0,
         unit: str = "°C",
@@ -739,6 +740,7 @@ class RTDSensor(Sensor):
         self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
         self.r0_ohms = float(r0_ohms)
         self.rref_ohms = float(rref_ohms)
+        self.adc_gain = float(adc_gain) if adc_gain else 1.0
         self.reference_factor = float(reference_factor) if reference_factor else 1.0
         self.idac_current_ua = float(idac_current_ua)
         self.idac1_ain = int(idac1_ain)
@@ -750,9 +752,10 @@ class RTDSensor(Sensor):
         t_mono = time.perf_counter()
         t_wall = time.time()
 
-        # RTD mode uses internal reference + IDAC; keep gain at 1 unless changed elsewhere.
+        # RTD mode switches to the ratiometric external reference path in enable_rtd_mode().
+        # Keep the ADC gain explicit here so RTDs can use the PGA when needed.
         try:
-            self.adc.configure_basic(use_internal_ref=True, gain=1)
+            self.adc.configure_basic(use_internal_ref=True, gain=int(self.adc_gain))
         except Exception:
             pass
 
@@ -782,7 +785,8 @@ class RTDSensor(Sensor):
         if self.rref_ohms <= 0:
             return 0.0
         factor = self.reference_factor if self.reference_factor > 0 else 1.0
-        return (float(code_rtd) / self._FS) * self.rref_ohms * factor
+        gain = self.adc_gain if self.adc_gain > 0 else 1.0
+        return (float(code_rtd) / (self._FS * gain)) * self.rref_ohms * factor
 
     def _resistance_to_temperature_c(self, resistance: float) -> float:
         r_ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
@@ -1570,6 +1574,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 sampling_rate_hz = float(cfg.get("sampling_rate_hz")) if cfg.get("sampling_rate_hz") is not None else None
             except Exception:
                 sampling_rate_hz = None
+            try:
+                adc_gain = float(cfg.get("adc_gain")) if cfg.get("adc_gain") is not None else 1.0
+            except Exception:
+                adc_gain = 1.0
 
             r0_ohms, rref_ohms, reference_factor, idac_current_ua, unit, offset = _rtd_calibration(sensor_id)
 
@@ -1610,6 +1618,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     sampling_rate_hz=sampling_rate_hz,
                     r0_ohms=r0_ohms,
                     rref_ohms=rref_ohms,
+                    adc_gain=adc_gain,
                     reference_factor=reference_factor,
                     idac_current_ua=idac_current_ua,
                     unit=unit,

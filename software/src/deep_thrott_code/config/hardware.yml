@@ -161,6 +161,7 @@ sensors:
         lead2_ain: 2
         idac1_ain: 5
         idac2_ain: 3
+        adc_gain: 2
         sampling_rate_hz: 5
         notes: "Water inlet RTD"
 
@@ -172,6 +173,7 @@ sensors:
         lead2_ain: 2
         idac1_ain: 5
         idac2_ain: 3
+        adc_gain: 2
         sampling_rate_hz: 5
         notes: "Water outlet RTD"
 
@@ -183,6 +185,7 @@ sensors:
         lead2_ain: 2
         idac1_ain: 5
         idac2_ain: 3
+        adc_gain: 2
         sampling_rate_hz: 5
         notes: "Nitrous tank RTD"
 
