@@ -179,6 +179,7 @@ class ThrottleValve():
             Moves immediately on receipt.
             Implementation of SERVO_MOVE_TIME_WRITE
             """
+        print(f"Throttling {self.valve_id}")
         time_ms = int(time_s * 1000)
         angle_param = int(angle_deg * self.SERVO_ANGLE_PARAM / self.SERVO_ANGLE_DEG)
         angle_param = max(0, min(1000, angle_param)) # clip between 0 and 1000
