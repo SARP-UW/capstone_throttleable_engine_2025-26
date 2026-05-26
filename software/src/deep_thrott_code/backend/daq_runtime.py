@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import queue
 import threading
 from collections.abc import Callable
@@ -89,6 +90,7 @@ class DaqRuntime:
 		self._logger = None
 		self._state_store = None
 		self._sensors: list[object] = []
+		self._sensor_map: dict[str, object] = {}
 
 	def snapshot_meta(self) -> dict[str, object]:
 		"""Return backend/runtime metadata for the GUI."""
@@ -111,6 +113,91 @@ class DaqRuntime:
 	def is_running(self) -> bool:
 		with self._lock:
 			return bool(self._running)
+
+	@staticmethod
+	def _coerce_finite_float(value: object) -> float | None:
+		try:
+			result = float(value)
+		except Exception:
+			return None
+		return result if math.isfinite(result) else None
+
+	@staticmethod
+	def _solve_zero_v_min(*, current_voltage: float, v_max: float, output_min: float, output_max: float, subtractive_offset: float) -> float:
+		output_span = float(output_max) - float(output_min)
+		if abs(output_span) < 1e-12:
+			raise ValueError("output span is zero")
+
+		fraction = (float(subtractive_offset) - float(output_min)) / output_span
+		denom = 1.0 - fraction
+		if abs(denom) < 1e-12:
+			raise ValueError("zero target collapses calibration")
+
+		new_v_min = (float(current_voltage) - fraction * float(v_max)) / denom
+		if not math.isfinite(new_v_min):
+			raise ValueError("computed v_min is not finite")
+		if not new_v_min < float(v_max):
+			raise ValueError("computed v_min would collapse voltage span")
+		return new_v_min
+
+	def zero_sensor(self, sensor_name: str, current_value: object = None, current_voltage: object = None) -> str:
+		sensor_key = str(sensor_name or "").strip()
+		if not sensor_key:
+			return "Zero failed: missing sensor name."
+
+		with self._lock:
+			sensor = self._sensor_map.get(sensor_key)
+
+		if sensor is None:
+			return f"Zero failed: sensor '{sensor_key}' is not active."
+
+		current_value_f = self._coerce_finite_float(current_value)
+		current_voltage_f = self._coerce_finite_float(current_voltage)
+
+		if hasattr(sensor, "offset_n"):
+			if current_value_f is None:
+				return f"Zero failed for {sensor_key}: current reading unavailable."
+			try:
+				sensor.offset_n = float(getattr(sensor, "offset_n", 0.0) or 0.0) + current_value_f
+			except Exception as exc:
+				return f"Zero failed for {sensor_key}: {exc}"
+			return f"Zeroed {sensor_key} load cell at {current_value_f:.3f}."
+
+		if hasattr(sensor, "p_min") and hasattr(sensor, "p_max") and hasattr(sensor, "v_min") and hasattr(sensor, "v_max"):
+			if current_voltage_f is None:
+				return f"Zero failed for {sensor_key}: current voltage unavailable."
+			try:
+				new_v_min = self._solve_zero_v_min(
+					current_voltage=current_voltage_f,
+					v_max=float(getattr(sensor, "v_max")),
+					output_min=float(getattr(sensor, "p_min", 0.0)),
+					output_max=float(getattr(sensor, "p_max", 0.0)),
+					subtractive_offset=float(getattr(sensor, "offset_psi", 0.0) or 0.0),
+				)
+				sensor.v_min = new_v_min
+				sensor.v_span = float(sensor.v_max) - float(sensor.v_min)
+			except Exception as exc:
+				return f"Zero failed for {sensor_key}: {exc}"
+			return f"Zeroed {sensor_key} PT using {current_voltage_f:.4f} V."
+
+		if hasattr(sensor, "flow_min") and hasattr(sensor, "flow_max") and hasattr(sensor, "v_min") and hasattr(sensor, "v_max"):
+			if current_voltage_f is None:
+				return f"Zero failed for {sensor_key}: current voltage unavailable."
+			try:
+				new_v_min = self._solve_zero_v_min(
+					current_voltage=current_voltage_f,
+					v_max=float(getattr(sensor, "v_max")),
+					output_min=float(getattr(sensor, "flow_min", 0.0)),
+					output_max=float(getattr(sensor, "flow_max", 0.0)),
+					subtractive_offset=float(getattr(sensor, "offset_flow", 0.0) or 0.0),
+				)
+				sensor.v_min = new_v_min
+				sensor.v_span = float(sensor.v_max) - float(sensor.v_min)
+			except Exception as exc:
+				return f"Zero failed for {sensor_key}: {exc}"
+			return f"Zeroed {sensor_key} flow meter using {current_voltage_f:.4f} V."
+
+		return f"Zero failed: {sensor_key} does not support GUI zeroing."
 
 	def start(self, simulation: bool, test_name: str | None = None) -> None:
 		"""Start DAQ threads and begin emitting samples to `gui_queue`."""
@@ -353,6 +440,7 @@ class DaqRuntime:
 			self._logger = logger
 			self._state_store = state_store
 			self._sensors = list(sensors)
+			self._sensor_map = dict(sensor_map)
 
 		self._emit_system(f"Backend log started ({'SIM' if simulation else 'ADC'} mode).")
 
@@ -377,6 +465,7 @@ class DaqRuntime:
 			self._logger = None
 			self._state_store = None
 			self._sensors = []
+			self._sensor_map = {}
 
 		if stop_event is not None:
 			stop_event.set()

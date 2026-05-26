@@ -26,6 +26,7 @@ class GuiCommandHandler:
 		start_log: Callable[[bool, str | None], None],
 		stop_log: Callable[[], None],
 		is_running: Callable[[], bool],
+		zero_sensor: Callable[[str, object, object], str] | None = None,
 		clear_daq_state: Callable[[], None] | None = None,
 	) -> None:
 		self._control_queue = control_queue
@@ -33,6 +34,7 @@ class GuiCommandHandler:
 		self._start_log = start_log
 		self._stop_log = stop_log
 		self._is_running = is_running
+		self._zero_sensor = zero_sensor
 		self._clear_daq_state = clear_daq_state
 
 		self._lock = threading.Lock()
@@ -101,6 +103,20 @@ class GuiCommandHandler:
 		except Exception:
 			pass
 
+	def zero_sensor(self, sensor_name: str | None, current_value: object = None, current_voltage: object = None) -> None:
+		sensor_key = str(sensor_name or "").strip()
+		if not sensor_key:
+			self._emit("Zero ignored: missing sensor name.")
+			return
+		if not callable(self._zero_sensor):
+			self._emit(f"Zero ignored for {sensor_key}: zero callback not configured.")
+			return
+		try:
+			message = self._zero_sensor(sensor_key, current_value, current_voltage)
+		except Exception as exc:
+			message = f"Zero failed for {sensor_key}: {exc}"
+		self._emit(message)
+
 	def command_loop_forever(self) -> None:
 		"""Consume `control_queue` messages forever.
 
@@ -128,6 +144,12 @@ class GuiCommandHandler:
 				elif name == "stop_log":
 					self._stop_log()
 					self._clear_latest_daq_state()
+				elif name == "zero_sensor":
+					self.zero_sensor(
+						payload.get("sensor_name"),
+						payload.get("current_value"),
+						payload.get("current_voltage"),
+					)
 				else:
 					self._emit(f"Unknown command: {name}")
 			finally:

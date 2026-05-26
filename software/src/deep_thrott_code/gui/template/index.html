@@ -306,19 +306,27 @@
       padding: 2px 4px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 6px;
       font-size: 0.72rem;
     }
 
     .daq-select select {
-      width: 100%;
-      max-width: 240px;
+      flex: 1 1 auto;
+      width: auto;
+      max-width: none;
       font-size: 0.72rem;
       padding: 2px 4px;
       min-height: 16px;
       border: 1px solid var(--border);
       background: white;
+    }
+
+    .daq-zero-btn {
+      flex: 0 0 auto;
+      min-width: 52px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
     }
 
     .daq-readouts {
@@ -796,7 +804,8 @@
         <div class="pid-tabs">
           <div class="tab" data-tab="ethanol">Ethanol Line Control</div>
           <div class="tab active" data-tab="nitrous">Nitrous Line Control</div>
-          <div class="tab" data-tab="daq">Data Acquisition</div>
+          <div class="tab" data-tab="daq">Data Acquisition 1</div>
+          <div class="tab" data-tab="daq2">Data Acquisition 2</div>
         </div>
 
         <div class="pid-panel">
@@ -1033,6 +1042,55 @@
             </div>
 
             <div class="daq-readouts hidden" id="daqReadouts"></div>
+          </div>
+
+          <div class="pid-stage hidden" id="daqStage2" data-stage="daq2">
+            <div class="daq-grid" id="daqPlots2">
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot10" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect10" aria-label="Select signal for plot 10"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot11" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect11" aria-label="Select signal for plot 11"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot12" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect12" aria-label="Select signal for plot 12"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot13" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect13" aria-label="Select signal for plot 13"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot14" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect14" aria-label="Select signal for plot 14"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot15" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect15" aria-label="Select signal for plot 15"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot16" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect16" aria-label="Select signal for plot 16"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot17" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect17" aria-label="Select signal for plot 17"><option value="">Waiting for data...</option></select></div>
+              </div>
+
+              <div class="daq-panel">
+                <div class="daq-canvas-wrap"><canvas class="daq-canvas" id="daqPlot18" width="373" height="154"></canvas></div>
+                <div class="daq-select"><select id="daqSelect18" aria-label="Select signal for plot 18"><option value="">Waiting for data...</option></select></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

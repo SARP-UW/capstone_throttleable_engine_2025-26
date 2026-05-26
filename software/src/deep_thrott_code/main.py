@@ -188,6 +188,7 @@ def main() -> None:
 		start_log=daq.start,
 		stop_log=daq.stop,
 		is_running=daq.is_running,
+		zero_sensor=daq.zero_sensor,
 		clear_daq_state=app.config.get("CLEAR_LATEST_STATES"),
 	)
 

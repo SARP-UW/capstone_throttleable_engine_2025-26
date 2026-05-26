@@ -244,19 +244,29 @@
 	const historyBySensor = new Map(); // sensorName -> {t: number[], v: number[], units: string}
 	const latestVoltageBySensor = new Map(); // sensorName -> { v: number|null, v1: number|null, v2: number|null }
 	const latestRateBySensor = new Map(); // sensorName -> achieved rate in Hz
+	const latestSampleBySensor = new Map(); // sensorName -> latest packet state
 	let knownSensorNames = [];
 	let pendingPlotAutofill = true;
 
 	const plotWidgets = [
-		{ canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'FI-PT' },
-		{ canvasId: 'daqPlot2', selectId: 'daqSelect2', defaultSensor: 'CC-PT' },
-		{ canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'FI-PT' },
-		{ canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'CC-PT' },
-		{ canvasId: 'daqPlot5', selectId: 'daqSelect5', defaultSensor: '' },
-		{ canvasId: 'daqPlot6', selectId: 'daqSelect6', defaultSensor: '' },
-		{ canvasId: 'daqPlot7', selectId: 'daqSelect7', defaultSensor: '' },
-		{ canvasId: 'daqPlot8', selectId: 'daqSelect8', defaultSensor: '' },
-		{ canvasId: 'daqPlot9', selectId: 'daqSelect9', defaultSensor: '' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot1', selectId: 'daqSelect1', defaultSensor: 'FI-PT' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot2', selectId: 'daqSelect2', defaultSensor: 'CC-PT' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot3', selectId: 'daqSelect3', defaultSensor: 'FM-PT' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot4', selectId: 'daqSelect4', defaultSensor: 'OM-PT' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot5', selectId: 'daqSelect5', defaultSensor: '' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot6', selectId: 'daqSelect6', defaultSensor: '' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot7', selectId: 'daqSelect7', defaultSensor: '' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot8', selectId: 'daqSelect8', defaultSensor: '' },
+		{ stageId: 'daqStage', canvasId: 'daqPlot9', selectId: 'daqSelect9', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot10', selectId: 'daqSelect10', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot11', selectId: 'daqSelect11', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot12', selectId: 'daqSelect12', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot13', selectId: 'daqSelect13', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot14', selectId: 'daqSelect14', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot15', selectId: 'daqSelect15', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot16', selectId: 'daqSelect16', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot17', selectId: 'daqSelect17', defaultSensor: '' },
+		{ stageId: 'daqStage2', canvasId: 'daqPlot18', selectId: 'daqSelect18', defaultSensor: '' },
 	];
 
 	const bindings = [
@@ -289,8 +299,34 @@
 
 	function clearAllPlotHistories() {
 		historyBySensor.clear();
+		latestVoltageBySensor.clear();
+		latestRateBySensor.clear();
+		latestSampleBySensor.clear();
 		prevPressureBySensor.clear();
 		renderAllPlots();
+	}
+
+	function chooseCurrentVoltageForZero(sensorName) {
+		const vrec = latestVoltageBySensor.get(sensorName);
+		if (!vrec || typeof vrec !== 'object') return null;
+		if (typeof vrec.v === 'number' && Number.isFinite(vrec.v)) return vrec.v;
+		if (typeof vrec.v1 === 'number' && Number.isFinite(vrec.v1)) return vrec.v1;
+		return null;
+	}
+
+	function buildZeroPayload(sensorName) {
+		if (!sensorName) return { error: 'Select a signal to zero first.' };
+		const state = latestSampleBySensor.get(sensorName);
+		if (!state || typeof state !== 'object') {
+			return { error: `No live data available yet for ${sensorName}.` };
+		}
+		const currentValue = typeof state.value === 'number' && Number.isFinite(state.value) ? state.value : null;
+		const currentVoltage = chooseCurrentVoltageForZero(sensorName);
+		return {
+			sensor_name: sensorName,
+			current_value: currentValue,
+			current_voltage: currentVoltage,
+		};
 	}
 
 	function autoPopulatePlotSelections(forceReset = false) {
@@ -463,9 +499,13 @@
 		el.classList.toggle('good', isGood);
 	}
 
-	function getDaqStageVisible() {
-		const stage = document.getElementById('daqStage');
+	function getDaqStageVisible(stageId) {
+		const stage = document.getElementById(stageId);
 		return !!stage && !stage.classList.contains('hidden');
+	}
+
+	function anyDaqStageVisible() {
+		return plotWidgets.some((w) => getDaqStageVisible(w.stageId));
 	}
 
 	function resizeCanvasToDisplaySize(canvas) {
@@ -528,6 +568,7 @@
 		for (const name of sensorNames) {
 			const state = states[name];
 			if (!state || typeof state !== 'object') continue;
+			latestSampleBySensor.set(name, state);
 
 			// Cache latest voltage for display.
 			const v = typeof state.voltage_v === 'number' && Number.isFinite(state.voltage_v) ? state.voltage_v : null;
@@ -729,8 +770,9 @@
 	}
 
 	function renderAllPlots() {
-		if (!getDaqStageVisible()) return;
+		if (!anyDaqStageVisible()) return;
 		for (const w of plotWidgets) {
+			if (!getDaqStageVisible(w.stageId)) continue;
 			const canvas = document.getElementById(w.canvasId);
 			const selectEl = document.getElementById(w.selectId);
 			const sensorName = selectEl ? selectEl.value : '';
@@ -749,9 +791,27 @@
 				selectEl.appendChild(opt);
 			}
 			selectEl.addEventListener('change', () => renderAllPlots());
+
+			const selectHost = selectEl.parentElement;
+			if (selectHost && !selectHost.querySelector('.daq-zero-btn')) {
+				const zeroBtn = document.createElement('button');
+				zeroBtn.type = 'button';
+				zeroBtn.className = 'mini-btn daq-zero-btn';
+				zeroBtn.textContent = 'ZERO';
+				zeroBtn.addEventListener('click', () => {
+					const sensorName = selectEl.value;
+					const payload = buildZeroPayload(sensorName);
+					if (payload.error) {
+						setSystemMessage(`System message: ${payload.error}`);
+						return;
+					}
+					emitGuiCommand({ name: 'zero_sensor', ...payload });
+				});
+				selectHost.appendChild(zeroBtn);
+			}
 		}
 
-		document.querySelectorAll('.tab[data-tab="daq"]').forEach((t) => {
+		document.querySelectorAll('.tab[data-tab="daq"], .tab[data-tab="daq2"]').forEach((t) => {
 			t.addEventListener('click', () => {
 				// Defer to allow DOM to update visibility.
 				setTimeout(() => renderAllPlots(), 0);
