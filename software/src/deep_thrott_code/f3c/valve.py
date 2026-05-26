@@ -192,6 +192,7 @@ class ThrottleValve():
             angle_param & 0xFF, (angle_param >> 8) & 0xFF,
             time_ms & 0xFF, (time_ms >> 8) & 0xFF
         ]
+        print(f"Sending packet: {self.build_packet(self.SERVO_MOVE_TIME_WRITE_CMD, params)}")
         self.send_packet(self.build_packet(self.SERVO_MOVE_TIME_WRITE_CMD, params))
 
     def read_pos(self):
