@@ -411,6 +411,8 @@
 				pulseControls.appendChild(dtInput);
 				pulseControls.appendChild(pulseBtn);
 				controlsHost.appendChild(pulseControls);
+			}
+
 			const pulseDtInput = overlay.querySelector('.pulse-dt');
 			const pulseBtn = overlay.querySelector('.pulse-btn');
 			if (pulseDtInput instanceof HTMLInputElement && !pulseDtInput.value) {
@@ -428,7 +430,6 @@
 					}
 					emitGuiCommand({ name: 'pulse_valve', valve_id: valveName, dt });
 				});
-			}
 			}
 
 			setValveUiState(valveName, valveStateByName.get(valveName));
