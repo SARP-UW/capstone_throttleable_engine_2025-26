@@ -305,7 +305,7 @@ actuators:
     fmctv:
        enabled: true
        mode: throttle
-       uart_id: 2
+       uart_id: 254
        normally_closed: false
        notes: "Fuel main control/throttle valve"
 
@@ -361,7 +361,7 @@ actuators:
     omctv:
        enabled: true
        mode: throttle
-       uart_id: 3
+       uart_id: 254
        normally_closed: false
        notes: "Oxidizer main control/throttle valve"
 
