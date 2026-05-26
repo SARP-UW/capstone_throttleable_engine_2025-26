@@ -30,6 +30,13 @@ DAQ_EMIT_RATE_STATS: bool = True
 DAQ_RATE_STATS_PERIOD_S: float = 5.0
 
 
+# Optional RTD diagnostic logging.
+# When enabled, each RTD emits a throttled backend log line with the raw lead
+# codes, raw differential code, inferred resistance, and computed temperature.
+RTD_DEBUG_LOG: bool = True
+RTD_DEBUG_LOG_PERIOD_S: float = 2.0
+
+
 # Internally oversubscribe per-sensor sampling targets to compensate for
 # scheduler jitter and conversion overhead. A configured sensor rate in
 # hardware.yml is multiplied by this value for producer scheduling and ADC
