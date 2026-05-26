@@ -407,9 +407,22 @@
 				pulseBtn.className = 'mini-btn pulse-btn';
 				pulseBtn.type = 'button';
 				pulseBtn.textContent = 'PULSE';
+
+				pulseControls.appendChild(dtInput);
+				pulseControls.appendChild(pulseBtn);
+				controlsHost.appendChild(pulseControls);
+			}
+
+			const pulseDtInput = overlay.querySelector('.pulse-dt');
+			const pulseBtn = overlay.querySelector('.pulse-btn');
+			if (pulseDtInput instanceof HTMLInputElement && !pulseDtInput.value) {
+				pulseDtInput.value = '0.10';
+			}
+			if (pulseBtn instanceof HTMLButtonElement && pulseDtInput instanceof HTMLInputElement && !pulseBtn.dataset.boundPulse) {
+				pulseBtn.dataset.boundPulse = 'true';
 				pulseBtn.addEventListener('click', (e) => {
 					e.preventDefault();
-					const dtRaw = dtInput.value;
+					const dtRaw = pulseDtInput.value;
 					const dt = Number(dtRaw);
 					if (!Number.isFinite(dt) || !(dt > 0)) {
 						setSystemMessage('System message: Invalid pulse dt (enter a positive number of seconds).');
@@ -417,10 +430,6 @@
 					}
 					emitGuiCommand({ name: 'pulse_valve', valve_id: valveName, dt });
 				});
-
-				pulseControls.appendChild(dtInput);
-				pulseControls.appendChild(pulseBtn);
-				controlsHost.appendChild(pulseControls);
 			}
 
 			setValveUiState(valveName, valveStateByName.get(valveName));
