@@ -320,3 +320,6 @@ class WaterValvePWM:
             self.set_angle(0.0)
         else:
             self.set_angle(90.0)
+
+    def is_normally_closed(self) -> bool:
+        return self.normally_closed
