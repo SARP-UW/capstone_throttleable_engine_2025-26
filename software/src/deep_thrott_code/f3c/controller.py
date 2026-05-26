@@ -12,8 +12,6 @@ import sys
 import os
 import os
 
-from f3c.valve import WaterValvePWM
-
 computer_sim = False
 
 if not computer_sim:
