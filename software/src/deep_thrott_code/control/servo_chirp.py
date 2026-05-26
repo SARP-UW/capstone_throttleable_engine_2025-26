@@ -195,7 +195,7 @@ servo_id = 254
 angle = 90
 duration = 2
 
-throttle_valve = ThrottleValve("test_throttle_valve", servo_id, pi, serial_handle, False)
+throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
 pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
 
 print("Sending sum shiz...")
