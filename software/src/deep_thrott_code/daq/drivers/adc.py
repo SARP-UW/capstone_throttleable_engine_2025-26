@@ -4,6 +4,8 @@ import time
 import threading
 import RPi.GPIO as GPIO  # type: ignore
 
+from .. import config as daq_config
+
 
 def _delay_s(duration_s: float) -> None:
     """Use a spin wait for very short delays; time.sleep() oversleeps badly there."""
@@ -91,6 +93,7 @@ class ADS124S08:
         self._cached_ref_reg = None
         self._cached_datarate_reg = None
         self._conversion_started = False
+        self._pending_settle_discards = 0
 
         self._deselect_all()
         time.sleep(0.01)
@@ -263,6 +266,20 @@ class ADS124S08:
         self.wreg(self.REG_REF, [cur])
         self._cached_ref_reg = cur
 
+    def _queue_settle_discards(self, count: int = 1) -> None:
+        try:
+            extra = int(count)
+        except Exception:
+            extra = 0
+        if extra <= 0:
+            return
+        self._pending_settle_discards += extra
+
+    def _consume_settle_discards(self) -> int:
+        extra = int(self._pending_settle_discards)
+        self._pending_settle_discards = 0
+        return extra
+
     def configure_idac_outputs(
         self,
         current_ua: int,
@@ -299,6 +316,9 @@ class ADS124S08:
             idac2_ain=idac2_ain,
         )
 
+        extra_discards = int(getattr(daq_config, "ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH", 1) or 0)
+        self._queue_settle_discards(extra_discards)
+
     def disable_rtd_mode(self) -> None:
         self.wreg(self.REG_IDACMAG, [0x00])
         self.wreg(self.REG_IDACMUX, [0xFF])
@@ -309,6 +329,9 @@ class ADS124S08:
             self.wreg(self.REG_REF, [self._ref_reg_backup])
             self._cached_ref_reg = self._ref_reg_backup
             self._ref_reg_backup = None
+
+        extra_discards = int(getattr(daq_config, "ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH", 1) or 0)
+        self._queue_settle_discards(extra_discards)
 
     def set_inpmux_single(self, ainp: int) -> None:
         if not (0 <= ainp <= 11):
@@ -339,13 +362,19 @@ class ADS124S08:
         if not self.wait_drdy(0.5):
             raise TimeoutError(f"{self.id}: DRDY timeout after MUX change")
 
-        _ = self.read_raw_sample()
+        sample = self.read_raw_sample()
 
+        discards_remaining = self._consume_settle_discards()
         if settle_discard:
+            discards_remaining += 1
+
+        while discards_remaining > 0:
             if not self.wait_drdy(0.5):
                 raise TimeoutError(f"{self.id}: DRDY timeout after settle discard")
+            sample = self.read_raw_sample()
+            discards_remaining -= 1
 
-        return self.read_raw_sample()
+        return sample
 
     def read_raw_diff(
         self,
@@ -360,13 +389,19 @@ class ADS124S08:
         if not self.wait_drdy(0.5):
             raise TimeoutError(f"{self.id}: DRDY timeout after MUX change")
 
-        _ = self.read_raw_sample()
+        sample = self.read_raw_sample()
 
+        discards_remaining = self._consume_settle_discards()
         if settle_discard:
+            discards_remaining += 1
+
+        while discards_remaining > 0:
             if not self.wait_drdy(0.5):
                 raise TimeoutError(f"{self.id}: DRDY timeout after settle discard")
+            sample = self.read_raw_sample()
+            discards_remaining -= 1
 
-        return self.read_raw_sample()
+        return sample
 
     def close(self) -> None:
         try:
