@@ -36,6 +36,9 @@ DAQ_RATE_STATS_PERIOD_S: float = 5.0
 RTD_DEBUG_LOG: bool = True
 RTD_DEBUG_LOG_PERIOD_S: float = 2.0
 
+# Optional ADS124S08 RTD register readback logging.
+RTD_DEBUG_REG_READBACK: bool = True
+
 
 # Internally oversubscribe per-sensor sampling targets to compensate for
 # scheduler jitter and conversion overhead. A configured sensor rate in
