@@ -179,11 +179,7 @@ class Controller:
         return self.current_step
 
     def shutdown(self) -> None:
-        self._stop_event.set()
-        try:
-            self._command_queue.put(None, timeout=0.1)
-        except Exception:
-            pass
+        pi.serial_close(self.serial_handle)
 
     # gui calls this to get a snapshot of the current system state for display and decision-making purposes
     def snapshot(self) -> dict[str, Any]:
@@ -274,6 +270,7 @@ class Controller:
                 if cmd_type == "set_valve":
                     print("Single valve actuation branch in start() reached...")
                     valve_id = gui_input.get("valve_id")
+                    print("Valve ID for Single Valve Actuation: ", valve_id, " ")      # remove after f3c checkout
                     state = gui_input.get("state") or gui_input.get("valve_state")
                     if isinstance(valve_id, str) and isinstance(state, str):
                         valve_key = valve_id.strip().lower()
@@ -356,6 +353,7 @@ class Controller:
         # if performing single valve actuation or pulse
         if action in (self.single_valve_actuation, self.pulse):
             current_valve = self.actuator_list.get(valve_id)
+            print("current_valve type:", type(current_valve))
 
             if current_valve is None:
                 print(f"Unknown or unconfigured valve_id: {valve_id}")
@@ -364,6 +362,7 @@ class Controller:
             # if single valve actuation
             if action == self.single_valve_actuation:
                 print("Single valve actuation branch in _execute_action() reached...")
+                print(f"args={current_valve, valve_state}")
 
                 # run helper method in its own thread
                 threading.Thread(target=self._execute_single_valve_actuation, args=(current_valve, valve_state)).start()
@@ -563,6 +562,7 @@ class Controller:
 
     def _execute_single_valve_actuation(self, valve: Valve, valve_state: ValveState):
         # actuate valve
+        print("Setting valve to state: ", valve_state, " for valve: ", valve.get_valve_id(), "")
         valve.set_state(valve_state)
 
         # log valve actuation
