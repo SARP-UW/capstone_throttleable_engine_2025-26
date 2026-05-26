@@ -336,6 +336,9 @@ class WaterValvePWM:
 
         self.state = new_state
 
+    def get_state(self) -> ValveState:
+        return self.state
+
     def pulse_valve(self, dt: float):
         if self.state == ValveState.CLOSED:
             self.set_state(ValveState.OPEN)
