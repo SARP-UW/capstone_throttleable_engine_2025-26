@@ -107,7 +107,7 @@ class Valve:
             time.sleep(dt)
             self.set_state(ValveState.CLOSED)
         else:
-            # TO DO: send error that valve must be closed to pulse it
+            # TODO: send error that valve must be closed to pulse it
             pass
 
 class ThrottleValve():
@@ -158,6 +158,15 @@ class ThrottleValve():
                 self.throttle(90.0, actuation_time)
             else:
                 self.throttle(0.0, actuation_time)
+
+    def pulse_valve(self, dt: float):
+        if self.state == ValveState.CLOSED:
+            self.set_state(ValveState.OPEN)
+            time.sleep(dt)
+            self.set_state(ValveState.CLOSED)
+        else:
+            # TO DO: send error that valve must be closed to pulse it
+            pass
 
     def throttle(self, angle_deg: float, time_s):
         """
@@ -287,6 +296,7 @@ class WaterValvePWM:
         self.pin = pin
         self.current_angle = 0.0
         self.normally_closed = normally_closed
+        self.state = ValveState.CLOSED
         
         if GPIO_AVAILABLE:
             try:
@@ -323,6 +333,17 @@ class WaterValvePWM:
             self.set_angle(0.0)
         else:
             self.set_angle(90.0)
+
+        self.state = new_state
+
+    def pulse_valve(self, dt: float):
+        if self.state == ValveState.CLOSED:
+            self.set_state(ValveState.OPEN)
+            time.sleep(dt)
+            self.set_state(ValveState.CLOSED)
+        else:
+            # TO DO: send error that valve must be closed to pulse it
+            pass
 
     def is_normally_closed(self) -> bool:
         return self.normally_closed
