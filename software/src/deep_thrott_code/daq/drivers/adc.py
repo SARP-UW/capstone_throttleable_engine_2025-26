@@ -280,6 +280,20 @@ class ADS124S08:
         self._pending_settle_discards = 0
         return extra
 
+    def _ensure_non_rtd_baseline(self) -> None:
+        """Defensively restore non-RTD analog state before normal reads.
+
+        RTD sampling temporarily enables IDAC excitation and switches the ADC
+        reference path. In the common case `disable_rtd_mode()` already restores
+        the ADC, but if any RTD path exits oddly we still want the next PT/LC/FM
+        read to start from a known baseline instead of reusing excited state.
+        """
+
+        if not self._idac_enabled and self._ref_reg_backup is None:
+            return
+
+        self.disable_rtd_mode()
+
     def configure_idac_outputs(
         self,
         current_ua: int,
@@ -361,6 +375,8 @@ class ADS124S08:
         ainp: int,
         settle_discard: bool = True,
     ) -> int:
+        self._ensure_non_rtd_baseline()
+
         if not self._conversion_started:
             self.start()
         self.set_inpmux_single(ainp)
@@ -388,6 +404,8 @@ class ADS124S08:
         ainn: int,
         settle_discard: bool = True,
     ) -> int:
+        self._ensure_non_rtd_baseline()
+
         if not self._conversion_started:
             self.start()
         self.set_inpmux_diff(ainp, ainn)

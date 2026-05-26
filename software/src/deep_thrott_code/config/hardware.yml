@@ -99,7 +99,7 @@ sensors:
         notes: "Water main pressure transducer"
 
       CC-PT:
-        enabled: false
+        enabled: true
         adc_id: ADC1
         signal_mode: single_ended
         ain: 8
@@ -108,7 +108,7 @@ sensors:
         notes: "Combustion chamber pressure transducer"
 
       XF-PT:
-        enabled: false
+        enabled: true
         adc_id: ADC2
         signal_mode: single_ended
         ain: 1
@@ -117,7 +117,7 @@ sensors:
         notes: "XF pressure transducer"
 
       OT-PT:
-        enabled: false
+        enabled: true
         adc_id: ADC2
         signal_mode: single_ended
         ain: 0
@@ -126,7 +126,7 @@ sensors:
         notes: "Ox tank pressure transducer"
 
       OF-PT:
-        enabled: false
+        enabled: true
         adc_id: ADC2
         signal_mode: single_ended
         ain: 11
@@ -135,7 +135,7 @@ sensors:
         notes: "Ox fill pressure transducer"
 
       OM-PT:
-        enabled: false
+        enabled: true
         adc_id: ADC2
         signal_mode: single_ended
         ain: 10
@@ -144,7 +144,7 @@ sensors:
         notes: "Ox main pressure transducer"
 
       OI-PT:
-        enabled: false
+        enabled: true
         adc_id: ADC2
         signal_mode: single_ended
         ain: 9
@@ -188,7 +188,7 @@ sensors:
 
     load cells:
       N-LC:
-        enabled: false
+        enabled: true
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 1
@@ -199,7 +199,7 @@ sensors:
         notes: "Nitrous tank load cell"
 
       E-LC:
-        enabled: false
+        enabled: true
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 11
