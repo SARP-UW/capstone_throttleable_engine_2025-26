@@ -147,6 +147,9 @@ class ThrottleValve():
     def is_normally_closed(self) -> bool:
         return self.normally_closed
 
+    def get_valve_id(self) -> str:
+        return self.valve_id
+
     def set_state(self, new_state: ValveState, theta: float | None = None):
         actuation_time = 0.5
         if self.state != new_state:
@@ -323,3 +326,6 @@ class WaterValvePWM:
 
     def is_normally_closed(self) -> bool:
         return self.normally_closed
+
+    def get_valve_id(self) -> str:
+        return self.valve_id
