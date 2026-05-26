@@ -176,22 +176,13 @@ class ADS124S08:
             time.sleep(timeout_s)
             return True
 
-        # DRDY is active-low. If it is already low, consume that ready state
-        # immediately instead of waiting for a falling edge that already happened.
-        if GPIO.input(self.drdy_pin) == GPIO.LOW:
-            return True
+        t0 = time.perf_counter()
 
-        timeout_ms = max(1, int(float(timeout_s) * 1000.0))
+        while (time.perf_counter() - t0) < timeout_s:
+            if GPIO.input(self.drdy_pin) == GPIO.LOW:
+                return True
 
-        try:
-            channel = GPIO.wait_for_edge(self.drdy_pin, GPIO.FALLING, timeout=timeout_ms)
-        except RuntimeError:
-            channel = None
-
-        if channel is not None:
-            return True
-
-        return GPIO.input(self.drdy_pin) == GPIO.LOW
+        return False
 
     def read_raw_sample(self) -> int:
         with self._chip_select_asserted():
