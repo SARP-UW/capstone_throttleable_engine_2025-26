@@ -165,7 +165,7 @@ sensors:
         notes: "Water inlet RTD"
 
       WO-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: rtd_3_wire
         lead1_ain: 4
