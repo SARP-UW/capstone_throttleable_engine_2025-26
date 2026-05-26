@@ -239,6 +239,28 @@ class DaqRuntime:
 				key = adc if adc is not None else "__no_adc__"
 				groups.setdefault(key, []).append(s)
 
+			def _sensor_state_sort_key(sensor):
+				# Minimize ADS124S08 state churn within one ADC by clustering reads that
+				# share the same broad acquisition mode.
+				if hasattr(sensor, "idac1_ain") and hasattr(sensor, "idac2_ain"):
+					mode_rank = 2  # RTD mode: internal ref + IDAC routing.
+				elif hasattr(sensor, "sig_minus_ain"):
+					mode_rank = 1  # Differential mode, often with higher PGA gain.
+				else:
+					mode_rank = 0  # Single-ended PT / flow reads.
+
+				try:
+					gain = float(getattr(sensor, "adc_gain", 1.0) or 1.0)
+				except Exception:
+					gain = 1.0
+
+				try:
+					rate = float(getattr(sensor, "sampling_rate_hz", 0.0) or 0.0)
+				except Exception:
+					rate = 0.0
+
+				return (mode_rank, gain, -rate, getattr(sensor, "name", sensor.__class__.__name__))
+
 			def _group_loop(sensor_group, group_loop_hz: float, cpu_index: int) -> None:
 				try:
 					self._pin_thread_to_cpu(cpu_index)
@@ -248,6 +270,7 @@ class DaqRuntime:
 
 			threads: list[threading.Thread] = []
 			for group_index, (_key, sensor_group) in enumerate(groups.items()):
+				sensor_group = sorted(sensor_group, key=_sensor_state_sort_key)
 				group_loop_hz = _compute_producer_loop_hz(sensor_group)
 				cpu_index = self._producer_cpus[group_index % len(self._producer_cpus)] if self._producer_cpus else self._producer_cpu
 				thr = threading.Thread(
