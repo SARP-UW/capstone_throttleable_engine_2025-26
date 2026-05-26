@@ -10,7 +10,6 @@ from scipy.stats import false_discovery_control
 try:
     import pigpio  # type: ignore
     import RPi.GPIO as GPIO
-    pi = pigpio.pi()
     GPIO_AVAILABLE = True
 
     # Ensure GPIO numbering mode is configured once.
@@ -136,13 +135,14 @@ class ThrottleValve():
     SERVO_ANGLE_DEG = 240
     SERVO_ANGLE_PARAM = 1000
 
-    def __init__(self, valve_id: str, uart_id: int, serial_handle, normally_closed: bool):
+    def __init__(self, valve_id: str, uart_id: int, serial_handle, pi_instance, normally_closed: bool):
         self.valve_id = valve_id
         self.uart_id = uart_id
         self.serial_handle = serial_handle
         self.load_motor()
         self.checksum_found = False
         self.state = ValveState.OPEN
+        self.pi = pi_instance
         self.normally_closed = normally_closed
 
 
@@ -244,8 +244,8 @@ class ThrottleValve():
         margin_us = 20  # margin to prevent clipping the stop bit
         total_wave_time = margin_us + duration_us + margin_us  # total time TX_ENABLE stays low (transmission time with margin before and after)
 
-        pi.wave_clear()  # clears last waveform before sending a new one
-        pi.wave_add_serial(self.TX_PIN, self.BAUD, packet, offset=margin_us)  # adds waveform from packet to staging area
+        self.pi.wave_clear()  # clears last waveform before sending a new one
+        self.pi.wave_add_serial(self.TX_PIN, self.BAUD, packet, offset=margin_us)  # adds waveform from packet to staging area
 
         enable_pulses = [
             # Set TX_ENABLE low, hold for total_wave_time microseconds
@@ -253,18 +253,18 @@ class ThrottleValve():
             # Set TX_ENABLE high, hold for 0 microseconds (end of wave)
             pigpio.pulse(1 << self.TX_ENABLE_PIN, 0, 0)
         ]
-        pi.wave_add_generic(enable_pulses)  # adds TX_ENABLE pulses to staging area
+        self.pi.wave_add_generic(enable_pulses)  # adds TX_ENABLE pulses to staging area
 
         # Create wave id from waveforms in staging area and send
-        wave_id = pi.wave_create()
-        pi.wave_send_once(wave_id)
+        wave_id = self.pi.wave_create()
+        self.pi.wave_send_once(wave_id)
 
         # Polls until DMA is done
-        while pi.wave_tx_busy():
+        while self.pi.wave_tx_busy():
             time.sleep(0.001)
 
         # Frees up memory
-        pi.wave_delete(wave_id)
+        self.pi.wave_delete(wave_id)
 
         return len(packet)
 
@@ -272,13 +272,13 @@ class ThrottleValve():
         checksum_found = False
         # drain the echos
         while not checksum_found:
-            count, echo_byte = pi.serial_read(self.serial_handle, 1)
+            count, echo_byte = self.pi.serial_read(self.serial_handle, 1)
             if echo_byte == packet_checksum:
                 checksum_found = True
 
         # read the response
         time.sleep(0.02)
-        count, serial_response = pi.serial_read(self.serial_handle, expected_length)
+        count, serial_response = self.pi.serial_read(self.serial_handle, expected_length)
         print(f"Response bytes: {list(serial_response)}")
 
         if count == 0:
@@ -306,7 +306,7 @@ class WaterValvePWM:
         
         if GPIO_AVAILABLE:
             try:
-                pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, 0)
+                self.pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, 0)
                 print(f"WaterValvePWM {self.valve_id}: initialized on pin {self.pin}")
             except Exception as exc:
                 print(f"WaterValvePWM {self.valve_id}: PWM setup failed: {exc!r}")
@@ -328,7 +328,7 @@ class WaterValvePWM:
         
         if GPIO_AVAILABLE:
             try:
-                pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, duty_cycle)
+                self.pi.hardware_PWM(self.pin, self.PWM_FREQUENCY, duty_cycle)
             except Exception as exc:
                 print(f"WaterValvePWM {self.valve_id}: PWM write failed: {exc!r}")
         else:
