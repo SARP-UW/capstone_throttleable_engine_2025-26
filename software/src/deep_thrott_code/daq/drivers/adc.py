@@ -88,6 +88,7 @@ class ADS124S08:
             GPIO.setup(self.drdy_pin, GPIO.IN, pull_up_down=GPIO.PUD_OFF)
 
         self._ref_reg_backup = None
+        self._default_ref_reg = None
         self._idac_enabled = False
         self._cached_pga_reg = None
         self._cached_ref_reg = None
@@ -229,11 +230,10 @@ class ADS124S08:
             self.wreg(self.REG_PGA, [desired_pga])
             self._cached_pga_reg = desired_pga
 
-        if use_internal_ref:
-            desired_ref = 0x39
-            if self._cached_ref_reg != desired_ref:
-                self.wreg(self.REG_REF, [desired_ref])
-                self._cached_ref_reg = desired_ref
+        desired_ref = 0x39 if use_internal_ref else self._get_default_ref_reg()
+        if self._cached_ref_reg != desired_ref:
+            self.wreg(self.REG_REF, [desired_ref])
+            self._cached_ref_reg = desired_ref
 
         if data_rate is not None:
             desired_datarate = int(data_rate) & 0xFF
@@ -257,6 +257,9 @@ class ADS124S08:
         cur = self.rreg(self.REG_REF, 1)[0]
         self._cached_ref_reg = cur
 
+        if self._default_ref_reg is None:
+            self._default_ref_reg = cur
+
         if self._ref_reg_backup is None:
             self._ref_reg_backup = cur
 
@@ -279,6 +282,13 @@ class ADS124S08:
         extra = int(self._pending_settle_discards)
         self._pending_settle_discards = 0
         return extra
+
+    def _get_default_ref_reg(self) -> int:
+        if self._default_ref_reg is None:
+            cur = self.rreg(self.REG_REF, 1)[0]
+            self._default_ref_reg = cur
+            self._cached_ref_reg = cur
+        return int(self._default_ref_reg)
 
     def _ensure_non_rtd_baseline(self) -> None:
         """Defensively restore non-RTD analog state before normal reads.
