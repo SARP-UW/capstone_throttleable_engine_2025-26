@@ -128,6 +128,7 @@ sequences:
         system_state: fire
 
       - valve_id: fmctv
+        action: None
         angle: 45.0
         time: 0.5
         time_delay: 0.0
@@ -135,6 +136,7 @@ sequences:
         system_state: fire
 
       - valve_id: omctv
+        action: None
         angle: 45.0
         time: 0.5
         time_delay: 4.0
