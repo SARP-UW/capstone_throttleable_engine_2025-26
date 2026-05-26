@@ -15,6 +15,7 @@ computer_sim = False
 if not computer_sim:
     import pigpio
     pi = pigpio.pi()
+    print(f"pigpio connected: {pi.connected}")
 
 class State(Enum):
     IDLE = "idle"

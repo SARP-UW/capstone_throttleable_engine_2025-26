@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 import time
+import threading
 
 from scipy.stats import false_discovery_control
 
@@ -134,6 +135,9 @@ class ThrottleValve():
     # servo units -> angle conversion values
     SERVO_ANGLE_DEG = 240
     SERVO_ANGLE_PARAM = 1000
+
+    # lock for sending waveforms
+    _wave_lock = threading.lock()
 
     def __init__(self, valve_id: str, uart_id: int, serial_handle, pi_instance, normally_closed: bool):
         self.valve_id = valve_id
