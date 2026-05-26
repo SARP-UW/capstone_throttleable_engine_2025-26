@@ -317,25 +317,28 @@
 	}
 
 	function setValveUiState(valveName, state) {
-		const overlay = document.querySelector(`[data-valve="${CSS.escape(valveName)}"]`);
-		if (!overlay) return;
-		const status = overlay.querySelector('.status-pill');
-		const openBtn = overlay.querySelector('[data-valve-action="open"]');
-		const closeBtn = overlay.querySelector('[data-valve-action="close"]');
+		const overlays = document.querySelectorAll(`[data-valve="${CSS.escape(valveName)}"]`);
+		if (!overlays.length) return;
 		const isOpen = state === 'open';
 
-		if (status) status.textContent = isOpen ? 'OPEN' : 'CLOSED';
+		overlays.forEach((overlay) => {
+			const status = overlay.querySelector('.status-pill');
+			const openBtn = overlay.querySelector('[data-valve-action="open"]');
+			const closeBtn = overlay.querySelector('[data-valve-action="close"]');
 
-		if (openBtn instanceof HTMLButtonElement) {
-			openBtn.disabled = isOpen;
-			openBtn.classList.toggle('is-active-open', isOpen);
-			openBtn.classList.toggle('is-active-close', false);
-		}
-		if (closeBtn instanceof HTMLButtonElement) {
-			closeBtn.disabled = !isOpen;
-			closeBtn.classList.toggle('is-active-close', !isOpen);
-			closeBtn.classList.toggle('is-active-open', false);
-		}
+			if (status) status.textContent = isOpen ? 'OPEN' : 'CLOSED';
+
+			if (openBtn instanceof HTMLButtonElement) {
+				openBtn.disabled = isOpen;
+				openBtn.classList.toggle('is-active-open', isOpen);
+				openBtn.classList.toggle('is-active-close', false);
+			}
+			if (closeBtn instanceof HTMLButtonElement) {
+				closeBtn.disabled = !isOpen;
+				closeBtn.classList.toggle('is-active-close', !isOpen);
+				closeBtn.classList.toggle('is-active-open', false);
+			}
+		});
 	}
 
 	function setValveState(valveName, state) {
