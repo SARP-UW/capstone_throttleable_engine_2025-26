@@ -533,12 +533,7 @@ class Controller:
 
                         # if this step is the pwm water valve
                         else:
-                            if action == "open":
-                                # open pwm valve
-                                current_valve.open()
-                            else:
-                                # close pwm valve
-                                current_valve.close()
+                            current_valve.set_state(valve_goal_state)
 
                             # log valve actuation
                             self.actuation_logger.write_valve_action(
