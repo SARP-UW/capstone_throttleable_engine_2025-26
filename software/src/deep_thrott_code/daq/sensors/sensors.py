@@ -729,6 +729,7 @@ class RTDSensor(Sensor):
         rref_ohms: float = 5600.0,
         adc_gain: float = 1.0,
         signal_mode: str = "rtd_3_wire",
+        invert_polarity: bool = False,
         reference_factor: float = 1.0,
         idac_current_ua: float = 50.0,
         unit: str = "°C",
@@ -743,37 +744,13 @@ class RTDSensor(Sensor):
         self.rref_ohms = float(rref_ohms)
         self.adc_gain = float(adc_gain) if adc_gain else 1.0
         self.signal_mode = str(signal_mode or "rtd_3_wire").strip().lower()
+        self.invert_polarity = bool(invert_polarity)
         self.reference_factor = float(reference_factor) if reference_factor else 1.0
         self.idac_current_ua = float(idac_current_ua)
         self.idac1_ain = int(idac1_ain)
         self.idac2_ain = int(idac2_ain)
         self.unit = unit
         self.offset = float(offset)
-        self._warned_polarity = False
-
-    def _normalize_rtd_code(self, code_rtd: int, raw_lead1: int, raw_lead2: int) -> int:
-        if self.signal_mode != "rtd_3_wire":
-            return int(code_rtd)
-
-        normalized = int(code_rtd)
-        lead_delta = int(raw_lead1) - int(raw_lead2)
-        if normalized < 0 and lead_delta > 0:
-            normalized = -normalized
-        elif normalized > 0 and lead_delta < 0:
-            normalized = -normalized
-
-        if normalized != int(code_rtd) and not self._warned_polarity:
-            _log.warning(
-                "[%s] RTD polarity normalized (lead1=%s, lead2=%s, raw=%s -> %s)",
-                self.name,
-                raw_lead1,
-                raw_lead2,
-                code_rtd,
-                normalized,
-            )
-            self._warned_polarity = True
-
-        return normalized
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
@@ -797,7 +774,8 @@ class RTDSensor(Sensor):
             raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
             raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)
             code_rtd = self.adc.read_raw_diff(self.lead1_ain, self.lead2_ain, settle_discard=settle_discard)
-            code_rtd = self._normalize_rtd_code(code_rtd, raw_lead1, raw_lead2)
+            if self.invert_polarity:
+                code_rtd = -int(code_rtd)
         finally:
             self.adc.disable_rtd_mode()
 
@@ -1600,6 +1578,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             idac1_ain = cfg.get("idac1_ain")
             idac2_ain = cfg.get("idac2_ain")
             signal_mode = str(cfg.get("signal_mode") or "rtd_3_wire")
+            invert_polarity = bool(cfg.get("invert_polarity", False))
             if None in (lead1_ain, lead2_ain, idac1_ain, idac2_ain):
                 raise RuntimeError(f"RTD {sensor_id} is enabled but missing one of lead1_ain/lead2_ain/idac1_ain/idac2_ain")
 
@@ -1653,6 +1632,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     rref_ohms=rref_ohms,
                     adc_gain=adc_gain,
                     signal_mode=signal_mode,
+                    invert_polarity=invert_polarity,
                     reference_factor=reference_factor,
                     idac_current_ua=idac_current_ua,
                     unit=unit,

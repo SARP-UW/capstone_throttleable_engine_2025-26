@@ -221,7 +221,24 @@ def main() -> None:
 	if getattr(socketio, 'async_mode', '') == 'threading':
 		run_kwargs['request_handler'] = _QuietDisconnectWSGIRequestHandler
 
-	socketio.run(**run_kwargs)
+	try:
+		socketio.run(**run_kwargs)
+	except KeyboardInterrupt:
+		print("Backend shutdown requested (Ctrl+C).")
+	finally:
+		try:
+			if daq.is_running():
+				daq.stop()
+		except Exception:
+			pass
+
+		try:
+			if f3_controller is not None:
+				shutdown = getattr(f3_controller, "shutdown", None)
+				if callable(shutdown):
+					shutdown()
+		except Exception:
+			pass
 
 if __name__ == "__main__":
 	main()
