@@ -160,7 +160,7 @@ class ThrottleValve():
         return self.state
 
     def set_state(self, new_state: ValveState, theta: float | None = None):
-        actuation_time = 0.5
+        actuation_time = 0
         if self.state != new_state:
             self.state = new_state
             if new_state == ValveState.OPEN:
