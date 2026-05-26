@@ -75,6 +75,7 @@ class Controller:
 
             # Open pigpio serial port for reading responses
             self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
+            print("Serial Handle: ", self.serial_handle)
 
         # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
@@ -672,7 +673,7 @@ class Controller:
                     actuator_list[str(valve_id)] = valve
                 else:
                     # pwm water valve
-                    valve = WaterValvePWM(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("normally_closed")))
+                    valve = WaterValvePWM(str(valve_id), int(actuator_info.get("pin")), pi, bool(actuator_info.get("normally_closed")))
                     actuator_list[str(valve_id)] = valve
         return actuator_list
 

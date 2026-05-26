@@ -297,12 +297,13 @@ class WaterValvePWM:
     MAX_PULSE_US = 2500
     MAX_ANGLE_DEG = 180
     
-    def __init__(self, valve_id: str, pin: int, normally_closed: bool):
+    def __init__(self, valve_id: str, pin: int, normally_closed: bool, pi_instance):
         self.valve_id = valve_id
         self.pin = pin
         self.current_angle = 0.0
         self.normally_closed = normally_closed
         self.state = ValveState.CLOSED
+        self.pi = pi_instance
         
         if GPIO_AVAILABLE:
             try:
