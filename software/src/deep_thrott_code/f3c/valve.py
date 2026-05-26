@@ -137,7 +137,7 @@ class ThrottleValve():
     SERVO_ANGLE_PARAM = 1000
 
     # lock for sending waveforms
-    _wave_lock = threading.lock()
+    _wave_lock = threading.Lock()
 
     def __init__(self, valve_id: str, uart_id: int, serial_handle, pi_instance, normally_closed: bool):
         self.valve_id = valve_id
