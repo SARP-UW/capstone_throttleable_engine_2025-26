@@ -6,6 +6,9 @@ import serial
 import time
 
 import pigpio
+
+from f3c.valve import WaterValvePWM
+
 pi = pigpio.pi()
 if not pi.connected:
     print("Failed to connect to pigpiod")
@@ -194,13 +197,16 @@ servo_id = 254
 angle = 90
 duration = 2
 
-valve = ThrottleValve("test_valve", servo_id, serial_handle, False)
+throttle_valve = ThrottleValve("test_throttle_valve", servo_id, pi, serial_handle, False)
+pwm_valve = WaterValvePWM("test_water_valve", 12)
 
 print("Sending sum shiz...")
 while True:
-    valve.set_state(ValveState.OPEN)
+    throttle_valve.set_state(ValveState.OPEN)
+    pwm_valve.set_state(ValveState.OPEN)
     time.sleep(duration)
-    valve.set_state(ValveState.CLOSED)
+    throttle_valve.set_state(ValveState.CLOSED)
+    pwm_valve.set_state(ValveState.CLOSED)
     time.sleep(duration)
 
 pi.serial_close(serial_handle)
