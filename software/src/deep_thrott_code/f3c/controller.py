@@ -577,6 +577,8 @@ class Controller:
         self.actuation_logger.write_valve_action(valve_actuation_data)
 
     def _execute_pulse(self, valve: Valve, dt: float):
+        print("_execute_pulse() reached...")
+        
         # pulse valve
         valve.pulse_valve(dt)
 
