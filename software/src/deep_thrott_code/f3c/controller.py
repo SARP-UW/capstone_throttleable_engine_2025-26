@@ -179,11 +179,7 @@ class Controller:
         return self.current_step
 
     def shutdown(self) -> None:
-        self._stop_event.set()
-        try:
-            self._command_queue.put(None, timeout=0.1)
-        except Exception:
-            pass
+        pi.serial_close(self.serial_handle)
 
     # gui calls this to get a snapshot of the current system state for display and decision-making purposes
     def snapshot(self) -> dict[str, Any]:

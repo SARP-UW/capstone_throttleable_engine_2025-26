@@ -261,6 +261,7 @@ class ThrottleValve():
 
         # Create wave id from waveforms in staging area and send
         wave_id = self.pi.wave_create()
+        print(f"wave_id: {wave_id}")
         self.pi.wave_send_once(wave_id)
 
         # Polls until DMA is done
