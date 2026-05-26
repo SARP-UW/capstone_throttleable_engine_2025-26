@@ -112,7 +112,7 @@ class Controller:
 
         # set up to use for action identification in start()
         self.single_valve_actuation = "single valve actuation"
-        self.pulse = "pulse"
+        self.pulse = "pulse_valve"
 
         # set up valve actuation logger
         self.actuation_header = ["valve_id", "valve_type", "target_state", "target_angle", "dt", "t_wall", "action_type"]
@@ -287,6 +287,7 @@ class Controller:
 
                 # pulse valve
                 elif cmd_type == "pulse_valve":
+                    print("Pulse valve branch in start() reached...")
                     valve_id = gui_input.get("valve_id")
                     dt = gui_input.get("dt")
                     if isinstance(valve_id, str):
@@ -367,6 +368,8 @@ class Controller:
 
             # if pulse valve
             elif action == self.pulse:
+                print("Pulse valve branch in _execute_action() reached...")
+
                 dt_s = float(dt) 
                 # run helper method in its own thread
                 threading.Thread(target=self._execute_pulse, args=(current_valve, dt_s)).start()
