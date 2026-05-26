@@ -8,8 +8,6 @@ from typing import Any
 import yaml
 from deep_thrott_code.daq.services.logger import CsvLogger
 from deep_thrott_code.f3c.valve import Valve, ValveState, ThrottleValve, WaterValvePWM
-import sys
-import os
 import os
 
 computer_sim = False
@@ -670,7 +668,7 @@ class Controller:
                     actuator_list[str(valve_id)] = valve
                 elif actuator_info.get("mode") == "throttle":
                     # throttle valves
-                    valve = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle, bool(actuator_info.get("normally_closed")))
+                    valve = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle, pi, bool(actuator_info.get("normally_closed")))
                     actuator_list[str(valve_id)] = valve
                 else:
                     # pwm water valve
