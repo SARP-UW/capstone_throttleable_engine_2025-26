@@ -110,6 +110,8 @@ class Valve:
             # TODO: send error that valve must be closed to pulse it
             pass
 
+# TODO: add to initialization to set valve to normal state
+
 class ThrottleValve():
     """
     Class which represents a throttleable valve.
@@ -149,6 +151,9 @@ class ThrottleValve():
 
     def get_valve_id(self) -> str:
         return self.valve_id
+
+    def get_state(self) -> ValveState:
+        return self.state
 
     def set_state(self, new_state: ValveState, theta: float | None = None):
         actuation_time = 0.5
