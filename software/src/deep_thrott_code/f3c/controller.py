@@ -75,6 +75,7 @@ class Controller:
 
             # Open pigpio serial port for reading responses
             self.serial_handle = pi.serial_open("/dev/ttyS0", self.baud)
+            print("Serial Handle: ", self.serial_handle)
 
         # queue to ask gui for manual step input before proceeding to next step
         self._f3c_to_gui_queue = f3c_to_gui_queue
