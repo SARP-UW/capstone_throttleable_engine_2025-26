@@ -59,7 +59,7 @@ sensors:
         signal_mode: single_ended
         pt_num: 1
         ain: 1
-        sampling_rate_hz: 25
+        sampling_rate_hz: 50
         notes: "L Fuel pressure transducer"
 
       FT-PT:
@@ -68,7 +68,7 @@ sensors:
         signal_mode: single_ended
         ain: 0
         pt_num: 2
-        sampling_rate_hz: 25
+        sampling_rate_hz: 50
         notes: "Fuel tank pressure transducer"
 
       FM-PT:
@@ -77,7 +77,7 @@ sensors:
         signal_mode: single_ended
         ain: 11
         pt_num: 3
-        sampling_rate_hz: 100
+        sampling_rate_hz: 500
         notes: "Fuel main pressure transducer"
 
       FI-PT:
@@ -86,7 +86,7 @@ sensors:
         signal_mode: single_ended
         ain: 10
         pt_num: 4
-        sampling_rate_hz: 100
+        sampling_rate_hz: 500
         notes: "Fuel injector pressure transducer"
 
       WM-PT:
@@ -95,7 +95,7 @@ sensors:
         signal_mode: single_ended
         ain: 9
         pt_num: 5
-        sampling_rate_hz: 25
+        sampling_rate_hz: 50
         notes: "Water main pressure transducer"
 
       CC-PT:
@@ -104,7 +104,7 @@ sensors:
         signal_mode: single_ended
         ain: 8
         pt_num: 6
-        sampling_rate_hz: 100
+        sampling_rate_hz: 500
         notes: "Combustion chamber pressure transducer"
 
       XF-PT:
@@ -113,7 +113,7 @@ sensors:
         signal_mode: single_ended
         ain: 1
         pt_num: 7
-        sampling_rate_hz: 25
+        sampling_rate_hz: 50
         notes: "XF pressure transducer"
 
       OT-PT:
@@ -122,7 +122,7 @@ sensors:
         signal_mode: single_ended
         ain: 0
         pt_num: 8
-        sampling_rate_hz: 25
+        sampling_rate_hz: 50
         notes: "Ox tank pressure transducer"
 
       OF-PT:
@@ -131,7 +131,7 @@ sensors:
         signal_mode: single_ended
         ain: 11
         pt_num: 9
-        sampling_rate_hz: 25
+        sampling_rate_hz: 50
         notes: "Ox fill pressure transducer"
 
       OM-PT:
@@ -140,7 +140,7 @@ sensors:
         signal_mode: single_ended
         ain: 10
         pt_num: 10
-        sampling_rate_hz: 100
+        sampling_rate_hz: 500
         notes: "Ox main pressure transducer"
 
       OI-PT:
@@ -149,7 +149,7 @@ sensors:
         signal_mode: single_ended
         ain: 9
         pt_num: 11
-        sampling_rate_hz: 100
+        sampling_rate_hz: 500
         notes: "Ox injector pressure transducer"
 
     resistive temperature detectors:
@@ -161,7 +161,7 @@ sensors:
         lead2_ain: 2
         idac1_ain: 5
         idac2_ain: 3
-        sampling_rate_hz: 10
+        sampling_rate_hz: 5
         notes: "Water inlet RTD"
 
       WO-RTD:
@@ -172,7 +172,7 @@ sensors:
         lead2_ain: 2
         idac1_ain: 5
         idac2_ain: 3
-        sampling_rate_hz: 10
+        sampling_rate_hz: 5
         notes: "Water outlet RTD"
 
       NT-RTD:
@@ -183,7 +183,7 @@ sensors:
         lead2_ain: 2
         idac1_ain: 5
         idac2_ain: 3
-        sampling_rate_hz: 10
+        sampling_rate_hz: 5
         notes: "Nitrous tank RTD"
 
     load cells:
