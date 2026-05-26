@@ -341,12 +341,12 @@ actuators:
       normally_closed: true
       notes: "Fuel tank filling flow valve"
 
-    oifv/sparker:
+    oifv:
       enabled: true
       mode: on_off
       pin: 27
       normally_closed: true
-      notes: "Igniter"
+      notes: "Oxidizer igniter flow valve"
 
     omv:
       enabled: true
