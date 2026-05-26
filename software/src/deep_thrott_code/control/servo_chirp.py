@@ -145,8 +145,8 @@ SERVO_MOVE_TIME_WRITE_CMD = 1
 #         print(f"Packet bytes: {list(packet)}")
 #         send_packet(packet)
 
-# valve_id_assignment_packet = build_packet(1, 13, [3])
-# send_packet(valve_id_assignment_packet)
+valve_id_assignment_packet = build_packet(1, 13, [2])
+send_packet(valve_id_assignment_packet)
 
 # # get valve id
 # print("Sending valve id request...")
@@ -191,21 +191,21 @@ SERVO_MOVE_TIME_WRITE_CMD = 1
 #     # print("Valve angle:", test_valve_naked.read_pos())
 #     time.sleep(3)
 
-servo_id = 254
-angle = 90
-duration = 2
-
-throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
-pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
-
-print("Sending sum shiz...")
-while True:
-    throttle_valve.set_state(ValveState.OPEN)
-    pwm_valve.set_state(ValveState.OPEN)
-    time.sleep(duration)
-    throttle_valve.set_state(ValveState.CLOSED)
-    pwm_valve.set_state(ValveState.CLOSED)
-    time.sleep(duration)
+# servo_id = 254
+# angle = 90
+# duration = 2
+#
+# throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
+# pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
+#
+# print("Sending sum shiz...")
+# while True:
+#     throttle_valve.set_state(ValveState.OPEN)
+#     pwm_valve.set_state(ValveState.OPEN)
+#     time.sleep(duration)
+#     throttle_valve.set_state(ValveState.CLOSED)
+#     pwm_valve.set_state(ValveState.CLOSED)
+#     time.sleep(duration)
 
 pi.serial_close(serial_handle)
 pi.stop()
