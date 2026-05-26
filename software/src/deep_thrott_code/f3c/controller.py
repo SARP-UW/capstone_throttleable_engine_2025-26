@@ -673,7 +673,7 @@ class Controller:
                     actuator_list[str(valve_id)] = valve
                 else:
                     # pwm water valve
-                    valve = WaterValvePWM(str(valve_id), int(actuator_info.get("pin")), pi, bool(actuator_info.get("normally_closed")))
+                    valve = WaterValvePWM(str(valve_id), int(actuator_info.get("pin")), bool(actuator_info.get("normally_closed")), pi)
                     actuator_list[str(valve_id)] = valve
         return actuator_list
 

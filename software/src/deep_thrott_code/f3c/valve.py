@@ -138,11 +138,11 @@ class ThrottleValve():
     def __init__(self, valve_id: str, uart_id: int, serial_handle, pi_instance, normally_closed: bool):
         self.valve_id = valve_id
         self.uart_id = uart_id
+        self.pi = pi_instance
         self.serial_handle = serial_handle
         self.load_motor()
         self.checksum_found = False
         self.state = ValveState.OPEN
-        self.pi = pi_instance
         self.normally_closed = normally_closed
 
 
