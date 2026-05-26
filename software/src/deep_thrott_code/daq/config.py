@@ -28,7 +28,7 @@ DAQ_RATE_STATS_PERIOD_S: float = 5.0
 # scheduler jitter and conversion overhead. A configured sensor rate in
 # hardware.yml is multiplied by this value for producer scheduling and ADC
 # datarate sizing.
-DAQ_SENSOR_RATE_TARGET_MULT: float = 10.0
+DAQ_SENSOR_RATE_TARGET_MULT: float = 2.0
 
 
 # Number of recent sample timestamps used to estimate achieved per-sensor rate
