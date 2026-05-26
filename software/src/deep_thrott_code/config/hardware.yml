@@ -188,7 +188,7 @@ sensors:
 
     load cells:
       N-LC:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 1
@@ -199,7 +199,7 @@ sensors:
         notes: "Nitrous tank load cell"
 
       E-LC:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 11
@@ -210,7 +210,7 @@ sensors:
 
     flow meters:
       FM-FM:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: single_ended
         ain: 8
