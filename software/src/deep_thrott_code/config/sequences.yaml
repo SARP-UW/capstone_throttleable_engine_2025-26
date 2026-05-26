@@ -81,7 +81,7 @@ sequences:
         user_input: false
         system_state: fire
 
-      - valve_id: oifv/sparker
+      - valve_id: oifv
         action: open
         time_delay: 2.0
         user_input: false
@@ -115,7 +115,7 @@ sequences:
         user_input: false
         system_state: fire
 
-      - valve_id: oifv/sparker
+      - valve_id: oifv
         action: closed
         time_delay: 2.0
         user_input: false

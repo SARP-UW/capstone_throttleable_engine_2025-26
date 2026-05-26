@@ -36,6 +36,23 @@ import time
 from typing import Any, Callable
 
 
+def _drain_pending_queue(q: queue.Queue | None) -> None:
+	if q is None:
+		return
+	while True:
+		try:
+			q.get_nowait()
+		except queue.Empty:
+			break
+		except Exception:
+			break
+		else:
+			try:
+				q.task_done()
+			except Exception:
+				pass
+
+
 
 def _sample_to_json(sample: Any) -> dict[str, Any]:  # noqa: ANN401
 	"""Convert a sample object into a JSON-serializable dict.
@@ -345,6 +362,9 @@ def register_socket_handlers(
 			if command_queue is None:
 				socketio.emit("command_reject", {"ok": False, "reason": "command_queue_not_configured"})
 				return
+			if name == "clear_test":
+				_drain_pending_queue(command_queue)
+				_drain_pending_queue(app.config.get("GUI_TO_F3_QUEUE"))
 			try:
 				command_queue.put({"type": "reset_sequences"}, timeout=0.1)
 			except Exception:
