@@ -727,6 +727,7 @@ class RTDSensor(Sensor):
         sampling_rate_hz: float | None = None,
         r0_ohms: float = 1000.0,
         rref_ohms: float = 5600.0,
+        reference_factor: float = 1.0,
         idac_current_ua: float = 50.0,
         unit: str = "°C",
         offset: float = 0.0,
@@ -738,6 +739,7 @@ class RTDSensor(Sensor):
         self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
         self.r0_ohms = float(r0_ohms)
         self.rref_ohms = float(rref_ohms)
+        self.reference_factor = float(reference_factor) if reference_factor else 1.0
         self.idac_current_ua = float(idac_current_ua)
         self.idac1_ain = int(idac1_ain)
         self.idac2_ain = int(idac2_ain)
@@ -779,7 +781,8 @@ class RTDSensor(Sensor):
     def _code_to_resistance(self, code_rtd: int) -> float:
         if self.rref_ohms <= 0:
             return 0.0
-        return (float(code_rtd) / self._FS) * self.rref_ohms
+        factor = self.reference_factor if self.reference_factor > 0 else 1.0
+        return (float(code_rtd) / self._FS) * self.rref_ohms * factor
 
     def _resistance_to_temperature_c(self, resistance: float) -> float:
         r_ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
@@ -1381,10 +1384,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 return default
 
-        def _rtd_calibration(sensor_id: str) -> tuple[float, float, float, str, float]:
-            """Return (r0_ohms, rref_ohms, idac_current_ua, unit, offset)."""
+        def _rtd_calibration(sensor_id: str) -> tuple[float, float, float, float, str, float]:
+            """Return (r0_ohms, rref_ohms, reference_factor, idac_current_ua, unit, offset)."""
 
-            default = (1000.0, 5600.0, 50.0, "°C", 0.0)
+            default = (1000.0, 5600.0, 1.0, 50.0, "°C", 0.0)
 
             cal = conversions_cfg.get("calibration")
             if not isinstance(cal, dict):
@@ -1414,10 +1417,11 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             try:
                 r0_ohms = float(profile.get("r0_ohms", default[0]))
                 rref_ohms = float(profile.get("rref_ohms", default[1]))
-                idac_current_ua = float(profile.get("idac_current_ua", default[2]))
-                unit = str(profile.get("unit", default[3]))
-                offset = float(profile.get("offset", default[4]))
-                return (r0_ohms, rref_ohms, idac_current_ua, unit, offset)
+                reference_factor = float(profile.get("reference_factor", default[2]))
+                idac_current_ua = float(profile.get("idac_current_ua", default[3]))
+                unit = str(profile.get("unit", default[4]))
+                offset = float(profile.get("offset", default[5]))
+                return (r0_ohms, rref_ohms, reference_factor, idac_current_ua, unit, offset)
             except Exception:
                 return default
 
@@ -1567,7 +1571,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             except Exception:
                 sampling_rate_hz = None
 
-            r0_ohms, rref_ohms, idac_current_ua, unit, offset = _rtd_calibration(sensor_id)
+            r0_ohms, rref_ohms, reference_factor, idac_current_ua, unit, offset = _rtd_calibration(sensor_id)
 
             try:
                 if cfg.get("r0_ohms") is not None:
@@ -1606,6 +1610,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                     sampling_rate_hz=sampling_rate_hz,
                     r0_ohms=r0_ohms,
                     rref_ohms=rref_ohms,
+                    reference_factor=reference_factor,
                     idac_current_ua=idac_current_ua,
                     unit=unit,
                     offset=offset,

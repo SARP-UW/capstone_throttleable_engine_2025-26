@@ -35,6 +35,7 @@ calibration_profiles:
       type: rtd_callendar_van_dusen
       r0_ohms: 1000.0
       rref_ohms: 5576.0
+      reference_factor: 2.0
       idac_current_ua: 100.0
       unit: "°C"
       offset: 0.0
@@ -44,20 +45,21 @@ calibration_profiles:
       type: rtd_callendar_van_dusen
       r0_ohms: 1000.0
       rref_ohms: 5590.0
+      reference_factor: 2.0
       idac_current_ua: 100.0
       unit: "°C"
       offset: 0.0
-    
+
     nitrous_rtd:
-    units: C
-    type: rtd_callendar_van_dusen
-    r0_ohms: 1000.0
-    rref_ohms: 5587.0
-    idac_current_ua: 100.0
-    unit: "°C"
-    offset: 0.0
-    
-  
+      units: C
+      type: rtd_callendar_van_dusen
+      r0_ohms: 1000.0
+      rref_ohms: 5587.0
+      reference_factor: 2.0
+      idac_current_ua: 100.0
+      unit: "°C"
+      offset: 0.0
+
   flow_meters:
     v_to_gpm_linear:
       units: gallons_per_minute
@@ -93,6 +95,7 @@ calibration:
   rtds:
     WI-RTD: { profile: pt1000_water_inlet }
     WO-RTD: { profile: pt1000_water_outlet }
+    NT-RTD: { profile: nitrous_rtd }
 
 limits:
   pressure_transducers:
