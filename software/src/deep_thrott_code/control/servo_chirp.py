@@ -198,9 +198,9 @@ valve = ThrottleValve("test_valve", servo_id, serial_handle, False)
 
 print("Sending sum shiz...")
 while True:
-    valve.throttle(servo_id, angle, duration)
+    valve.throttle(angle, duration)
     time.sleep(duration)
-    valve.throttle(servo_id, 0, duration)
+    valve.throttle(0, duration)
     time.sleep(duration)
 
 pi.serial_close(serial_handle)
