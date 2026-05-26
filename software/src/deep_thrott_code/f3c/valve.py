@@ -145,7 +145,7 @@ class ThrottleValve():
 
 
     def is_normally_closed(self) -> bool:
-        return self.normally_closed()
+        return self.normally_closed
 
     def set_state(self, new_state: ValveState, theta: float | None = None):
         actuation_time = 0.5
@@ -279,10 +279,11 @@ class WaterValvePWM:
     MAX_PULSE_US = 2500
     MAX_ANGLE_DEG = 180
     
-    def __init__(self, valve_id: str, pin: int):
+    def __init__(self, valve_id: str, pin: int, normally_closed: bool):
         self.valve_id = valve_id
         self.pin = pin
         self.current_angle = 0.0
+        self.normally_closed = normally_closed
         
         if GPIO_AVAILABLE:
             try:
@@ -314,8 +315,8 @@ class WaterValvePWM:
         else:
             print(f"WaterValvePWM {self.valve_id}: set to {angle_deg:.1f}° ({pulse_us:.0f}us)")
 
-    def open(self):
-        self.set_angle(90.0)
-
-    def close(self):
-        self.set_angle(0.0)
+    def set_state(self, new_state: ValveState):
+        if new_state == ValveState.OPEN:
+            self.set_angle(0.0)
+        else:
+            self.set_angle(90.0)
