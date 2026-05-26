@@ -7,8 +7,6 @@ import time
 
 import pigpio
 
-from f3c.valve import WaterValvePWM
-
 pi = pigpio.pi()
 if not pi.connected:
     print("Failed to connect to pigpiod")
@@ -18,7 +16,7 @@ if not pi.connected:
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from deep_thrott_code.f3c.valve import ThrottleValve, ValveState
+from deep_thrott_code.f3c.valve import ThrottleValve, ValveState, WaterValvePWM
 
 TX_ENABLE_PIN = 18
 TX_PIN = 14
