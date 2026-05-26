@@ -15,7 +15,7 @@ if not pi.connected:
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from deep_thrott_code.f3c.valve import ThrottleValve
+from deep_thrott_code.f3c.valve import ThrottleValve, ValveState
 
 TX_ENABLE_PIN = 18
 TX_PIN = 14
@@ -198,9 +198,9 @@ valve = ThrottleValve("test_valve", servo_id, serial_handle, False)
 
 print("Sending sum shiz...")
 while True:
-    valve.throttle(angle, duration)
+    valve.set_state(ValveState.OPEN)
     time.sleep(duration)
-    valve.throttle(0, duration)
+    valve.set_state(ValveState.CLOSED)
     time.sleep(duration)
 
 pi.serial_close(serial_handle)

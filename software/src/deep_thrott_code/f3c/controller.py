@@ -272,6 +272,7 @@ class Controller:
                 
                 # single valve actuation
                 if cmd_type == "set_valve":
+                    print("Single valve actuation branch in start() reached...")
                     valve_id = gui_input.get("valve_id")
                     state = gui_input.get("state") or gui_input.get("valve_state")
                     if isinstance(valve_id, str) and isinstance(state, str):
@@ -362,6 +363,7 @@ class Controller:
 
             # if single valve actuation
             if action == self.single_valve_actuation:
+                print("Single valve actuation branch in _execute_action() reached...")
 
                 # run helper method in its own thread
                 threading.Thread(target=self._execute_single_valve_actuation, args=(current_valve, valve_state)).start()
@@ -578,7 +580,7 @@ class Controller:
 
     def _execute_pulse(self, valve: Valve, dt: float):
         print("_execute_pulse() reached...")
-        
+
         # pulse valve
         valve.pulse_valve(dt)
 
