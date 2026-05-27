@@ -547,7 +547,6 @@ class Controller:
                                     finally:
                                         self._ack_queue.task_done()
 
-
                     # set fill_executed or fire_executed to True if the sequence is finished
                     if current_sequence == "fill":
                         fill_executed = True

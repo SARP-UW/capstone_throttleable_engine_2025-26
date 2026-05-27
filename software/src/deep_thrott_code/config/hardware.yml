@@ -54,7 +54,7 @@ sensors:
   hotfire:
     pressure_transducers:
       LF-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         pt_num: 1
@@ -63,7 +63,7 @@ sensors:
         notes: "L Fuel pressure transducer"
 
       FT-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 0
@@ -72,7 +72,7 @@ sensors:
         notes: "Fuel tank pressure transducer"
 
       FM-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 11
@@ -81,7 +81,7 @@ sensors:
         notes: "Fuel main pressure transducer"
 
       FI-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 10
@@ -90,7 +90,7 @@ sensors:
         notes: "Fuel injector pressure transducer"
 
       WM-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 9
@@ -99,7 +99,7 @@ sensors:
         notes: "Water main pressure transducer"
 
       CC-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: single_ended
         ain: 8
@@ -108,7 +108,7 @@ sensors:
         notes: "Combustion chamber pressure transducer"
 
       XF-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: single_ended
         ain: 1
@@ -117,7 +117,7 @@ sensors:
         notes: "XF pressure transducer"
 
       OT-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: single_ended
         ain: 0
@@ -126,7 +126,7 @@ sensors:
         notes: "Ox tank pressure transducer"
 
       OF-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: single_ended
         ain: 11
@@ -135,7 +135,7 @@ sensors:
         notes: "Ox fill pressure transducer"
 
       OM-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: single_ended
         ain: 10
@@ -144,7 +144,7 @@ sensors:
         notes: "Ox main pressure transducer"
 
       OI-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: single_ended
         ain: 9
@@ -166,7 +166,7 @@ sensors:
         notes: "Water inlet RTD"
 
       WO-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: rtd_3_wire
         lead1_ain: 4
@@ -191,7 +191,7 @@ sensors:
 
     load cells:
       N-LC:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 1
@@ -202,7 +202,7 @@ sensors:
         notes: "Nitrous tank load cell"
 
       E-LC:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 11
@@ -213,10 +213,10 @@ sensors:
 
     flow meters:
       FM-FM:
-        enabled: false
-        adc_id: ADC2
+        enabled: true
+        adc_id: ADC3
         signal_mode: single_ended
-        ain: 8
+        ain: 10
         sampling_rate_hz: 150
         notes: "Fuel main flow meter"
 

@@ -19,6 +19,11 @@ ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH: int = 4
 RTD_MODE_SETTLE_S: float = 0.02
 
 
+# Number of differential RTD samples to take while RTD mode stays enabled.
+# The median of the burst is used as the RTD code.
+RTD_DIFF_BURST_SAMPLES: int = 3
+
+
 # If True, force ADS124S08 DATARATE.DR to max (4000 SPS) at startup.
 # This maximizes scan throughput when multiplexing channels.
 ADC_FORCE_MAX_DATARATE: bool = False

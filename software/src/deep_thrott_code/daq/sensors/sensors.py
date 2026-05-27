@@ -752,6 +752,44 @@ class RTDSensor(Sensor):
         self.unit = unit
         self.offset = float(offset)
         self._last_debug_log_t = 0.0
+        self._last_diff_burst: tuple[int, ...] = ()
+
+    def _read_rtd_diff_code(self, settle_discard: bool) -> int:
+        try:
+            burst_samples = int(getattr(config, "RTD_DIFF_BURST_SAMPLES", 1) or 1)
+        except Exception:
+            burst_samples = 1
+        if burst_samples <= 1:
+            burst_samples = 1
+
+        codes: list[int] = []
+        codes.append(
+            int(
+                self.adc.read_raw_diff(
+                    self.lead1_ain,
+                    self.lead2_ain,
+                    settle_discard=settle_discard,
+                )
+            )
+        )
+
+        for _ in range(1, burst_samples):
+            codes.append(
+                int(
+                    self.adc.read_raw_diff(
+                        self.lead1_ain,
+                        self.lead2_ain,
+                        settle_discard=False,
+                    )
+                )
+            )
+
+        self._last_diff_burst = tuple(codes)
+        if len(codes) == 1:
+            return codes[0]
+
+        ordered = sorted(codes)
+        return int(ordered[len(ordered) // 2])
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
@@ -781,7 +819,7 @@ class RTDSensor(Sensor):
             settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
             raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
             raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)
-            code_rtd = self.adc.read_raw_diff(self.lead1_ain, self.lead2_ain, settle_discard=settle_discard)
+            code_rtd = self._read_rtd_diff_code(bool(settle_discard))
             if self.invert_polarity:
                 code_rtd = -int(code_rtd)
         finally:
@@ -853,11 +891,12 @@ class RTDSensor(Sensor):
         raw_lead2 = raw_sample.raw_diff_2
         ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
         _log.warning(
-            "[%s] RTD debug lead1=%s lead2=%s diff=%s gain=%s rref=%.3f ref_factor=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
+            "[%s] RTD debug lead1=%s lead2=%s diff=%s burst=%s gain=%s rref=%.3f ref_factor=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
             self.name,
             raw_lead1,
             raw_lead2,
             raw_sample.raw_count,
+            list(self._last_diff_burst),
             self.adc_gain,
             self.rref_ohms,
             self.reference_factor,
