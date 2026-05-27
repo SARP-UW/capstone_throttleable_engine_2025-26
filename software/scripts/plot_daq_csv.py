@@ -22,6 +22,42 @@ from collections import defaultdict
 from pathlib import Path
 
 
+def _default_csv_search_roots() -> list[Path]:
+    script_dir = Path(__file__).resolve().parent
+    software_dir = script_dir.parent
+    repo_dir = software_dir.parent
+    return [
+        software_dir / "logs" / "daq",
+        software_dir / "src" / "logs",
+        repo_dir,
+    ]
+
+
+def _find_most_recent_csv() -> Path:
+    newest_path: Path | None = None
+    newest_mtime = float("-inf")
+
+    for root in _default_csv_search_roots():
+        if not root.exists():
+            continue
+        for candidate in root.rglob("*.csv"):
+            if not candidate.is_file():
+                continue
+            try:
+                mtime = candidate.stat().st_mtime
+            except OSError:
+                continue
+            if mtime > newest_mtime:
+                newest_mtime = mtime
+                newest_path = candidate
+
+    if newest_path is None:
+        roots = ", ".join(str(root) for root in _default_csv_search_roots())
+        raise SystemExit(f"No CSV logs found under: {roots}")
+
+    return newest_path
+
+
 def _to_float(x: object) -> float | None:
     if x is None:
         return None
@@ -95,8 +131,8 @@ def main() -> int:
     ap.add_argument(
         "csv",
         nargs="?",
-        default="daq_backend_log.csv",
-        help="Path to CSV log (default: daq_backend_log.csv)",
+        default=None,
+        help="Path to CSV log (default: newest CSV in the DAQ log folders)",
     )
     ap.add_argument(
         "--sensors",
@@ -112,7 +148,7 @@ def main() -> int:
 
     args = ap.parse_args()
 
-    path = Path(args.csv)
+    path = Path(args.csv) if args.csv else _find_most_recent_csv()
     if not path.exists():
         raise SystemExit(f"File not found: {path}")
 
