@@ -543,13 +543,13 @@ class Controller:
                         # wait for delay specified in step (can be 0.0)
                         time.sleep(step.get("time_delay", 0.0))
 
-                    with self._lock:
-                        self.state = State.IDLE
-                    # set fill_executed or fire_executed to True if the sequence is finished
-                    if current_sequence == "fill":
-                        fill_executed = True
-                    else:
-                        fire_executed = True
+                # set fill_executed or fire_executed to True if the sequence is finished
+                if current_sequence == "fill":
+                    fill_executed = True
+                else:
+                    fire_executed = True
+                with self._lock:
+                    self.state = State.IDLE
             else:
                 # TODO: send to gui "already executed fill/fire sequence"
                 pass
