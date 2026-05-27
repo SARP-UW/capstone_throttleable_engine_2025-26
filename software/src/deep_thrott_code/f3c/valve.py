@@ -177,6 +177,7 @@ class ThrottleValve():
             # TO DO: send error that valve must be closed to pulse it
             pass
 
+    # TODO: make time_s 0.0 by default
     def throttle(self, angle_deg: float, time_s):
         """
             Move servo to angle (0-1000 => 0-240°) over time_ms (0-30000ms).

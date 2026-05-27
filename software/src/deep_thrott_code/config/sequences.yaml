@@ -67,6 +67,7 @@ sequences:
         user_input: true
         system_state: fill
 
+# coldflow sequence
   - name: fire
     steps:
       - valve_id: wmv
@@ -101,7 +102,7 @@ sequences:
 
       - valve_id: fmctv
         action: None
-        angle: 60.0
+        angle: 60.0    # full open
         time: 0.5
         time_delay: 0.0
         user_input: false
@@ -109,7 +110,7 @@ sequences:
 
       - valve_id: omctv
         action: None
-        angle: 60.0
+        angle: 60.0     # full open
         time: 0.5
         time_delay: 2.0
         user_input: false
@@ -117,13 +118,13 @@ sequences:
 
       - valve_id: oifv
         action: closed
-        time_delay: 2.0
+        time_delay: 0.0
         user_input: false
         system_state: fire
 
       - valve_id: fmctv
         action: None
-        angle: 45.0
+        angle: 45.0     # 90% open
         time: 0.5
         time_delay: 0.0
         user_input: false
@@ -131,9 +132,25 @@ sequences:
 
       - valve_id: omctv
         action: None
-        angle: 45.0
+        angle: 45.0         # 90% open
         time: 0.5
-        time_delay: 4.0
+        time_delay: 1.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: fmctv
+        action: None
+        angle: 45.0     # 90% open
+        time: 0.5
+        time_delay: 0.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: omctv
+        action: None
+        angle: 45.0         # 90% open
+        time: 0.5
+        time_delay: 1.0
         user_input: false
         system_state: fire
 
@@ -154,3 +171,92 @@ sequences:
         time_delay: 0.0
         user_input: true
         system_state: fire
+
+# hotfire sequence
+#  - name: fire
+#    steps:
+#      - valve_id: wmv
+#        action: open
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: fifv
+#        action: open
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: oifv
+#        action: open
+#        time_delay: 2.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: omv
+#        action: open
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: fmv
+#        action: open
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: fmctv
+#        action: None
+#        angle: 60.0
+#        time: 0.5
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: omctv
+#        action: None
+#        angle: 60.0
+#        time: 0.5
+#        time_delay: 2.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: oifv
+#        action: closed
+#        time_delay: 2.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: fmctv
+#        action: None
+#        angle: 45.0
+#        time: 0.5
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: omctv
+#        action: None
+#        angle: 45.0
+#        time: 0.5
+#        time_delay: 4.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: lffv
+#        action: closed
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: fifv
+#        action: closed
+#        time_delay: 0.0
+#        user_input: false
+#        system_state: fire
+#
+#      - valve_id: xffv
+#        action: closed
+#        time_delay: 0.0
+#        user_input: true
+#        system_state: fire
