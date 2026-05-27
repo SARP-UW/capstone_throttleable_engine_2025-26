@@ -35,11 +35,6 @@ ADC_FORCE_MAX_DATARATE: bool = False
 ADC_DATARATE_HEADROOM: float = 1.5
 
 
-# Optional producer rate instrumentation.
-DAQ_EMIT_RATE_STATS: bool = True
-DAQ_RATE_STATS_PERIOD_S: float = 5.0
-
-
 # Optional RTD diagnostic logging.
 # When enabled, each RTD emits a throttled backend log line with the raw lead
 # codes, raw differential code, inferred resistance, and computed temperature.

@@ -381,52 +381,6 @@ class DaqRuntime:
 		producer_thread = threading.Thread(target=producer_entrypoint, daemon=True, name="producer_dispatch")
 		consumer_thread = threading.Thread(target=consumer_entrypoint, daemon=True, name="consumer")
 
-		# Optional DAQ rate monitor thread. Delete after testing 
-		monitor_thread: threading.Thread | None = None
-		if bool(getattr(daq_config, "DAQ_EMIT_RATE_STATS", False)):
-			period_s = float(getattr(daq_config, "DAQ_RATE_STATS_PERIOD_S", 5.0) or 5.0)
-
-			def monitor_entrypoint() -> None:
-				last = producer_stats.snapshot()
-				last_consumer = consumer_stats.snapshot()
-				last_t = time.perf_counter()
-				while not stop_event.is_set():
-					time.sleep(period_s)
-					now = time.perf_counter()
-					snap = producer_stats.snapshot()
-					consumer_snap = consumer_stats.snapshot()
-					dt = now - last_t
-					if dt <= 0:
-						last = snap
-						last_consumer = consumer_snap
-						last_t = now
-						continue
-					cycles = snap["cycles"] - last["cycles"]
-					samples = snap["samples_enqueued"] - last["samples_enqueued"]
-					reads = snap["samples_read"] - last["samples_read"]
-					overruns = snap["overruns"] - last["overruns"]
-					busy = snap["busy_s"] - last["busy_s"]
-					read_busy = snap["read_s"] - last["read_s"]
-					due_skips = snap["due_skips"] - last["due_skips"]
-					timeouts = snap["timeouts"] - last["timeouts"]
-					consumer_samples = consumer_snap["samples"] - last_consumer["samples"]
-					convert_s = consumer_snap["convert_s"] - last_consumer["convert_s"]
-					state_gui_s = consumer_snap["state_gui_s"] - last_consumer["state_gui_s"]
-					log_s = consumer_snap["log_s"] - last_consumer["log_s"]
-					msg = (
-						f"DAQ rate: cyc={cycles / dt:.1f}/s read={reads / dt:.1f}/s enq={samples / dt:.1f}/s "
-						f"busy={busy / dt:.0%} read_busy={read_busy / dt:.0%} due_skips={due_skips / dt:.1f}/s "
-						f"timeouts={int(timeouts)} cons={consumer_samples / dt:.1f}/s conv={convert_s / dt:.0%} "
-						f"gui={state_gui_s / dt:.0%} log={log_s / dt:.0%} overruns={int(overruns)}"
-					)
-					print(msg, flush=True)
-					last = snap
-					last_consumer = consumer_snap
-					last_t = now
-
-			monitor_thread = threading.Thread(target=monitor_entrypoint, daemon=True, name="producer_monitor")
-		# Delete until here
-
 		producer_thread.start()
 		consumer_thread.start()
 		if monitor_thread is not None:
