@@ -383,8 +383,6 @@ class DaqRuntime:
 
 		producer_thread.start()
 		consumer_thread.start()
-		if monitor_thread is not None:
-			monitor_thread.start()
 
 		with self._lock:
 			self._running = True
