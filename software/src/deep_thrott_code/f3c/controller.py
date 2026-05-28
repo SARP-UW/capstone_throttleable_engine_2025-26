@@ -683,7 +683,8 @@ class Controller:
         now = datetime.now()
         folder_date = now.strftime("%Y/%m/%d")
         file_timestamp = now.strftime("%H-%M-%S_" + file_name + ".csv")
-        base_dir = Path("logs")
+        software_dir = Path(__file__).resolve().parents[3]
+        base_dir = software_dir / "logs" / "f3c"
         full_path = base_dir / folder_date / file_timestamp
         full_path.parent.mkdir(parents=True, exist_ok=True)
         try:
