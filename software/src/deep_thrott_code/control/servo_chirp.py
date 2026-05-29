@@ -1,3 +1,9 @@
+import sys
+import os
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, ROOT)
+
+
 import numpy as np
 # from debugpy._vendored.pydevd._pydevd_bundle import pydevd_io
 from scipy.signal import chirp
@@ -5,7 +11,7 @@ from scipy.signal import chirp
 import serial
 import time
 from deep_thrott_code.f3c.valve import ThrottleValve, ValveState, WaterValvePWM
-import sys, os
+
 import pigpio
 
 pi = pigpio.pi()
@@ -14,7 +20,6 @@ if not pi.connected:
     exit()
 
 # TODO: evaluate whether this is needed
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 
