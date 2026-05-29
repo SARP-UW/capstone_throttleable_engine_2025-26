@@ -198,7 +198,7 @@ SERVO_MOVE_TIME_WRITE_CMD = 1
 
 servo_id = 254
 angle = 90
-duration = 2
+duration = 10
 
 throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
 # pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
