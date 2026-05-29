@@ -4,7 +4,8 @@ from scipy.signal import chirp
 # import matplotlib.pyplot as plt
 import serial
 import time
-
+from deep_thrott_code.f3c.valve import ThrottleValve, ValveState, WaterValvePWM
+import sys, os
 import pigpio
 
 pi = pigpio.pi()
@@ -13,10 +14,9 @@ if not pi.connected:
     exit()
 
 # TODO: evaluate whether this is needed
-import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from deep_thrott_code.f3c.valve import ThrottleValve, ValveState, WaterValvePWM
+
 
 TX_ENABLE_PIN = 18
 TX_PIN = 14
@@ -31,26 +31,26 @@ pi.write(TX_ENABLE_PIN, 1)     # start in receive mode
 # Open pigpio serial port for reading responses
 serial_handle = pi.serial_open("/dev/ttyS0", BAUD)
 
-# Parameters
-T = 10.0             # Total time in seconds
-fs = 1000           # Sampling frequency (Hz)
-f0 = 0.01             # Start frequency (Hz)
-f1 = 2            # End frequency 1 (Hz)
-f2 = 5            # End frequency 2 (Hz)
-f3 = 10            # End frequency 3 (Hz)
-f4 = 20            # End frequency 4 (Hz)
-t = np.linspace(0, T, int(T * fs), endpoint=False)
+# # Parameters
+# T = 10.0             # Total time in seconds
+# fs = 1000           # Sampling frequency (Hz)
+# f0 = 0.01             # Start frequency (Hz)
+# f1 = 2            # End frequency 1 (Hz)
+# f2 = 5            # End frequency 2 (Hz)
+# f3 = 10            # End frequency 3 (Hz)
+# f4 = 20            # End frequency 4 (Hz)
+# t = np.linspace(0, T, int(T * fs), endpoint=False)
 
-# Generate linear chirp
-# method options: 'linear', 'quadratic', 'logarithmic'
-chirp_2hz = chirp(t, f0=f0, t1=T, f1=f1, method='linear')
-chirp_5hz = chirp(t, f0=f0, t1=T, f1=f2, method='linear')
-chirp_10hz = chirp(t, f0=f0, t1=T, f1=f3, method='linear')
-chirp_20hz = chirp(t, f0=f0, t1=T, f1=f4, method='linear')
-chirp_angle_2hz = 45*chirp_2hz + 45
-chirp_angle_5hz = 45*chirp_5hz + 45
-chirp_angle_10hz = 45*chirp_10hz + 45
-chirp_angle_20hz = 45*chirp_20hz + 45
+# # Generate linear chirp
+# # method options: 'linear', 'quadratic', 'logarithmic'
+# chirp_2hz = chirp(t, f0=f0, t1=T, f1=f1, method='linear')
+# chirp_5hz = chirp(t, f0=f0, t1=T, f1=f2, method='linear')
+# chirp_10hz = chirp(t, f0=f0, t1=T, f1=f3, method='linear')
+# chirp_20hz = chirp(t, f0=f0, t1=T, f1=f4, method='linear')
+# chirp_angle_2hz = 45*chirp_2hz + 45
+# chirp_angle_5hz = 45*chirp_5hz + 45
+# chirp_angle_10hz = 45*chirp_10hz + 45
+# chirp_angle_20hz = 45*chirp_20hz + 45
 
 # Plot
 # plt.plot(t, chirp_angle_10hz)
@@ -145,8 +145,8 @@ SERVO_MOVE_TIME_WRITE_CMD = 1
 #         print(f"Packet bytes: {list(packet)}")
 #         send_packet(packet)
 
-valve_id_assignment_packet = build_packet(1, 13, [2])
-send_packet(valve_id_assignment_packet)
+# valve_id_assignment_packet = build_packet(1, 13, [2])
+# send_packet(valve_id_assignment_packet)
 
 # # get valve id
 # print("Sending valve id request...")
@@ -191,21 +191,22 @@ send_packet(valve_id_assignment_packet)
 #     # print("Valve angle:", test_valve_naked.read_pos())
 #     time.sleep(3)
 
-# servo_id = 254
-# angle = 90
-# duration = 2
-#
-# throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
-# pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
-#
-# print("Sending sum shiz...")
-# while True:
-#     throttle_valve.set_state(ValveState.OPEN)
-#     pwm_valve.set_state(ValveState.OPEN)
-#     time.sleep(duration)
-#     throttle_valve.set_state(ValveState.CLOSED)
-#     pwm_valve.set_state(ValveState.CLOSED)
-#     time.sleep(duration)
+servo_id = 254
+angle = 90
+duration = 2
 
-pi.serial_close(serial_handle)
-pi.stop()
+throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
+pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
+#
+print("Sending sum shiz...")
+try:
+    while True:
+        throttle_valve.set_state(ValveState.OPEN)
+        pwm_valve.set_state(ValveState.OPEN)
+        time.sleep(duration)
+        throttle_valve.set_state(ValveState.CLOSED)
+        pwm_valve.set_state(ValveState.CLOSED)
+        time.sleep(duration)
+except KeyboardInterrupt:
+    pi.serial_close(serial_handle)
+    pi.stop()
