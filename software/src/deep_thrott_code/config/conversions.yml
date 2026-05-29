@@ -83,7 +83,7 @@ calibration_profiles:
       v_min: 0.8 # 4mA over 200 ohm resistor
       v_max: 4 # 20mA over 200 ohm resistor
       gpm_min: 0.0
-      gpm_max: 30
+      gpm_max: 10
 
 calibration:
   pressure_transducers:
