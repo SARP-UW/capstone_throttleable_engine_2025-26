@@ -81,7 +81,7 @@ sensors:
         notes: "Fuel main pressure transducer"
 
       FI-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 0
@@ -90,7 +90,7 @@ sensors:
         notes: "Fuel injector pressure transducer"
 
       WM-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 9
@@ -99,7 +99,7 @@ sensors:
         notes: "Water main pressure transducer"
 
       CC-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: single_ended
         ain: 8
@@ -144,7 +144,7 @@ sensors:
         notes: "Ox main pressure transducer"
 
       OI-PT:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: single_ended
         ain: 11
@@ -191,7 +191,7 @@ sensors:
 
     load cells:
       N-LC:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 1
@@ -202,7 +202,7 @@ sensors:
         notes: "Nitrous tank load cell"
 
       E-LC:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: differential
         ain_pos: 11
