@@ -21,9 +21,8 @@ if not pi.connected:
 
 # TODO: evaluate whether this is needed
 
-
-
-TX_ENABLE_PIN = 18
+# TX_ENABLE_PIN = 18 # ORIGINAL TX_ENABLE
+TX_ENABLE_PIN = 20 # TRYING START SYNC
 TX_PIN = 14
 RX_PIN = 15     # check this!
 BAUD = 115200
