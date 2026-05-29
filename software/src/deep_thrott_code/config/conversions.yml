@@ -8,8 +8,16 @@ calibration_profiles:
       v_min: 0.5
       v_max: 4.5
       psi_min: 0.0
-      psi_max: 500.0
+      psi_max: 1000.0
 
+    v_to_psi_0p5_4p5V_0_3000psi:
+      units: psi
+      type: volts_to_psi
+      v_min: 0.5
+      v_max: 4.5
+      psi_min: 0.0
+      psi_max: 3000.0
+    
     v_to_psi_0p5_4p5V_0_80psi:
       units: psi
       type: volts_to_psi
@@ -72,19 +80,24 @@ calibration_profiles:
     v_to_gpm_linear:
       units: gallons_per_minute
       type: linear
-      v_min: 0.008 # 4mA over 200 ohm resistor
+      v_min: 0.8 # 4mA over 200 ohm resistor
       v_max: 4 # 20mA over 200 ohm resistor
       gpm_min: 0.0
-      gpm_max: 7.925
+      gpm_max: 10
 
 calibration:
   pressure_transducers:
-    LF-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
-    FT-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
-    FM-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
-    FI-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
-    WM-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
-    CC-PT: { profile: v_to_psi_0p5_4p5V_0_500psi }
+    LF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    FT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    FM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    FI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    WM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    CC-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    XF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    OT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    OF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    OM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    OI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
     IC-PT1: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT2: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT3: { profile: v_to_psi_0p5_4p5V_0_80psi }
