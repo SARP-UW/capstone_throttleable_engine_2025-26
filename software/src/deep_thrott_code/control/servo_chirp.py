@@ -200,18 +200,27 @@ servo_id = 254
 angle = 90
 duration = 10
 
+
+
 throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
 # pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
 #
 print("Sending sum shiz...")
+
 try:
     while True:
-        print("Opening Throttle Valve...")
-        throttle_valve.set_state(ValveState.OPEN)
+        print("Pulling TX_ENABLE Low")
+        pi.write(TX_ENABLE_PIN, 0)
+
+        # print("Opening Throttle Valve...")
+        # throttle_valve.set_state(ValveState.OPEN)
         # pwm_valve.set_state(ValveState.OPEN)
         time.sleep(duration)
-        print("Closing Throttle Valv...")
-        throttle_valve.set_state(ValveState.CLOSED)
+        print("Pulling TX_ENABLE High")
+        pi.write(TX_ENABLE_PIN, 1)
+
+        # print("Closing Throttle Valv...")
+        # throttle_valve.set_state(ValveState.CLOSED)
         # pwm_valve.set_state(ValveState.CLOSED)
         time.sleep(duration)
 except KeyboardInterrupt:
