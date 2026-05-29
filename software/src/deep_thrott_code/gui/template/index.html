@@ -88,10 +88,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 12px;
       text-align: center;
-      font-size: 1.35rem;
+      font-size: 1.7rem;
+      font-weight: 700;
       padding: 0 10px;
       overflow: hidden;
+    }
+
+    .title-bar-logo {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .title-bar-text {
+      min-width: 0;
+      line-height: 1.1;
     }
 
     .top-row {
@@ -113,9 +127,14 @@
 
     .meta-box {
       padding: 6px 10px;
-      font-size: 0.7rem;
-      line-height: 1.25;
+      font-size: 0.88rem;
+      line-height: 1.35;
       overflow: hidden;
+    }
+
+    .meta-primary {
+      font-size: 1.02rem;
+      font-weight: 700;
     }
 
     .state-box {
@@ -774,11 +793,14 @@
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" async=""></script></head>
 <body>
   <div class="app">
-    <div class="title-bar">SARP Capstone Baja Blast Data Acquisition and Control Interface</div>
+    <div class="title-bar">
+      <img class="title-bar-logo" src="/static/Illustration18_6.png" alt="SARP Capstone Baja Blast logo">
+      <span class="title-bar-text">SARP Capstone Baja Blast Data Acquisition and Control Interface</span>
+    </div>
 
     <div class="top-row">
       <div class="meta-box">
-        <div><strong>TEST NAME:</strong> BAJA BLAST HOTFIRE 1</div>
+        <div class="meta-primary"><strong>TEST NAME:</strong> BAJA BLAST HOTFIRE 1</div>
         <div><strong>DATE AND TIME:</strong> <span id="metaDateTime">5/24/2026, 12:12:24 AM</span></div>
         <div><strong>LOGGING DIRECTORY:</strong> <span id="metaLogPath">/home/pi/capstone_throttleable_engine_2025-26/software/logs/daq/2026/05/24</span></div>
         <div><strong>OPERATOR:</strong> ELYSE LIAN</div>
@@ -1099,18 +1121,16 @@
         <div id="sequencesBlock">
           <div class="side-title" id="sequencesTitle">SEQUENCES</div>
           <div class="sequence-tabs" id="sequenceTabs"><div class="sequence-placeholder">No sequences loaded (sequencer disabled or backend failed to start). If you started the backend with <code>--no-sequencer</code>, remove that flag.</div></div>
+        </div>
 
+        <div>
+          <div class="side-title">INSTAGRAM REELS</div>
           <div id="reelsEmbed">
             <div class="reels-popup">
               <div class="reels-popup-title">Instagram Reels</div>
               <button class="reels-open" id="openReelsPopup" type="button">Open Instagram Reels</button>
             </div>
           </div>
-        </div>
-
-        <div>
-          <div class="side-title">VALVE POS</div>
-          <div class="value-box">50 DEG</div>
         </div>
       </div>
     </div>
