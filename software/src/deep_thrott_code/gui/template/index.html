@@ -52,6 +52,7 @@
       --tab-bg: #c7ffec;
       --tab-active: #74e2ae;
       --blue: #34ffb9;
+      --fonttext: #ffffff;
     }
 
     * { box-sizing: border-box; }
@@ -240,19 +241,22 @@
     .tab {
       border: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      background: #01756d;
+      background: var(--tab-bg);
+      color: var(--text);
       padding: 4px 20px;
       font-size: 0.9rem;
       margin-right: -1px;
       user-select: none;
       position: relative;
       top: 1px;
+      color: var(--fonttext);
     }
 
     .tab.active {
-      background: #014d4a;
+      background: var(--tab-active);
       border-bottom-color: white;
       z-index: 1;
+      color: var(--fonttext);
     }
 
     .pid-panel {
