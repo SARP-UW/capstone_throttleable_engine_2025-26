@@ -80,10 +80,10 @@ calibration_profiles:
     v_to_gpm_linear:
       units: gallons_per_minute
       type: linear
-      v_min: 0.008 # 4mA over 200 ohm resistor
+      v_min: 0.8 # 4mA over 200 ohm resistor
       v_max: 4 # 20mA over 200 ohm resistor
       gpm_min: 0.0
-      gpm_max: 7.925
+      gpm_max: 30
 
 calibration:
   pressure_transducers:
