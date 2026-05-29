@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deep-thrott-code"
+version = "0.1.0"
+description = "Throttleable engine DAQ, control, and GUI software for the 2025-26 capstone project"
+readme = "README.md"
+authors = [
+    { name = "SARP Capstone Team" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "flask",
+    "flask-socketio",
+    "matplotlib",
+    "numpy",
+    "PyYAML",
+    "pyserial",
+    "scipy",
+    "RPi.GPIO; platform_system == 'Linux'",
+    "pigpio; platform_system == 'Linux'",
+    "spidev; platform_system == 'Linux'"
+]
+
+[project.optional-dependencies]
+server = [
+    "eventlet"
+]
+
+[tool.setuptools.packages.find]
+where = ["software/src"]
+include = ["deep_thrott_code*"]
