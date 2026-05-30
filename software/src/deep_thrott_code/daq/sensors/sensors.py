@@ -762,48 +762,23 @@ class RTDSensor(Sensor):
         self._last_diff_burst: tuple[int, ...] = ()
 
     def _read_rtd_diff_code(self, settle_discard: bool) -> int:
-        try:
-            burst_samples = int(getattr(config, "RTD_DIFF_BURST_SAMPLES", 1) or 1)
-        except Exception:
-            burst_samples = 1
-        if burst_samples <= 1:
-            burst_samples = 1
-
-        codes: list[int] = []
-        codes.append(
-            int(
-                self.adc.read_raw_diff(
-                    self.lead1_ain,
-                    self.lead2_ain,
-                    settle_discard=settle_discard,
-                )
+        code = int(
+            self.adc.read_raw_diff(
+                self.lead1_ain,
+                self.lead2_ain,
+                settle_discard=settle_discard,
             )
         )
-
-        for _ in range(1, burst_samples):
-            codes.append(
-                int(
-                    self.adc.read_raw_diff(
-                        self.lead1_ain,
-                        self.lead2_ain,
-                        settle_discard=False,
-                    )
-                )
-            )
-
-        self._last_diff_burst = tuple(codes)
-        if len(codes) == 1:
-            return codes[0]
-
-        ordered = sorted(codes)
-        return int(ordered[len(ordered) // 2])
+        self._last_diff_burst = (code,)
+        return code
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
         t_wall = time.time()
 
-        # RTD mode uses the ADC internal 2.5 V reference so the RTD differential
-        # voltage can be converted back to resistance from the configured IDAC current.
+        # Keep the RTD read path close to the standalone implementation: switch to
+        # internal reference, enable IDACs, read both leads plus the RTD
+        # differential once, then restore the ADC state.
         try:
             self.adc.configure_basic(use_internal_ref=True, gain=int(self.adc_gain))
         except Exception:
@@ -816,13 +791,6 @@ class RTDSensor(Sensor):
         )
 
         try:
-            try:
-                rtd_mode_settle_s = float(getattr(config, "RTD_MODE_SETTLE_S", 0.0) or 0.0)
-            except Exception:
-                rtd_mode_settle_s = 0.0
-            if rtd_mode_settle_s > 0:
-                time.sleep(rtd_mode_settle_s)
-
             settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
             raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
             raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)
