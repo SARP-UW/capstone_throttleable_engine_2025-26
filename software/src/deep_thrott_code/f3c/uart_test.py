@@ -1,7 +1,7 @@
 import time
 import pigpio
 
-TX_ENABLE_PIN = 18
+TX_ENABLE_PIN = 20
 pi = pigpio.pi()
 
 # TX_ENABLE pin setup
