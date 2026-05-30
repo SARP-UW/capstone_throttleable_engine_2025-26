@@ -695,7 +695,7 @@
 
     .bottom-row {
       display: grid;
-      grid-template-columns: 1fr 220px;
+      grid-template-columns: 1fr 150px;
       gap: 10px;
       min-height: 0;
       position: relative;
@@ -704,24 +704,30 @@
 
     .settings-panel {
       position: relative;
-      padding: 6px;
+      padding: 2px 4px;
       display: flex;
       align-items: center;
       z-index: 20;
     }
 
     .settings-toggle {
-      width: 44px;
-      height: 44px;
+      width: 100%;
+      min-height: 28px;
       border: 1px solid var(--border);
       cursor: pointer;
-      background: var(--muted);
+      background: transparent;
       color: var(--text);
-      font-size: 0.9rem;
-      padding: 6px;
+      font-size: 0.8rem;
+      padding: 3px 8px;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 6px;
+    }
+
+    .settings-label {
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .settings-btn {
@@ -1156,6 +1162,7 @@
       <div class="settings-panel">
         <button class="settings-toggle" id="settingsToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
           <img class="settings-icon" src="/static/gear_icon.png" alt="">
+          <span class="settings-label">Settings</span>
         </button>
 
         <div class="settings-menu hidden" id="settingsMenu" role="menu" aria-label="Settings">

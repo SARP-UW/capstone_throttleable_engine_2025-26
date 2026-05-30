@@ -207,7 +207,7 @@ class GuiCommandHandler:
 					with self._lock:
 						simulation = bool(self._simulation_enabled)
 						test_name = self._test_name
-						selected_sensor_names = self._resolved_selected_sensor_names()
+					selected_sensor_names = self._resolved_selected_sensor_names()
 					self._clear_latest_daq_state()
 					self._start_log(simulation, test_name, selected_sensor_names)
 				elif name == "stop_log":

@@ -294,6 +294,8 @@
 				const next = new Set(selectedSensorNames);
 				if (next.has(sensorName)) next.delete(sensorName);
 				else next.add(sensorName);
+				selectedSensorNames = sanitizeSensorNames(Array.from(next));
+				renderSensorSettingsList();
 				emitSelectedSensors(Array.from(next));
 			});
 			host.appendChild(btn);
@@ -1065,7 +1067,7 @@
 					const nextLocked = !!meta.sensor_selection_locked;
 					if (!arraysEqual(nextAvailable, availableSensorNames) || !arraysEqual(nextSelected, selectedSensorNames) || nextLocked !== sensorSelectionLocked) {
 						availableSensorNames = nextAvailable;
-						selectedSensorNames = nextSelected;
+						selectedSensorNames = nextSelected.length ? nextSelected : nextAvailable;
 						sensorSelectionLocked = nextLocked;
 						renderSensorSettingsList();
 					}
