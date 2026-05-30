@@ -118,7 +118,6 @@ class ThrottleValve():
     """
     # TODO: add command numbers/lengths from hiwonder datasheet to get rid of magic numbers
     # variables for pin setup for uart
-    TX_ENABLE_PIN = 20
     TX_PIN = 14
     RX_PIN = 15
     BAUD = 115200
@@ -139,7 +138,7 @@ class ThrottleValve():
     # lock for sending waveforms
     _wave_lock = threading.Lock()
 
-    def __init__(self, valve_id: str, uart_id: int, serial_handle, pi_instance, normally_closed: bool):
+    def __init__(self, valve_id: str, uart_id: int, tx_enable_pin, serial_handle, pi_instance, normally_closed: bool):
         self.valve_id = valve_id
         self.uart_id = uart_id
         self.pi = pi_instance
@@ -148,6 +147,7 @@ class ThrottleValve():
         self.checksum_found = False
         self.state = ValveState.OPEN
         self.normally_closed = normally_closed
+        self.tx_enable_pin = tx_enable_pin
 
 
     def is_normally_closed(self) -> bool:
@@ -255,9 +255,9 @@ class ThrottleValve():
 
         enable_pulses = [
             # Set TX_ENABLE low, hold for total_wave_time microseconds
-            pigpio.pulse(0, 1 << self.TX_ENABLE_PIN, total_wave_time),
+            pigpio.pulse(0, 1 << self.tx_enable_pin, total_wave_time),
             # Set TX_ENABLE high, hold for 0 microseconds (end of wave)
-            pigpio.pulse(1 << self.TX_ENABLE_PIN, 0, 0)
+            pigpio.pulse(1 << self.tx_enable_pin, 0, 0)
         ]
         self.pi.wave_add_generic(enable_pulses)  # adds TX_ENABLE pulses to staging area
 
