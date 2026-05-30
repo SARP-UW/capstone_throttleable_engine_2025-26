@@ -986,7 +986,7 @@ class FlowMeterSensor(Sensor):
 
 
 # please clean this up
-def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> list[Sensor]:
+def build_sensors(*, simulation: bool = True, test_name: str | None = None, selected_sensor_names: list[str] | tuple[str, ...] | set[str] | None = None) -> list[Sensor]:
     """Create and return the list of sensor objects.
 
     - simulation=True: returns simulated sensors (runs without hardware).
@@ -1769,6 +1769,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
                 )
             )
 
+        if selected_sensor_names is not None:
+            selected = {str(name).strip() for name in selected_sensor_names if str(name).strip()}
+            sensors = [sensor for sensor in sensors if sensor.name in selected]
+
         if not sensors:
             raise RuntimeError(
                 "No enabled hardware sensors were built. Check 'enabled: true' and set AINs in hardware.yml."
@@ -1776,7 +1780,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
 
         return sensors
 
-    return [
+    sensors = [
         SimulatedPressureSensor(
             name="CC-PT",
             sampling_rate_hz=100.0,
@@ -1820,6 +1824,71 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None) -> l
             seed=3,
         ),
     ]
+
+    if selected_sensor_names is not None:
+        selected = {str(name).strip() for name in selected_sensor_names if str(name).strip()}
+        sensors = [sensor for sensor in sensors if sensor.name in selected]
+    if not sensors:
+        raise RuntimeError("No sensors selected for Start Log.")
+    return sensors
+
+
+def available_sensor_names(*, simulation: bool = True, test_name: str | None = None) -> list[str]:
+    if simulation:
+        return ["CC-PT", "FI-PT", "FM-FM", "tank_temp", "thrust"]
+
+    try:
+        import yaml  # type: ignore
+    except Exception:
+        return []
+
+    pkg_root = Path(__file__).resolve().parents[2]
+    hardware_path = pkg_root / "config" / "hardware.yml"
+    if not hardware_path.exists():
+        return []
+
+    try:
+        with hardware_path.open("r", encoding="utf-8") as f:
+            hardware_cfg = yaml.safe_load(f)
+    except Exception:
+        return []
+
+    if not isinstance(hardware_cfg, dict):
+        return []
+
+    def _norm_test_key(s: str) -> str:
+        return " ".join(str(s).strip().lower().split())
+
+    def _select_sensors_cfg(cfg: Any, group: str | None) -> Any:  # noqa: ANN401
+        if not isinstance(cfg, dict):
+            return None
+        if any(k in cfg for k in ("pressure_transducers", "rtds", "resistive temperature detectors", "load_cells", "load cells", "flow_meters", "flow meters")):
+            return cfg
+        want = _norm_test_key(group or "hotfire")
+        for key, val in cfg.items():
+            if isinstance(key, str) and _norm_test_key(key) == want:
+                return val
+        for key, val in cfg.items():
+            if isinstance(key, str) and _norm_test_key(key) == "hotfire":
+                return val
+        return None
+
+    sensors_cfg = _select_sensors_cfg(hardware_cfg.get("sensors"), test_name)
+    if not isinstance(sensors_cfg, dict):
+        return []
+
+    names: list[str] = []
+    for group_name in ("pressure_transducers", "rtds", "resistive temperature detectors", "load_cells", "load cells", "flow_meters", "flow meters"):
+        group = sensors_cfg.get(group_name)
+        if not isinstance(group, dict):
+            continue
+        for sensor_id, cfg in group.items():
+            if not isinstance(sensor_id, str) or not isinstance(cfg, dict):
+                continue
+            if not bool(cfg.get("enabled", False)):
+                continue
+            names.append(sensor_id)
+    return sorted(set(names))
 
 
 def build_sensor_map(sensors: list[Sensor]) -> dict[str, Sensor]:

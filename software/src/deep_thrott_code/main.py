@@ -167,6 +167,15 @@ def main() -> None:
 	app.config["SECRET_KEY"] = "dev"
 	socketio.init_app(app)
 
+	controller_ref: dict[str, GuiCommandHandler | None] = {"value": None}
+
+	def _backend_meta() -> dict[str, Any]:
+		meta = daq.snapshot_meta()
+		controller = controller_ref["value"]
+		if controller is not None:
+			meta.update(controller.snapshot_meta())
+		return meta
+
 	register_socket_handlers(
 		socketio,
 		app,
@@ -177,7 +186,7 @@ def main() -> None:
 		gui_to_f3_queue=sequencer_ack_queue,
 		get_system_snapshot=get_system_snapshot,
 		sequence_defs=sequence_defs_for_gui,
-		backend_meta_getter=daq.snapshot_meta,
+		backend_meta_getter=_backend_meta,
 		pin_thread_to_cpu = pin_current_thread_to_cpu,
 		cpu=CPU_CORE_0_OS_AND_GUI,
 	)
@@ -191,6 +200,7 @@ def main() -> None:
 		zero_sensor=daq.zero_sensor,
 		clear_daq_state=app.config.get("CLEAR_LATEST_STATES"),
 	)
+	controller_ref["value"] = controller
 
 	controller.set_simulation_enabled(cfg.simulation)
 	threading.Thread(target=controller.command_loop_forever, daemon=True, 

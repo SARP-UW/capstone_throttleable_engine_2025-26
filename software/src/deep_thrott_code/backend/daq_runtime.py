@@ -199,7 +199,7 @@ class DaqRuntime:
 
 		return f"Zero failed: {sensor_key} does not support GUI zeroing."
 
-	def start(self, simulation: bool, test_name: str | None = None) -> None:
+	def start(self, simulation: bool, test_name: str | None = None, selected_sensor_names: list[str] | tuple[str, ...] | set[str] | None = None) -> None:
 		"""Start DAQ threads and begin emitting samples to `gui_queue`."""
 
 		import time
@@ -224,7 +224,11 @@ class DaqRuntime:
 			self._log_started_at_wall = start_wall
 
 		try:
-			sensors = build_sensors(simulation=bool(simulation), test_name=test_name)
+			sensors = build_sensors(
+				simulation=bool(simulation),
+				test_name=test_name,
+				selected_sensor_names=selected_sensor_names,
+			)
 		except Exception as e:
 			self._emit_system(str(e))
 			return

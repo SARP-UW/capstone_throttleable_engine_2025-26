@@ -23,7 +23,7 @@ class GuiCommandHandler:
 		*,
 		control_queue: queue.Queue,
 		emit_system: Callable[[str], None],
-		start_log: Callable[[bool, str | None], None],
+		start_log: Callable[[bool, str | None, list[str] | None], None],
 		stop_log: Callable[[], None],
 		is_running: Callable[[], bool],
 		zero_sensor: Callable[[str, object, object], str] | None = None,
@@ -42,6 +42,40 @@ class GuiCommandHandler:
 		self._simulation_enabled = True
 		# "Test" is a latched setting that applies to the next Start Log.
 		self._test_name: str | None = "hotfire"
+		self._selected_sensor_names: tuple[str, ...] | None = None
+
+	def _available_sensor_names(self, simulation: bool | None = None, test_name: str | None = None) -> list[str]:
+		from deep_thrott_code.daq.sensors.sensors import available_sensor_names  # noqa: PLC0415
+
+		if simulation is None or test_name is None:
+			with self._lock:
+				sim = self._simulation_enabled if simulation is None else bool(simulation)
+				test = self._test_name if test_name is None else test_name
+		else:
+			sim = bool(simulation)
+			test = test_name
+		return available_sensor_names(simulation=sim, test_name=test)
+
+	def _resolved_selected_sensor_names(self) -> list[str]:
+		with self._lock:
+			selected = list(self._selected_sensor_names) if self._selected_sensor_names is not None else None
+			simulation = bool(self._simulation_enabled)
+			test_name = self._test_name
+
+		available = self._available_sensor_names(simulation=simulation, test_name=test_name)
+		if selected is None:
+			return available
+		selected_set = {name for name in selected if name in available}
+		return [name for name in available if name in selected_set]
+
+	def snapshot_meta(self) -> dict[str, object]:
+		available = self._available_sensor_names()
+		selected = self._resolved_selected_sensor_names()
+		return {
+			"available_sensor_names": available,
+			"selected_sensor_names": selected,
+			"sensor_selection_locked": bool(self._is_running()),
+		}
 
 	def _emit(self, text: str) -> None:
 		try:
@@ -65,6 +99,10 @@ class GuiCommandHandler:
 		enabled_bool = bool(enabled)
 		with self._lock:
 			self._simulation_enabled = enabled_bool
+			if self._selected_sensor_names is not None:
+				available = self._available_sensor_names(simulation=enabled_bool, test_name=self._test_name)
+				filtered = tuple(name for name in self._selected_sensor_names if name in available)
+				self._selected_sensor_names = filtered or None
 			running = self._is_running()
 
 		if running:
@@ -85,6 +123,10 @@ class GuiCommandHandler:
 
 		with self._lock:
 			self._test_name = normalized
+			if self._selected_sensor_names is not None:
+				available = self._available_sensor_names(simulation=self._simulation_enabled, test_name=normalized)
+				filtered = tuple(name for name in self._selected_sensor_names if name in available)
+				self._selected_sensor_names = filtered or None
 			simulation = bool(self._simulation_enabled)
 			running = self._is_running()
 
@@ -99,9 +141,35 @@ class GuiCommandHandler:
 			pass
 		self._clear_latest_daq_state()
 		try:
-			self._start_log(simulation, normalized)
+			self._start_log(simulation, normalized, self._resolved_selected_sensor_names())
 		except Exception:
 			pass
+
+	def set_selected_sensor_names(self, sensor_names: object) -> None:
+		if self._is_running():
+			self._emit("Sensor selection is locked while logging.")
+			return
+
+		available = self._available_sensor_names()
+		if isinstance(sensor_names, (list, tuple, set)):
+			normalized = []
+			seen = set()
+			for value in sensor_names:
+				name = str(value or "").strip()
+				if not name or name in seen or name not in available:
+					continue
+				seen.add(name)
+				normalized.append(name)
+		else:
+			normalized = []
+
+		with self._lock:
+			self._selected_sensor_names = tuple(normalized)
+
+		if normalized:
+			self._emit(f"Selected {len(normalized)} sensor(s) for next Start Log.")
+		else:
+			self._emit("No sensors selected for next Start Log.")
 
 	def zero_sensor(self, sensor_name: str | None, current_value: object = None, current_voltage: object = None) -> None:
 		sensor_key = str(sensor_name or "").strip()
@@ -139,11 +207,14 @@ class GuiCommandHandler:
 					with self._lock:
 						simulation = bool(self._simulation_enabled)
 						test_name = self._test_name
+						selected_sensor_names = self._resolved_selected_sensor_names()
 					self._clear_latest_daq_state()
-					self._start_log(simulation, test_name)
+					self._start_log(simulation, test_name, selected_sensor_names)
 				elif name == "stop_log":
 					self._stop_log()
 					self._clear_latest_daq_state()
+				elif name == "set_sensors":
+					self.set_selected_sensor_names(payload.get("sensor_names"))
 				elif name == "zero_sensor":
 					self.zero_sensor(
 						payload.get("sensor_name"),

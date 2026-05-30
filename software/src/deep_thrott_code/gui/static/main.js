@@ -35,6 +35,9 @@
 	let telemetryFrozen = false;
 	let simulationEnabled = true;
 	let selectedTest = 'hotfire';
+	let availableSensorNames = [];
+	let selectedSensorNames = [];
+	let sensorSelectionLocked = false;
 	let sequenceDefs = null;
 	let systemSnapshot = null;
 	let pendingSequenceCommand = null; // 'fill' | 'fire' | null
@@ -232,6 +235,71 @@
 		emitGuiCommand({ name: 'set_simulation', enabled: simulationEnabled });
 	}
 
+	function arraysEqual(a, b) {
+		if (!Array.isArray(a) || !Array.isArray(b)) return false;
+		if (a.length !== b.length) return false;
+		for (let i = 0; i < a.length; i++) {
+			if (a[i] !== b[i]) return false;
+		}
+		return true;
+	}
+
+	function sanitizeSensorNames(values) {
+		if (!Array.isArray(values)) return [];
+		const seen = new Set();
+		const out = [];
+		for (const value of values) {
+			const name = String(value || '').trim();
+			if (!name || seen.has(name)) continue;
+			seen.add(name);
+			out.push(name);
+		}
+		return out.sort((a, b) => a.localeCompare(b));
+	}
+
+	function emitSelectedSensors(sensorNames) {
+		emitGuiCommand({ name: 'set_sensors', sensor_names: sanitizeSensorNames(sensorNames) });
+	}
+
+	function renderSensorSettingsList() {
+		const host = document.getElementById('sensorSettingsList');
+		const sectionBtn = document.getElementById('sensorSettingsSectionBtn');
+		if (sectionBtn instanceof HTMLButtonElement) {
+			sectionBtn.disabled = sensorSelectionLocked;
+		}
+		if (!host) return;
+		host.innerHTML = '';
+
+		if (!availableSensorNames.length) {
+			const empty = document.createElement('div');
+			empty.className = 'sensor-settings-empty';
+			empty.textContent = sensorSelectionLocked ? 'Sensor selection is locked while logging.' : 'No sensors available for this mode.';
+			host.appendChild(empty);
+			return;
+		}
+
+		for (const sensorName of availableSensorNames) {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'settings-btn';
+			btn.disabled = sensorSelectionLocked;
+			const isSelected = selectedSensorNames.includes(sensorName);
+			btn.innerHTML = `<span>${sensorName}</span><span class="settings-tick" aria-hidden="true">${isSelected ? '✓' : ''}</span>`;
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				if (sensorSelectionLocked) {
+					setSystemMessage('System message: Sensor selection is locked while logging.');
+					return;
+				}
+				const next = new Set(selectedSensorNames);
+				if (next.has(sensorName)) next.delete(sensorName);
+				else next.add(sensorName);
+				emitSelectedSensors(Array.from(next));
+			});
+			host.appendChild(btn);
+		}
+	}
+
 	function updateSimulationTicks(enabled) {
 		const mode = enabled ? 'enabled' : 'disabled';
 		document.querySelectorAll('[data-sim-tick]').forEach((el) => {
@@ -303,6 +371,13 @@
 		latestRateBySensor.clear();
 		latestSampleBySensor.clear();
 		prevPressureBySensor.clear();
+		renderAllPlots();
+	}
+
+	function clearSensorPlotHistory(sensorName) {
+		if (!sensorName) return;
+		historyBySensor.delete(sensorName);
+		prevPressureBySensor.delete(sensorName);
 		renderAllPlots();
 	}
 
@@ -805,6 +880,7 @@
 						setSystemMessage(`System message: ${payload.error}`);
 						return;
 					}
+					clearSensorPlotHistory(sensorName);
 					emitGuiCommand({ name: 'zero_sensor', ...payload });
 				});
 				selectHost.appendChild(zeroBtn);
@@ -984,6 +1060,15 @@
 					const logDir = (typeof meta.log_dir === 'string' && meta.log_dir) ? meta.log_dir : '';
 					const logPath = (typeof meta.log_path === 'string' && meta.log_path) ? meta.log_path : '';
 					if (logDir || logPath) logEl.textContent = logDir || logPath;
+					const nextAvailable = sanitizeSensorNames(meta.available_sensor_names);
+					const nextSelected = sanitizeSensorNames(meta.selected_sensor_names);
+					const nextLocked = !!meta.sensor_selection_locked;
+					if (!arraysEqual(nextAvailable, availableSensorNames) || !arraysEqual(nextSelected, selectedSensorNames) || nextLocked !== sensorSelectionLocked) {
+						availableSensorNames = nextAvailable;
+						selectedSensorNames = nextSelected;
+						sensorSelectionLocked = nextLocked;
+						renderSensorSettingsList();
+					}
 				}
 			} catch (e) {
 				// ignore
@@ -1068,7 +1153,7 @@
 		const abortBtn = document.getElementById('abortBtn');
 		if (abortBtn) {
 			abortBtn.addEventListener('click', () => {
-				setSystemMessage('System message: Returning valves to nominal state...');
+				setSystemMessage('System message: Returning valves to normal state...');
 				emitGuiCommand({ name: 'return_to_nominal' });
 			});
 		}
@@ -1080,6 +1165,7 @@
 		const themeSubmenu = document.getElementById('themeSubmenu');
 		const simSubmenu = document.getElementById('simulationSubmenu');
 		const testSubmenu = document.getElementById('testSubmenu');
+		const sensorSubmenu = document.getElementById('sensorSubmenu');
 		if (!toggle || !menu) return;
 
 		function closeMenu() {
@@ -1088,6 +1174,7 @@
 			if (themeSubmenu) themeSubmenu.classList.add('hidden');
 			if (simSubmenu) simSubmenu.classList.add('hidden');
 			if (testSubmenu) testSubmenu.classList.add('hidden');
+			if (sensorSubmenu) sensorSubmenu.classList.add('hidden');
 		}
 
 		function openMenu() {
@@ -1104,6 +1191,7 @@
 			if (themeSubmenu) themeSubmenu.classList.toggle('hidden', which !== 'theme');
 			if (simSubmenu) simSubmenu.classList.toggle('hidden', which !== 'simulation');
 			if (testSubmenu) testSubmenu.classList.toggle('hidden', which !== 'test');
+			if (sensorSubmenu) sensorSubmenu.classList.toggle('hidden', which !== 'sensors');
 		}
 
 		toggle.addEventListener('click', (e) => {
@@ -1140,6 +1228,8 @@
 				setSelectedTest(btn.getAttribute('data-test'));
 			});
 		});
+
+		renderSensorSettingsList();
 
 		document.addEventListener('click', closeMenu);
 		document.addEventListener('keydown', (e) => {

@@ -547,12 +547,7 @@
       padding: 10px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    .reels-popup-title {
-      font-size: 0.9rem;
-      text-align: center;
+      gap: 0;
     }
 
     .reels-open {
@@ -562,13 +557,17 @@
       padding: 10px 12px;
       border: 1px solid var(--border);
       background: var(--surface);
-      color: var(--text);
+      color: inherit;
       cursor: pointer;
       font-size: 0.95rem;
     }
 
     body.theme-baja #reelsEmbed {
       display: block;
+    }
+
+    body.theme-baja .reels-open {
+      color: var(--fonttext);
     }
 
     .sequence-tabs details {
@@ -712,17 +711,17 @@
     }
 
     .settings-toggle {
-      width: 100%;
+      width: 44px;
+      height: 44px;
       border: 1px solid var(--border);
       cursor: pointer;
       background: var(--muted);
       color: var(--text);
       font-size: 0.9rem;
-      padding: 6px 10px;
+      padding: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
     }
 
     .settings-btn {
@@ -777,13 +776,29 @@
     }
 
     .settings-icon {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .settings-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .sensor-settings-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .sensor-settings-empty {
+      font-size: 0.82rem;
+      opacity: 0.8;
+      padding: 4px 2px;
     }
 
     .zoom-controls { display: none; }
@@ -821,7 +836,7 @@
         <button class="cmd-btn btn-yellow stop-btn" id="stopLogBtn">STOP LOG</button>
         <button class="cmd-btn btn-orange fire-btn" id="fireBtn">FIRE</button>
         <button class="cmd-btn clear-btn" id="clearTestBtn">CLEAR TEST</button>
-        <button class="cmd-btn btn-red abort-btn" id="abortBtn">RETURN TO NOMINAL</button>
+        <button class="cmd-btn btn-red abort-btn" id="abortBtn">RETURN TO NORMAL</button>
       </div>
     </div>
 
@@ -1011,7 +1026,7 @@
                 <div class="sensor-box good" id="sensor-OI-PT" data-green-threshold-psi="450"><div class="sensor-reading">198 PSI</div><div class="sensor-deriv">-40.3 psi/min</div></div>
               </div>
               
-              <div class="overlay" style="left: 1358px;top: 450px;">
+              <div class="overlay" style="left: 1427px;top: 450px;">
                 <div class="overlay-label">CC-PT10</div>
                 <div class="sensor-box is-placeholder" id="sensor-CC-PT-nitrous" data-green-threshold-psi="450"><div class="sensor-reading">-- PSI</div><div class="sensor-deriv">-- psi/min</div></div>
               </div>
@@ -1127,13 +1142,9 @@
           <div class="sequence-tabs" id="sequenceTabs"><div class="sequence-placeholder">No sequences loaded (sequencer disabled or backend failed to start). If you started the backend with <code>--no-sequencer</code>, remove that flag.</div></div>
         </div>
 
-        <div>
-          <div class="side-title">INSTAGRAM REELS</div>
-          <div id="reelsEmbed">
-            <div class="reels-popup">
-              <div class="reels-popup-title">Instagram Reels</div>
-              <button class="reels-open" id="openReelsPopup" type="button">Open Instagram Reels</button>
-            </div>
+        <div id="reelsEmbed">
+          <div class="reels-popup">
+            <button class="reels-open" id="openReelsPopup" type="button">Open Instagram Reels</button>
           </div>
         </div>
       </div>
@@ -1143,12 +1154,8 @@
       <div class="message-bar" id="systemMessage">System message: Test set to hotfire.</div>
 
       <div class="settings-panel">
-        <button class="settings-toggle" id="settingsToggle" type="button" aria-haspopup="true" aria-expanded="false">
-          <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-1.41 3.41h-1.99a1.65 1.65 0 0 0-1.51 1l-.02.06a2 2 0 0 1-3.7 0l-.02-.06a1.65 1.65 0 0 0-1.51-1H5.62a2 2 0 0 1-1.41-3.41l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1-1.51l-.06-.02a2 2 0 0 1 0-3.7l.06-.02A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 5.62 3.7h1.99a1.65 1.65 0 0 0 1.51-1l.02-.06a2 2 0 0 1 3.7 0l.02.06a1.65 1.65 0 0 0 1.51 1h1.99a2 2 0 0 1 1.41 3.41l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1 1.51l.06.02a2 2 0 0 1 0 3.7l-.06.02a1.65 1.65 0 0 0-1 1.51z"></path>
-          </svg>
-          <span>Settings</span>
+        <button class="settings-toggle" id="settingsToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
+          <img class="settings-icon" src="/static/gear_icon.png" alt="">
         </button>
 
         <div class="settings-menu hidden" id="settingsMenu" role="menu" aria-label="Settings">
@@ -1192,6 +1199,16 @@
             <button class="settings-btn" type="button" data-test="injector cold flow" role="menuitem">
               <span>Injector Cold Flow</span><span class="settings-tick" data-test-tick="injector cold flow" aria-hidden="true"></span>
             </button>
+          </div>
+
+          <button class="settings-btn" type="button" data-settings-section="sensors" role="menuitem" id="sensorSettingsSectionBtn">
+            <span>Sensors</span>
+            <span class="settings-tick" aria-hidden="true">▸</span>
+          </button>
+          <div class="settings-submenu hidden" id="sensorSubmenu" aria-label="Sensors">
+            <div class="sensor-settings-list" id="sensorSettingsList">
+              <div class="sensor-settings-empty">Waiting for sensor list...</div>
+            </div>
           </div>
         </div>
       </div>
