@@ -707,9 +707,16 @@ class PressureTransducerSensor(Sensor):
 
 
 class RTDSensor(Sensor):
-    """Hardware RTD sensor using ADS124S08 ratiometric RTD mode."""
+    """Hardware RTD sensor using ADS124S08 RTD excitation mode.
+
+    This path matches the working standalone RTD implementation: enable IDAC
+    excitation, read the RTD differential voltage directly, then compute
+    resistance from V_RTD / I_IDAC before applying the Callendar-Van Dusen
+    conversion.
+    """
 
     _FS = (1 << 23) - 1
+    _VREF_INTERNAL = 2.5
 
     _CVD_A = 3.9083e-3
     _CVD_B = -5.775e-7
@@ -795,8 +802,8 @@ class RTDSensor(Sensor):
         t_mono = time.perf_counter()
         t_wall = time.time()
 
-        # RTD mode switches to the ratiometric external reference path in enable_rtd_mode().
-        # Keep the ADC gain explicit here so RTDs can use the PGA when needed.
+        # RTD mode uses the ADC internal 2.5 V reference so the RTD differential
+        # voltage can be converted back to resistance from the configured IDAC current.
         try:
             self.adc.configure_basic(use_internal_ref=True, gain=int(self.adc_gain))
         except Exception:
@@ -838,11 +845,12 @@ class RTDSensor(Sensor):
         )
 
     def _code_to_resistance(self, code_rtd: int) -> float:
-        if self.rref_ohms <= 0:
-            return 0.0
-        factor = self.reference_factor if self.reference_factor > 0 else 1.0
         gain = self.adc_gain if self.adc_gain > 0 else 1.0
-        return (float(code_rtd) / (self._FS * gain)) * self.rref_ohms * factor
+        idac_current_a = self.idac_current_ua * 1e-6
+        if idac_current_a == 0:
+            return 0.0
+        v_rtd = (float(code_rtd) / self._FS) * (self._VREF_INTERNAL / gain)
+        return v_rtd / idac_current_a
 
     def _resistance_to_temperature_c(self, resistance: float) -> float:
         r_ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
@@ -889,17 +897,21 @@ class RTDSensor(Sensor):
         self._last_debug_log_t = now
         raw_lead1 = raw_sample.raw_diff_1
         raw_lead2 = raw_sample.raw_diff_2
+        gain = self.adc_gain if self.adc_gain > 0 else 1.0
+        lead1_v = _adc_code_to_voltage(int(raw_lead1), vref=self._VREF_INTERNAL, gain=gain) if raw_lead1 is not None else None
+        lead2_v = _adc_code_to_voltage(int(raw_lead2), vref=self._VREF_INTERNAL, gain=gain) if raw_lead2 is not None else None
         ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
         _log.warning(
-            "[%s] RTD debug lead1=%s lead2=%s diff=%s burst=%s gain=%s rref=%.3f ref_factor=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
+            "[%s] RTD debug lead1_code=%s lead2_code=%s lead1_v=%s lead2_v=%s diff=%s burst=%s gain=%s idac_ua=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
             self.name,
             raw_lead1,
             raw_lead2,
+            lead1_v,
+            lead2_v,
             raw_sample.raw_count,
             list(self._last_diff_burst),
             self.adc_gain,
-            self.rref_ohms,
-            self.reference_factor,
+            self.idac_current_ua,
             resistance,
             ratio,
             temp_c,
@@ -908,6 +920,7 @@ class RTDSensor(Sensor):
         )
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
+        gain = self.adc_gain if self.adc_gain > 0 else 1.0
         resistance = self._code_to_resistance(int(raw_sample.raw_count))
         temp_c = self._resistance_to_temperature_c(resistance)
         temperature = self._convert_unit(temp_c) - self.offset
@@ -920,6 +933,8 @@ class RTDSensor(Sensor):
             raw_value=raw_sample.raw_count,
             value=float(temperature),
             units=self.unit,
+            V_diff_1=_adc_code_to_voltage(int(raw_sample.raw_diff_1), vref=self._VREF_INTERNAL, gain=gain) if raw_sample.raw_diff_1 is not None else None,
+            V_diff_2=_adc_code_to_voltage(int(raw_sample.raw_diff_2), vref=self._VREF_INTERNAL, gain=gain) if raw_sample.raw_diff_2 is not None else None,
             source="hardware",
         )
 
