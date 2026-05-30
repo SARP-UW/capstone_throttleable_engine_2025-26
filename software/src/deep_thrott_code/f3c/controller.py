@@ -667,7 +667,7 @@ class Controller:
                     actuator_list[str(valve_id)] = valve
                 elif actuator_info.get("mode") == "throttle":
                     # throttle valves
-                    valve = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.serial_handle, pi, bool(actuator_info.get("normally_closed")))
+                    valve = ThrottleValve(str(valve_id), int(actuator_info.get("uart_id")), self.tx_enable_pin, self.serial_handle, pi, bool(actuator_info.get("normally_closed")))
                     actuator_list[str(valve_id)] = valve
                 else:
                     # pwm water valve
