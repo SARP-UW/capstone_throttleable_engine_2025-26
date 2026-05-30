@@ -65,7 +65,7 @@ class Controller:
 
         if not computer_sim:
             # pin values for talking to servos
-            self.tx_enable_pin = 18
+            self.tx_enable_pin = 20
             self.tx_pin = 14
             self.baud = 115200
 
