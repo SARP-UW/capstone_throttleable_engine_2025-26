@@ -118,7 +118,7 @@ class ThrottleValve():
     """
     # TODO: add command numbers/lengths from hiwonder datasheet to get rid of magic numbers
     # variables for pin setup for uart
-    TX_ENABLE_PIN = 18
+    TX_ENABLE_PIN = 20
     TX_PIN = 14
     RX_PIN = 15
     BAUD = 115200
