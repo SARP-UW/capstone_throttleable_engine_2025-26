@@ -14,5 +14,6 @@ try:
         time.sleep(1)
         print("Pulling ts shit low")
         pi.write(TX_ENABLE_PIN, 0) # pull ts shit low
+        time.sleep(1)
 except KeyboardInterrupt:
     pi.stop()
