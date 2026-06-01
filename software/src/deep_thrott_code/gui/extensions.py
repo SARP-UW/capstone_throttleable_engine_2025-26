@@ -6,18 +6,9 @@ import warnings
 from typing import Any, Callable, Optional
 
 try:
-	configured_async_mode = os.environ.get("DEEP_THROTT_SOCKETIO_ASYNC_MODE", "").strip().lower()
-	async_mode = configured_async_mode
-	if not async_mode:
-		try:
-			# Eventlet avoids Werkzeug's dev server and is the recommended production-ish
-			# server for Flask-SocketIO on the Pi. Prefer it automatically when present.
-			import eventlet  # type: ignore
-			eventlet.monkey_patch()  # type: ignore
-			async_mode = "eventlet"
-		except ImportError:
-			async_mode = "threading"
-	elif async_mode == "eventlet":
+	configured_async_mode = os.environ.get("DEEP_THROTT_SOCKETIO_ASYNC_MODE", "threading").strip().lower()
+	async_mode = configured_async_mode or "threading"
+	if async_mode == "eventlet":
 		import eventlet  # type: ignore
 		eventlet.monkey_patch()  # type: ignore
 
