@@ -1,10 +1,13 @@
-from flask import Flask
+from __future__ import annotations
 
-from .gui.extensions import socketio
-from .gui.routes import main_bp
-from .gui.sockets import register_socket_handlers
 
 def create_app(state_store, command_queue):
+    from flask import Flask
+
+    from .gui.extensions import socketio
+    from .gui.routes import main_bp
+    from .gui.sockets import register_socket_handlers
+
     app = Flask(
         __name__,
         template_folder="gui/template",
