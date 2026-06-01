@@ -2,7 +2,7 @@ schema_version: 1
 
 calibration_profiles:
   pressure_transducers:
-    v_to_psi_0p5_4p5V_0_500psi:
+    v_to_psi_0p5_4p5V_0_1000psi:
       units: psi
       type: volts_to_psi
       v_min: 0.5
@@ -17,6 +17,14 @@ calibration_profiles:
       v_max: 4.5
       psi_min: 0.0
       psi_max: 3000.0
+    
+    v_to_psi_0p5_4p5V_0_5000psi:
+      units: psi
+      type: volts_to_psi
+      v_min: 0.5
+      v_max: 4.5
+      psi_min: 0.0
+      psi_max: 5000.0
     
     v_to_psi_0p5_4p5V_0_80psi:
       units: psi
@@ -87,17 +95,17 @@ calibration_profiles:
 
 calibration:
   pressure_transducers:
-    LF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    FT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    FM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    FI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    WM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    CC-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    XF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    OT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    OF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    OM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
-    OI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi }
+    LF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
+    FT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
+    FM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
+    FI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
+    WM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
+    CC-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
+    XF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed 
+    OT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
+    OF-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #confirmed
+    OM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
+    OI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
     IC-PT1: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT2: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT3: { profile: v_to_psi_0p5_4p5V_0_80psi }
