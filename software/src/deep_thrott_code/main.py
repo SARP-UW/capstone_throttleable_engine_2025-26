@@ -32,8 +32,8 @@ except Exception as exc:  # pragma: no cover
 # CPU pinning notes (Raspberry Pi / Linux)
 # ---------------------------------------------------------------------
 
-	# - Core 0: OS + GUI server (can also host one DAQ producer when read path is saturated)
-	# - Core 1: DAQ producer / throttle placeholder
+	# - Core 0: OS reserve
+	# - Core 1: GUI server / throttle placeholder
 	# - Core 2: DAQ producer
 	# - Core 3: DAQ consumer + F3C loop (placeholder)
 
@@ -190,7 +190,7 @@ def main() -> None:
 			sequence_defs=sequence_defs_for_gui,
 			backend_meta_getter=_backend_meta,
 			pin_thread_to_cpu=pin_current_thread_to_cpu,
-			cpu=CPU_CORE_0_OS_AND_GUI,
+			cpu=CPU_CORE_1_THROTTLE,
 		)
 		clear_latest_daq_state = app.config.get("CLEAR_LATEST_STATES")
 
@@ -263,6 +263,10 @@ def main() -> None:
 	}
 	if getattr(socketio, 'async_mode', '') == 'threading':
 		run_kwargs['request_handler'] = _QuietDisconnectWSGIRequestHandler
+
+	# The Werkzeug / Socket.IO server thread can become the dominant CPU user.
+	# Keep it off core 0 so the OS stays responsive on the Pi.
+	pin_current_thread_to_cpu(CPU_CORE_1_THROTTLE)
 
 	try:
 		socketio.run(**run_kwargs)
