@@ -158,7 +158,11 @@ class DaqRuntime:
 			if current_value_f is None:
 				return f"Zero failed for {sensor_key}: current reading unavailable."
 			try:
-				sensor.offset_n = float(getattr(sensor, "offset_n", 0.0) or 0.0) + current_value_f
+				current_force_n = float(current_value_f)
+				converter = getattr(sensor, "display_force_to_n", None)
+				if callable(converter):
+					current_force_n = float(converter(current_force_n))
+				sensor.offset_n = float(getattr(sensor, "offset_n", 0.0) or 0.0) + current_force_n
 			except Exception as exc:
 				return f"Zero failed for {sensor_key}: {exc}"
 			return f"Zeroed {sensor_key} load cell at {current_value_f:.3f}."

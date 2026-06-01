@@ -30,7 +30,7 @@ calibration_profiles:
     # force_n = (|V_plus - V_minus| / excitation_voltage) / sensitivity_v_per_v * max_load_n - offset_n
     # where sensitivity_v_per_v is in V/V at full-scale load.
     engine_load_cell:
-      units: N
+      units: lbs
       type: vdiff_to_force
       max_load_n: 980.67 # 100 kg
       excitation_voltage: 10.0
@@ -38,7 +38,7 @@ calibration_profiles:
       offset_n: 0.0
 
     nitrous_load_cell:
-      units: N
+      units: lbs
       type: vdiff_to_force
       max_load_n: 980.67 # 60 kg
       excitation_voltage: 10.0

@@ -28,6 +28,30 @@ import RPi.GPIO as GPIO  # type: ignore
 _log = logging.getLogger(__name__)
 
 
+_LBF_PER_NEWTON = 0.22480894387096
+
+
+def _normalize_force_unit(unit: object) -> str:
+    text = str(unit or "N").strip().lower()
+    if text in {"lb", "lbs", "lbf", "pound", "pounds"}:
+        return "lbs"
+    return "N"
+
+
+def _force_n_to_display(force_n: float, unit: object) -> float:
+    normalized = _normalize_force_unit(unit)
+    if normalized == "lbs":
+        return float(force_n) * _LBF_PER_NEWTON
+    return float(force_n)
+
+
+def _display_force_to_n(force_value: float, unit: object) -> float:
+    normalized = _normalize_force_unit(unit)
+    if normalized == "lbs":
+        return float(force_value) / _LBF_PER_NEWTON
+    return float(force_value)
+
+
 class Sensor(ABC):
     """Base class for all sensors used by the DAQ loops."""
 
@@ -312,9 +336,11 @@ class SimulatedLoadCellSensor(Sensor):
         noise_std_n: float = 2.0,
         seed: int = 1,
         channel: int = 0,
+        force_unit: str = "lbs",
     ):
         self.name = str(name)
         self.channel = int(channel)
+        self.force_unit = _normalize_force_unit(force_unit)
 
         self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
@@ -397,7 +423,7 @@ class SimulatedLoadCellSensor(Sensor):
                 t_wall=raw_sample.t_wall,
                 raw_value=raw_sample.raw_count,
                 value=0.0,
-                units="N",
+                units=self.force_unit,
                 status="ERROR",
                 message="missing raw_diff_1/raw_diff_2",
                 source="simulated",
@@ -407,6 +433,7 @@ class SimulatedLoadCellSensor(Sensor):
         v_minus = self.adc_code_to_voltage(int(code_minus))
         vdiff = abs(v_plus - v_minus)
         force_n = (vdiff / self.v_diff_fs) * self.max_load_n if self.v_diff_fs else 0.0
+        display_force = _force_n_to_display(force_n, self.force_unit)
 
         return Sample(
             sensor_name=raw_sample.sensor_name,
@@ -414,12 +441,15 @@ class SimulatedLoadCellSensor(Sensor):
             t_monotonic=raw_sample.t_monotonic,
             t_wall=raw_sample.t_wall,
             raw_value=raw_sample.raw_count,
-            value=force_n,
-            units="N",
+            value=display_force,
+            units=self.force_unit,
             V_diff_1=v_plus,
             V_diff_2=v_minus,
             source="simulated",
         )
+
+    def display_force_to_n(self, force_value: float) -> float:
+        return _display_force_to_n(force_value, self.force_unit)
 
 
 class SimulatedRTDSensor(Sensor):
@@ -565,6 +595,7 @@ class LoadCellSensor(Sensor):
         offset_n: float = 0.0,
         adc_vref: float = 5.0,
         adc_gain: float = 1.0,
+        force_unit: str = "lbs",
     ):
         self.name = str(name)
         self.adc = adc
@@ -577,6 +608,7 @@ class LoadCellSensor(Sensor):
         self.offset_n = float(offset_n)
         self.adc_vref = float(adc_vref)
         self.adc_gain = float(adc_gain)
+        self.force_unit = _normalize_force_unit(force_unit)
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
@@ -619,6 +651,7 @@ class LoadCellSensor(Sensor):
             current_v_per_v = v_diff / self.excitation_voltage
             ratio = current_v_per_v / self.sensitivity_v_per_v
             force_n = ratio * self.max_load_n - self.offset_n
+        display_force = _force_n_to_display(force_n, self.force_unit)
 
         return Sample(
             sensor_name=raw_sample.sensor_name,
@@ -626,11 +659,14 @@ class LoadCellSensor(Sensor):
             t_monotonic=raw_sample.t_monotonic,
             t_wall=raw_sample.t_wall,
             raw_value=raw_sample.raw_count,
-            value=float(force_n),
-            units="N",
+            value=float(display_force),
+            units=self.force_unit,
             V_diff_1=v_diff,
             source="hardware",
         )
+
+    def display_force_to_n(self, force_value: float) -> float:
+        return _display_force_to_n(force_value, self.force_unit)
 
 
 class PressureTransducerSensor(Sensor):
@@ -1408,10 +1444,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             except Exception:
                 return default
 
-        def _lc_calibration(sensor_id: str) -> tuple[float, float, float, float]:
-            """Return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n)."""
+        def _lc_calibration(sensor_id: str) -> tuple[float, float, float, float, str]:
+            """Return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n, force_unit)."""
 
-            default = (1000.0, 5.0, 0.0020, 0.0)
+            default = (1000.0, 5.0, 0.0020, 0.0, "lbs")
 
             cal = conversions_cfg.get("calibration")
             if not isinstance(cal, dict):
@@ -1443,7 +1479,8 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                 excitation_voltage = float(profile.get("excitation_voltage", default[1]))
                 sensitivity_v_per_v = float(profile.get("sensitivity_v_per_v", default[2]))
                 offset_n = float(profile.get("offset_n", default[3]))
-                return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n)
+                force_unit = str(profile.get("unit", profile.get("units", default[4])))
+                return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n, force_unit)
             except Exception:
                 return default
 
@@ -1714,7 +1751,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             except Exception:
                 adc_gain = 1.0
 
-            max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n = _lc_calibration(sensor_id)
+            max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n, force_unit = _lc_calibration(sensor_id)
 
             # Allow hardware.yml to override calibration profile values.
             try:
@@ -1737,6 +1774,13 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                     offset_n = float(cfg.get("offset"))
             except Exception:
                 pass
+            try:
+                if cfg.get("unit") is not None:
+                    force_unit = str(cfg.get("unit"))
+                elif cfg.get("units") is not None:
+                    force_unit = str(cfg.get("units"))
+            except Exception:
+                pass
 
             sensors.append(
                 LoadCellSensor(
@@ -1750,6 +1794,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                     sensitivity_v_per_v=sensitivity_v_per_v,
                     offset_n=offset_n,
                     adc_gain=adc_gain,
+                    force_unit=force_unit,
                 )
             )
 
@@ -1788,6 +1833,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             amplitude_n=200.0,
             frequency_hz=0.5,
             seed=2,
+            force_unit="lbs",
         ),
         SimulatedFlowMeterSensor(
             name="FM-FM",
