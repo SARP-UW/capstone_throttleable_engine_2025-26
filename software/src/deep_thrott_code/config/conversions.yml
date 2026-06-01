@@ -40,7 +40,7 @@ calibration_profiles:
     engine_load_cell:
       units: lbs
       type: vdiff_to_force
-      max_load_n: 980.67 # 100 kg
+      max_load_n: 220.462 # 100 kg
       excitation_voltage: 10.0
       sensitivity_v_per_v: 0.003
       offset_n: 0.0
@@ -48,7 +48,7 @@ calibration_profiles:
     nitrous_load_cell:
       units: lbs
       type: vdiff_to_force
-      max_load_n: 980.67 # 60 kg
+      max_load_n: 132.277 # 60 kg
       excitation_voltage: 10.0
       sensitivity_v_per_v: 0.002
       offset_n: 0.0
@@ -98,14 +98,14 @@ calibration:
     LF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
     FT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
     FM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
-    FI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
-    WM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
+    FI-PT: { profile: v_to_psi_0p5_4p5V_0_3000psi } #confirmed
+    WM-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #confirmed
     CC-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
     XF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed 
     OT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
     OF-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #confirmed
     OM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
-    OI-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #update
+    OI-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #Confirmed
     IC-PT1: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT2: { profile: v_to_psi_0p5_4p5V_0_80psi }
     IC-PT3: { profile: v_to_psi_0p5_4p5V_0_80psi }
