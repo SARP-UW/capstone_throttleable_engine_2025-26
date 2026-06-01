@@ -4,6 +4,7 @@ import logging
 import os
 import queue
 import threading
+import time
 from pathlib import Path
 from typing import Any
 from werkzeug.serving import WSGIRequestHandler
@@ -83,7 +84,7 @@ def pin_current_thread_to_cpu(cpu_index: int) -> None:
 def main() -> None:
 	cfg = parse_args()
 
-	if getattr(socketio, "is_dummy", False):
+	if not cfg.no_gui_server and getattr(socketio, "is_dummy", False):
 		raise RuntimeError(
 			"flask_socketio is required for the backend service. "
 			"Install `flask-socketio` (and deps) in this environment."
@@ -158,16 +159,8 @@ def main() -> None:
 	# TODO: Throttle control loop add
 	# -----------------------------------------------------------------
 
-	# Gui stuffs
-
-	from deep_thrott_code.gui.sockets import register_socket_handlers
-	from flask import Flask
-
-	app = Flask(__name__)
-	app.config["SECRET_KEY"] = "dev"
-	socketio.init_app(app)
-
 	controller_ref: dict[str, GuiCommandHandler | None] = {"value": None}
+	clear_latest_daq_state: Any | None = None
 
 	def _backend_meta() -> dict[str, Any]:
 		meta = daq.snapshot_meta()
@@ -176,20 +169,29 @@ def main() -> None:
 			meta.update(controller.snapshot_meta())
 		return meta
 
-	register_socket_handlers(
-		socketio,
-		app,
-		gui_queue=gui_queue,
-		command_queue=sequencer_command_queue,
-		control_queue=control_queue,
-		f3_to_gui_queue=f3_to_gui_queue,
-		gui_to_f3_queue=sequencer_ack_queue,
-		get_system_snapshot=get_system_snapshot,
-		sequence_defs=sequence_defs_for_gui,
-		backend_meta_getter=_backend_meta,
-		pin_thread_to_cpu = pin_current_thread_to_cpu,
-		cpu=CPU_CORE_0_OS_AND_GUI,
-	)
+	if not cfg.no_gui_server:
+		from deep_thrott_code.gui.sockets import register_socket_handlers
+		from flask import Flask
+
+		app = Flask(__name__)
+		app.config["SECRET_KEY"] = "dev"
+		socketio.init_app(app)
+
+		register_socket_handlers(
+			socketio,
+			app,
+			gui_queue=gui_queue,
+			command_queue=sequencer_command_queue,
+			control_queue=control_queue,
+			f3_to_gui_queue=f3_to_gui_queue,
+			gui_to_f3_queue=sequencer_ack_queue,
+			get_system_snapshot=get_system_snapshot,
+			sequence_defs=sequence_defs_for_gui,
+			backend_meta_getter=_backend_meta,
+			pin_thread_to_cpu=pin_current_thread_to_cpu,
+			cpu=CPU_CORE_0_OS_AND_GUI,
+		)
+		clear_latest_daq_state = app.config.get("CLEAR_LATEST_STATES")
 
 	controller = GuiCommandHandler(
 		control_queue=control_queue,
@@ -198,7 +200,7 @@ def main() -> None:
 		stop_log=daq.stop,
 		is_running=daq.is_running,
 		zero_sensor=daq.zero_sensor,
-		clear_daq_state=app.config.get("CLEAR_LATEST_STATES"),
+		clear_daq_state=clear_latest_daq_state,
 	)
 	controller_ref["value"] = controller
 
@@ -208,6 +210,30 @@ def main() -> None:
 
 	if cfg.autostart:
 		daq.start(cfg.simulation)
+
+	if cfg.no_gui_server:
+		print("Backend running without GUI server (--no-gui-server).")
+		print("Use Ctrl+C to stop. If CPU stays low in this mode, the web/socket server is the culprit.")
+		try:
+			while True:
+				time.sleep(1.0)
+		except KeyboardInterrupt:
+			print("Backend shutdown requested (Ctrl+C).")
+		finally:
+			try:
+				if daq.is_running():
+					daq.stop()
+			except Exception:
+				pass
+
+			try:
+				if f3_controller is not None:
+					shutdown = getattr(f3_controller, "shutdown", None)
+					if callable(shutdown):
+						shutdown()
+			except Exception:
+				pass
+		return
 
 	print(f"Backend listening on http://{cfg.host}:{cfg.port} (Socket.IO)")
 
