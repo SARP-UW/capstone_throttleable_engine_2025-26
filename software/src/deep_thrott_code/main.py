@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import queue
@@ -236,6 +237,12 @@ def main() -> None:
 		return
 
 	print(f"Backend listening on http://{cfg.host}:{cfg.port} (Socket.IO)")
+	print(f"Socket.IO async mode: {getattr(socketio, 'async_mode', 'unknown')}")
+	if getattr(socketio, 'async_mode', '') == 'threading' and importlib.util.find_spec("simple_websocket") is None:
+		print(
+			"Warning: simple-websocket is not installed, so Flask-SocketIO will fall back "
+			"to HTTP long-polling in threading mode. This can drive high CPU when the GUI connects."
+		)
 
 	# Keep terminal output readable: filter out per-request logs (polling spam)
 	# while keeping the startup banner ("Running on http://...") visible.

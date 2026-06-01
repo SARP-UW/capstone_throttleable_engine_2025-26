@@ -19,6 +19,7 @@ dependencies = [
     "PyYAML",
     "pyserial",
     "scipy",
+    "simple-websocket",
     "RPi.GPIO; platform_system == 'Linux'",
     "pigpio; platform_system == 'Linux'",
     "spidev; platform_system == 'Linux'"
