@@ -706,16 +706,9 @@ class PressureTransducerSensor(Sensor):
         )
 
 class RTDSensor(Sensor):
-    """Hardware RTD sensor using ADS124S08 RTD excitation mode.
-
-    This path matches the working standalone RTD implementation: enable IDAC
-    excitation, read the RTD differential voltage directly, then compute
-    resistance from V_RTD / I_IDAC before applying the Callendar-Van Dusen
-    conversion.
-    """
+    """Hardware RTD sensor using ADS124S08 ratiometric RTD mode."""
 
     _FS = (1 << 23) - 1
-    _VREF_INTERNAL = 2.5
 
     _CVD_A = 3.9083e-3
     _CVD_B = -5.775e-7
@@ -761,48 +754,23 @@ class RTDSensor(Sensor):
         self._last_diff_burst: tuple[int, ...] = ()
 
     def _read_rtd_diff_code(self, settle_discard: bool) -> int:
-        try:
-            burst_samples = int(getattr(config, "RTD_DIFF_BURST_SAMPLES", 1) or 1)
-        except Exception:
-            burst_samples = 1
-        if burst_samples <= 1:
-            burst_samples = 1
-
-        codes: list[int] = []
-        codes.append(
-            int(
-                self.adc.read_raw_diff(
-                    self.lead1_ain,
-                    self.lead2_ain,
-                    settle_discard=settle_discard,
-                )
+        code = int(
+            self.adc.read_raw_diff(
+                self.lead1_ain,
+                self.lead2_ain,
+                settle_discard=settle_discard,
             )
         )
-
-        for _ in range(1, burst_samples):
-            codes.append(
-                int(
-                    self.adc.read_raw_diff(
-                        self.lead1_ain,
-                        self.lead2_ain,
-                        settle_discard=False,
-                    )
-                )
-            )
-
-        self._last_diff_burst = tuple(codes)
-        if len(codes) == 1:
-            return codes[0]
-
-        ordered = sorted(codes)
-        return int(ordered[len(ordered) // 2])
+        self._last_diff_burst = (code,)
+        return code
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
         t_wall = time.time()
 
-        # RTD mode uses the ADC internal 2.5 V reference so the RTD differential
-        # voltage can be converted back to resistance from the configured IDAC current.
+        # Keep the RTD read path close to the standalone implementation: switch to
+        # internal reference, enable IDACs, read both leads plus the RTD
+        # differential once, then restore the ADC state.
         try:
             self.adc.configure_basic(use_internal_ref=True, gain=int(self.adc_gain))
         except Exception:
@@ -815,13 +783,6 @@ class RTDSensor(Sensor):
         )
 
         try:
-            try:
-                rtd_mode_settle_s = float(getattr(config, "RTD_MODE_SETTLE_S", 0.0) or 0.0)
-            except Exception:
-                rtd_mode_settle_s = 0.0
-            if rtd_mode_settle_s > 0:
-                time.sleep(rtd_mode_settle_s)
-
             settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
             raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
             raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)
@@ -844,12 +805,11 @@ class RTDSensor(Sensor):
         )
 
     def _code_to_resistance(self, code_rtd: int) -> float:
-        gain = self.adc_gain if self.adc_gain > 0 else 1.0
-        idac_current_a = self.idac_current_ua * 1e-6
-        if idac_current_a == 0:
+        if self.rref_ohms <= 0:
             return 0.0
-        v_rtd = (float(code_rtd) / self._FS) * (self._VREF_INTERNAL / gain)
-        return v_rtd / idac_current_a
+        factor = self.reference_factor if self.reference_factor > 0 else 1.0
+        gain = self.adc_gain if self.adc_gain > 0 else 1.0
+        return (float(code_rtd) / (self._FS * gain)) * self.rref_ohms * factor
 
     def _resistance_to_temperature_c(self, resistance: float) -> float:
         r_ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
@@ -896,21 +856,17 @@ class RTDSensor(Sensor):
         self._last_debug_log_t = now
         raw_lead1 = raw_sample.raw_diff_1
         raw_lead2 = raw_sample.raw_diff_2
-        gain = self.adc_gain if self.adc_gain > 0 else 1.0
-        lead1_v = _adc_code_to_voltage(int(raw_lead1), vref=self._VREF_INTERNAL, gain=gain) if raw_lead1 is not None else None
-        lead2_v = _adc_code_to_voltage(int(raw_lead2), vref=self._VREF_INTERNAL, gain=gain) if raw_lead2 is not None else None
         ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
         _log.warning(
-            "[%s] RTD debug lead1_code=%s lead2_code=%s lead1_v=%s lead2_v=%s diff=%s burst=%s gain=%s idac_ua=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
+            "[%s] RTD debug lead1=%s lead2=%s diff=%s burst=%s gain=%s rref=%.3f ref_factor=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
             self.name,
             raw_lead1,
             raw_lead2,
-            lead1_v,
-            lead2_v,
             raw_sample.raw_count,
             list(self._last_diff_burst),
             self.adc_gain,
-            self.idac_current_ua,
+            self.rref_ohms,
+            self.reference_factor,
             resistance,
             ratio,
             temp_c,
@@ -919,7 +875,6 @@ class RTDSensor(Sensor):
         )
 
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
-        gain = self.adc_gain if self.adc_gain > 0 else 1.0
         resistance = self._code_to_resistance(int(raw_sample.raw_count))
         temp_c = self._resistance_to_temperature_c(resistance)
         temperature = self._convert_unit(temp_c) - self.offset
@@ -932,8 +887,6 @@ class RTDSensor(Sensor):
             raw_value=raw_sample.raw_count,
             value=float(temperature),
             units=self.unit,
-            V_diff_1=_adc_code_to_voltage(int(raw_sample.raw_diff_1), vref=self._VREF_INTERNAL, gain=gain) if raw_sample.raw_diff_1 is not None else None,
-            V_diff_2=_adc_code_to_voltage(int(raw_sample.raw_diff_2), vref=self._VREF_INTERNAL, gain=gain) if raw_sample.raw_diff_2 is not None else None,
             source="hardware",
         )
 

@@ -35,8 +35,8 @@ except Exception as exc:  # pragma: no cover
 	# - Core 2: DAQ producer
 	# - Core 3: DAQ consumer + F3C loop (placeholder)
 
-CPU_CORE_0_OS_AND_GUI = 1
-CPU_CORE_1_THROTTLE = 0
+CPU_CORE_0_OS_AND_GUI = 0
+CPU_CORE_1_THROTTLE = 1
 CPU_CORE_2_DAQ_PRODUCER = 2
 CPU_CORE_3_DAQ_CONSUMER_AND_F3 = 3
 

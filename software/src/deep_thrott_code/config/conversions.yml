@@ -32,15 +32,15 @@ calibration_profiles:
     engine_load_cell:
       units: N
       type: vdiff_to_force
-      max_load_n: 980.67
+      max_load_n: 980.67 # 100 kg
       excitation_voltage: 10.0
-      sensitivity_v_per_v: 0.002
+      sensitivity_v_per_v: 0.003
       offset_n: 0.0
 
     nitrous_load_cell:
       units: N
       type: vdiff_to_force
-      max_load_n: 980.67
+      max_load_n: 980.67 # 60 kg
       excitation_voltage: 10.0
       sensitivity_v_per_v: 0.002
       offset_n: 0.0

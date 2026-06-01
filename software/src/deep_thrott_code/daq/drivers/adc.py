@@ -58,8 +58,6 @@ class ADS124S08:
         2000: 0x09,
     }
 
-    _FS_CODE = (1 << 23) - 1
-
     def __init__(
         self,
         id,
@@ -205,13 +203,6 @@ class ADS124S08:
             code -= 1 << 24
 
         return code
-
-    @staticmethod
-    def code_to_volts(code: int, vref: float = 5.0, gain: float = 1.0) -> float:
-        """Convert a signed 24-bit ADC code to volts for a bipolar transfer."""
-
-        full_scale = float(vref) / float(gain) if gain else float(vref)
-        return (float(code) / ADS124S08._FS_CODE) * full_scale
 
     def configure_basic(
         self,
@@ -438,18 +429,6 @@ class ADS124S08:
             discards_remaining -= 1
 
         return sample
-
-    def read_voltage_single(
-        self,
-        ainp: int,
-        vref: float = 5.0,
-        gain: float = 1.0,
-        settle_discard: bool = True,
-    ) -> float:
-        """Single-ended read helper returning volts instead of the raw ADC code."""
-
-        code = self.read_raw_single(ainp, settle_discard=settle_discard)
-        return self.code_to_volts(code, vref=vref, gain=gain)
 
     def read_raw_diff(
         self,
