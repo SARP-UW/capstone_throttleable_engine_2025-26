@@ -163,10 +163,19 @@ class ThrottleValve():
         actuation_time = 0
         if self.state != new_state:
             self.state = new_state
-            if new_state == ValveState.OPEN:
-                self.throttle(75.0, actuation_time)
+
+            # angles calibrated for omctv
+            if self.valve_id == "omctv":
+                if new_state == ValveState.OPEN:
+                    self.throttle(75.0, actuation_time)
+                else:
+                    self.throttle(-15.0, actuation_time)
+            # angles calibrated for fmctv
             else:
-                self.throttle(-15.0, actuation_time)
+                if new_state == ValveState.OPEN:
+                    self.throttle(90.0, actuation_time)
+                else:
+                    self.throttle(0.0, actuation_time)
 
     def pulse_valve(self, dt: float):
         if self.state == ValveState.CLOSED:
