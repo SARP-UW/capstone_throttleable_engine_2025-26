@@ -164,9 +164,9 @@ class ThrottleValve():
         if self.state != new_state:
             self.state = new_state
             if new_state == ValveState.OPEN:
-                self.throttle(100.0, actuation_time)
+                self.throttle(80.0, actuation_time)
             else:
-                self.throttle(10.0, actuation_time)
+                self.throttle(-10.0, actuation_time)
 
     def pulse_valve(self, dt: float):
         if self.state == ValveState.CLOSED:
