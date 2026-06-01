@@ -196,32 +196,66 @@ SERVO_MOVE_TIME_WRITE_CMD = 1
 #     time.sleep(3)
 
 servo_id = 254
-angle = 90
-duration = 10
+angle = 90 # degrees
+duration = 5 # seconds
 
 
 
-throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
-# pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
+# throttle_valve = ThrottleValve("test_throttle_valve", servo_id, serial_handle, pi, False)
+pwm_valve = WaterValvePWM("test_water_valve", 12, True, pi)
 #
 print("Sending sum shiz...")
 
-try:
-    while True:
-        print("Pulling TX_ENABLE Low")
-        pi.write(TX_ENABLE_PIN, 0)
+
+angles = [0, 30, 60, 90, 120, 150, 180]
+
+# try:
+#     while True:
+        # print("Pulling TX_ENABLE Low")
+        # pi.write(TX_ENABLE_PIN, 0)
 
         # print("Opening Throttle Valve...")
         # throttle_valve.set_state(ValveState.OPEN)
         # pwm_valve.set_state(ValveState.OPEN)
-        time.sleep(duration)
-        print("Pulling TX_ENABLE High")
-        pi.write(TX_ENABLE_PIN, 1)
+        # time.sleep(duration)
+        # print("Pulling TX_ENABLE High")
+        # pi.write(TX_ENABLE_PIN, 1)
 
         # print("Closing Throttle Valv...")
         # throttle_valve.set_state(ValveState.CLOSED)
         # pwm_valve.set_state(ValveState.CLOSED)
-        time.sleep(duration)
+        # time.sleep(duration)
+
+
+        # for angle in angles:
+        #     print(f"Setting throttle valve to {angle} degrees...")
+        #     pwm_valve.set_angle(angle)
+        #     time.sleep(duration)
+
+# except KeyboardInterrupt:
+#     pi.serial_close(serial_handle)
+#     pi.stop()
+
+
+try:
+    while True:
+        user_input = input("Enter angle 0-180 (q to quit): ").strip()
+        if user_input.lower() in ("q", "quit", "exit"):
+            break
+
+        try:
+            angle = float(user_input)
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+
+        angle = max(0.0, min(180.0, angle))
+        pwm_valve.set_angle(angle)
+        print(f"Set PWM valve to {angle:.1f}°")
+
 except KeyboardInterrupt:
-    pi.serial_close(serial_handle)
-    pi.stop()
+    print("\nStopped by Ctrl+C")
+
+finally:
+    print("Exiting loop")
+    # optional cleanup here

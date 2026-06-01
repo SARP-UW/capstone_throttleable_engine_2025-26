@@ -11,17 +11,17 @@ ADC_SETTLE_DISCARD: bool = True
 # Extra conversions to discard after entering or leaving RTD mode. RTD reads
 # change the ADS124S08 reference and IDAC routing, which can leave the next
 # conversion on that ADC partially unsettled even after the usual MUX discard.
-ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH: int = 0
+ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH: int = 4
 
 
 # Time to hold RTD mode active before taking the first reading. This gives the
 # IDAC/reference path a chance to settle before we touch the MUX.
-RTD_MODE_SETTLE_S: float = 0.0
+RTD_MODE_SETTLE_S: float = 0.02
 
 
 # Number of differential RTD samples to take while RTD mode stays enabled.
 # The median of the burst is used as the RTD code.
-RTD_DIFF_BURST_SAMPLES: int = 1
+RTD_DIFF_BURST_SAMPLES: int = 3
 
 
 # If True, force ADS124S08 DATARATE.DR to max (4000 SPS) at startup.
@@ -33,16 +33,6 @@ ADC_FORCE_MAX_DATARATE: bool = False
 # reserve extra headroom above the theoretical minimum conversion rate.
 # This accounts for SPI command overhead, MUX changes, and scheduling jitter.
 ADC_DATARATE_HEADROOM: float = 1.5
-
-
-# Optional RTD diagnostic logging.
-# When enabled, each RTD emits a throttled backend log line with the raw lead
-# codes, raw differential code, inferred resistance, and computed temperature.
-RTD_DEBUG_LOG: bool = False
-RTD_DEBUG_LOG_PERIOD_S: float = 2.0
-
-# Optional ADS124S08 RTD register readback logging.
-RTD_DEBUG_REG_READBACK: bool = False
 
 
 # Internally oversubscribe per-sensor sampling targets to compensate for

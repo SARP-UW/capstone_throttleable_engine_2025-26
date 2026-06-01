@@ -43,6 +43,7 @@ class GuiCommandHandler:
 		# "Test" is a latched setting that applies to the next Start Log.
 		self._test_name: str | None = "hotfire"
 		self._selected_sensor_names: tuple[str, ...] | None = None
+		self._available_sensor_names_cache: dict[tuple[bool, str | None], tuple[str, ...]] = {}
 
 	def _available_sensor_names(self, simulation: bool | None = None, test_name: str | None = None) -> list[str]:
 		from deep_thrott_code.daq.sensors.sensors import available_sensor_names  # noqa: PLC0415
@@ -54,23 +55,33 @@ class GuiCommandHandler:
 		else:
 			sim = bool(simulation)
 			test = test_name
-		return available_sensor_names(simulation=sim, test_name=test)
 
-	def _resolved_selected_sensor_names(self) -> list[str]:
+		cache_key = (bool(sim), test)
+		with self._lock:
+			cached = self._available_sensor_names_cache.get(cache_key)
+		if cached is not None:
+			return list(cached)
+
+		resolved = tuple(available_sensor_names(simulation=sim, test_name=test))
+		with self._lock:
+			self._available_sensor_names_cache[cache_key] = resolved
+		return list(resolved)
+
+	def _resolved_selected_sensor_names(self, available: list[str] | None = None) -> list[str]:
 		with self._lock:
 			selected = list(self._selected_sensor_names) if self._selected_sensor_names is not None else None
 			simulation = bool(self._simulation_enabled)
 			test_name = self._test_name
 
-		available = self._available_sensor_names(simulation=simulation, test_name=test_name)
+		resolved_available = available if available is not None else self._available_sensor_names(simulation=simulation, test_name=test_name)
 		if selected is None:
-			return available
-		selected_set = {name for name in selected if name in available}
-		return [name for name in available if name in selected_set]
+			return list(resolved_available)
+		selected_set = {name for name in selected if name in resolved_available}
+		return [name for name in resolved_available if name in selected_set]
 
 	def snapshot_meta(self) -> dict[str, object]:
 		available = self._available_sensor_names()
-		selected = self._resolved_selected_sensor_names()
+		selected = self._resolved_selected_sensor_names(available)
 		return {
 			"available_sensor_names": available,
 			"selected_sensor_names": selected,

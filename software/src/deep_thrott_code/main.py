@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import queue
 import threading
+import time
 from pathlib import Path
 from typing import Any
-from werkzeug.serving import WSGIRequestHandler
 
 from deep_thrott_code.backend.app_factory import parse_args
 from deep_thrott_code.backend.daq_runtime import DaqRuntime, drain_queue, emit_system as _emit_system
 from deep_thrott_code.backend.gui_command_handler import GuiCommandHandler
 from deep_thrott_code.gui.extensions import socketio
+from werkzeug.serving import WSGIRequestHandler
 
 try:
 	# Prefer the real controller as the source of truth for sequence state.
@@ -30,8 +32,8 @@ except Exception as exc:  # pragma: no cover
 # CPU pinning notes (Raspberry Pi / Linux)
 # ---------------------------------------------------------------------
 
-	# - Core 0: OS + GUI server (can also host one DAQ producer when read path is saturated)
-	# - Core 1: DAQ producer / throttle placeholder
+	# - Core 0: OS reserve
+	# - Core 1: GUI server / throttle placeholder
 	# - Core 2: DAQ producer
 	# - Core 3: DAQ consumer + F3C loop (placeholder)
 
@@ -83,7 +85,7 @@ def pin_current_thread_to_cpu(cpu_index: int) -> None:
 def main() -> None:
 	cfg = parse_args()
 
-	if getattr(socketio, "is_dummy", False):
+	if not cfg.no_gui_server and getattr(socketio, "is_dummy", False):
 		raise RuntimeError(
 			"flask_socketio is required for the backend service. "
 			"Install `flask-socketio` (and deps) in this environment."
@@ -150,7 +152,7 @@ def main() -> None:
 		drain_queue_fn=drain_queue,
 		pin_thread_to_cpu=pin_current_thread_to_cpu,
 		producer_cpu=CPU_CORE_2_DAQ_PRODUCER,
-		producer_cpus=(CPU_CORE_0_OS_AND_GUI, CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER),
+		producer_cpus=(CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER, CPU_CORE_3_DAQ_CONSUMER_AND_F3),
 		consumer_cpu=CPU_CORE_3_DAQ_CONSUMER_AND_F3,
 	)
 
@@ -158,16 +160,8 @@ def main() -> None:
 	# TODO: Throttle control loop add
 	# -----------------------------------------------------------------
 
-	# Gui stuffs
-
-	from deep_thrott_code.gui.sockets import register_socket_handlers
-	from flask import Flask
-
-	app = Flask(__name__)
-	app.config["SECRET_KEY"] = "dev"
-	socketio.init_app(app)
-
 	controller_ref: dict[str, GuiCommandHandler | None] = {"value": None}
+	clear_latest_daq_state: Any | None = None
 
 	def _backend_meta() -> dict[str, Any]:
 		meta = daq.snapshot_meta()
@@ -176,20 +170,29 @@ def main() -> None:
 			meta.update(controller.snapshot_meta())
 		return meta
 
-	register_socket_handlers(
-		socketio,
-		app,
-		gui_queue=gui_queue,
-		command_queue=sequencer_command_queue,
-		control_queue=control_queue,
-		f3_to_gui_queue=f3_to_gui_queue,
-		gui_to_f3_queue=sequencer_ack_queue,
-		get_system_snapshot=get_system_snapshot,
-		sequence_defs=sequence_defs_for_gui,
-		backend_meta_getter=_backend_meta,
-		pin_thread_to_cpu = pin_current_thread_to_cpu,
-		cpu=CPU_CORE_0_OS_AND_GUI,
-	)
+	if not cfg.no_gui_server:
+		from deep_thrott_code.gui.sockets import register_socket_handlers
+		from flask import Flask
+
+		app = Flask(__name__)
+		app.config["SECRET_KEY"] = "dev"
+		socketio.init_app(app)
+
+		register_socket_handlers(
+			socketio,
+			app,
+			gui_queue=gui_queue,
+			command_queue=sequencer_command_queue,
+			control_queue=control_queue,
+			f3_to_gui_queue=f3_to_gui_queue,
+			gui_to_f3_queue=sequencer_ack_queue,
+			get_system_snapshot=get_system_snapshot,
+			sequence_defs=sequence_defs_for_gui,
+			backend_meta_getter=_backend_meta,
+			pin_thread_to_cpu=pin_current_thread_to_cpu,
+			cpu=CPU_CORE_1_THROTTLE,
+		)
+		clear_latest_daq_state = app.config.get("CLEAR_LATEST_STATES")
 
 	controller = GuiCommandHandler(
 		control_queue=control_queue,
@@ -198,7 +201,7 @@ def main() -> None:
 		stop_log=daq.stop,
 		is_running=daq.is_running,
 		zero_sensor=daq.zero_sensor,
-		clear_daq_state=app.config.get("CLEAR_LATEST_STATES"),
+		clear_daq_state=clear_latest_daq_state,
 	)
 	controller_ref["value"] = controller
 
@@ -209,7 +212,37 @@ def main() -> None:
 	if cfg.autostart:
 		daq.start(cfg.simulation)
 
+	if cfg.no_gui_server:
+		print("Backend running without GUI server (--no-gui-server).")
+		print("Use Ctrl+C to stop. If CPU stays low in this mode, the web/socket server is the culprit.")
+		try:
+			while True:
+				time.sleep(1.0)
+		except KeyboardInterrupt:
+			print("Backend shutdown requested (Ctrl+C).")
+		finally:
+			try:
+				if daq.is_running():
+					daq.stop()
+			except Exception:
+				pass
+
+			try:
+				if f3_controller is not None:
+					shutdown = getattr(f3_controller, "shutdown", None)
+					if callable(shutdown):
+						shutdown()
+			except Exception:
+				pass
+		return
+
 	print(f"Backend listening on http://{cfg.host}:{cfg.port} (Socket.IO)")
+	print(f"Socket.IO async mode: {getattr(socketio, 'async_mode', 'unknown')}")
+	if getattr(socketio, 'async_mode', '') == 'threading' and importlib.util.find_spec("simple_websocket") is None:
+		print(
+			"Warning: simple-websocket is not installed, so Flask-SocketIO will fall back "
+			"to HTTP long-polling in threading mode. This can drive high CPU when the GUI connects."
+		)
 
 	# Keep terminal output readable: filter out per-request logs (polling spam)
 	# while keeping the startup banner ("Running on http://...") visible.
@@ -230,6 +263,10 @@ def main() -> None:
 	}
 	if getattr(socketio, 'async_mode', '') == 'threading':
 		run_kwargs['request_handler'] = _QuietDisconnectWSGIRequestHandler
+
+	# The Werkzeug / Socket.IO server thread can become the dominant CPU user.
+	# Keep it off core 0 so the OS stays responsive on the Pi.
+	pin_current_thread_to_cpu(CPU_CORE_1_THROTTLE)
 
 	try:
 		socketio.run(**run_kwargs)

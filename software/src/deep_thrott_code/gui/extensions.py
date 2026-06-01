@@ -6,10 +6,9 @@ import warnings
 from typing import Any, Callable, Optional
 
 try:
-	async_mode = os.environ.get("DEEP_THROTT_SOCKETIO_ASYNC_MODE", "threading").strip().lower()
+	configured_async_mode = os.environ.get("DEEP_THROTT_SOCKETIO_ASYNC_MODE", "threading").strip().lower()
+	async_mode = configured_async_mode or "threading"
 	if async_mode == "eventlet":
-		# Eventlet avoids Werkzeug's dev server and is the recommended production-ish
-		# server for Flask-SocketIO.
 		import eventlet  # type: ignore
 		eventlet.monkey_patch()  # type: ignore
 

@@ -360,10 +360,9 @@ class WaterValvePWM:
 
     def set_state(self, new_state: ValveState):
         if new_state == ValveState.OPEN:
-            self.set_angle(0.0)
+            self.set_angle(45.0)
         else:
-            self.set_angle(90.0)
-
+            self.set_angle(135.0)
         self.state = new_state
 
     def get_state(self) -> ValveState:

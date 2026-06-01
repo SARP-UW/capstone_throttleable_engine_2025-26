@@ -28,8 +28,6 @@ import queue
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from flask import Flask
-
 
 @dataclass(frozen=True)
 class BackendConfig:
@@ -41,6 +39,7 @@ class BackendConfig:
 	autostart: bool
 	simulation: bool
 	no_sequencer: bool
+	no_gui_server: bool
 
 
 def parse_args() -> BackendConfig:
@@ -73,6 +72,11 @@ def parse_args() -> BackendConfig:
 		action="store_true",
 		help="Do not start the F3C sequencer/controller (DAQ + GUI streaming only).",
 	)
+	parser.add_argument(
+		"--no-gui-server",
+		action="store_true",
+		help="Do not start the Flask-SocketIO server. Useful for headless DAQ debugging on the Pi.",
+	)
 	# Parse the args and normalize types.
 	args = parser.parse_args()
 	return BackendConfig(
@@ -82,6 +86,7 @@ def parse_args() -> BackendConfig:
 		autostart=bool(args.autostart),
 		simulation=bool(args.simulation),
 		no_sequencer=bool(args.no_sequencer),
+		no_gui_server=bool(args.no_gui_server),
     )
 
 __all__ = ["BackendConfig", "parse_args"]

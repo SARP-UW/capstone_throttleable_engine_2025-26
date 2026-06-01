@@ -28,6 +28,30 @@ import RPi.GPIO as GPIO  # type: ignore
 _log = logging.getLogger(__name__)
 
 
+_LBF_PER_NEWTON = 0.22480894387096
+
+
+def _normalize_force_unit(unit: object) -> str:
+    text = str(unit or "N").strip().lower()
+    if text in {"lb", "lbs", "lbf", "pound", "pounds"}:
+        return "lbs"
+    return "N"
+
+
+def _force_n_to_display(force_n: float, unit: object) -> float:
+    normalized = _normalize_force_unit(unit)
+    if normalized == "lbs":
+        return float(force_n) * _LBF_PER_NEWTON
+    return float(force_n)
+
+
+def _display_force_to_n(force_value: float, unit: object) -> float:
+    normalized = _normalize_force_unit(unit)
+    if normalized == "lbs":
+        return float(force_value) / _LBF_PER_NEWTON
+    return float(force_value)
+
+
 class Sensor(ABC):
     """Base class for all sensors used by the DAQ loops."""
 
@@ -312,9 +336,11 @@ class SimulatedLoadCellSensor(Sensor):
         noise_std_n: float = 2.0,
         seed: int = 1,
         channel: int = 0,
+        force_unit: str = "lbs",
     ):
         self.name = str(name)
         self.channel = int(channel)
+        self.force_unit = _normalize_force_unit(force_unit)
 
         self.sampling_rate_hz = float(sampling_rate_hz) if sampling_rate_hz is not None else None
 
@@ -397,7 +423,7 @@ class SimulatedLoadCellSensor(Sensor):
                 t_wall=raw_sample.t_wall,
                 raw_value=raw_sample.raw_count,
                 value=0.0,
-                units="N",
+                units=self.force_unit,
                 status="ERROR",
                 message="missing raw_diff_1/raw_diff_2",
                 source="simulated",
@@ -407,6 +433,7 @@ class SimulatedLoadCellSensor(Sensor):
         v_minus = self.adc_code_to_voltage(int(code_minus))
         vdiff = abs(v_plus - v_minus)
         force_n = (vdiff / self.v_diff_fs) * self.max_load_n if self.v_diff_fs else 0.0
+        display_force = _force_n_to_display(force_n, self.force_unit)
 
         return Sample(
             sensor_name=raw_sample.sensor_name,
@@ -414,12 +441,15 @@ class SimulatedLoadCellSensor(Sensor):
             t_monotonic=raw_sample.t_monotonic,
             t_wall=raw_sample.t_wall,
             raw_value=raw_sample.raw_count,
-            value=force_n,
-            units="N",
+            value=display_force,
+            units=self.force_unit,
             V_diff_1=v_plus,
             V_diff_2=v_minus,
             source="simulated",
         )
+
+    def display_force_to_n(self, force_value: float) -> float:
+        return _display_force_to_n(force_value, self.force_unit)
 
 
 class SimulatedRTDSensor(Sensor):
@@ -565,6 +595,7 @@ class LoadCellSensor(Sensor):
         offset_n: float = 0.0,
         adc_vref: float = 5.0,
         adc_gain: float = 1.0,
+        force_unit: str = "lbs",
     ):
         self.name = str(name)
         self.adc = adc
@@ -577,6 +608,7 @@ class LoadCellSensor(Sensor):
         self.offset_n = float(offset_n)
         self.adc_vref = float(adc_vref)
         self.adc_gain = float(adc_gain)
+        self.force_unit = _normalize_force_unit(force_unit)
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
@@ -619,6 +651,7 @@ class LoadCellSensor(Sensor):
             current_v_per_v = v_diff / self.excitation_voltage
             ratio = current_v_per_v / self.sensitivity_v_per_v
             force_n = ratio * self.max_load_n - self.offset_n
+        display_force = _force_n_to_display(force_n, self.force_unit)
 
         return Sample(
             sensor_name=raw_sample.sensor_name,
@@ -626,11 +659,14 @@ class LoadCellSensor(Sensor):
             t_monotonic=raw_sample.t_monotonic,
             t_wall=raw_sample.t_wall,
             raw_value=raw_sample.raw_count,
-            value=float(force_n),
-            units="N",
+            value=float(display_force),
+            units=self.force_unit,
             V_diff_1=v_diff,
             source="hardware",
         )
+
+    def display_force_to_n(self, force_value: float) -> float:
+        return _display_force_to_n(force_value, self.force_unit)
 
 
 class PressureTransducerSensor(Sensor):
@@ -705,12 +741,10 @@ class PressureTransducerSensor(Sensor):
             source="hardware",
         )
 
-
 class RTDSensor(Sensor):
-    """Hardware RTD sensor using ADS124S08 IDAC excitation mode."""
+    """Hardware RTD sensor using ADS124S08 ratiometric RTD mode."""
 
     _FS = (1 << 23) - 1
-    _VREF_INTERNAL = 2.5
 
     _CVD_A = 3.9083e-3
     _CVD_B = -5.775e-7
@@ -755,64 +789,24 @@ class RTDSensor(Sensor):
         self._last_debug_log_t = 0.0
         self._last_diff_burst: tuple[int, ...] = ()
 
-    def _read_raw_single_rtd_mode(self, ainp: int, settle_discard: bool = True) -> int:
-        """
-        RTD-mode single-ended read.
-
-        Important: do NOT call adc.read_raw_single() here, because the normal
-        ADC helper defensively calls _ensure_non_rtd_baseline(), which disables
-        IDAC excitation before the RTD measurement.
-        """
-        if not getattr(self.adc, "_conversion_started", False):
-            self.adc.start()
-
-        self.adc.set_inpmux_single(ainp)
-
-        if not self.adc.wait_drdy(0.5):
-            raise TimeoutError(f"{self.name}: DRDY timeout after RTD single MUX change")
-
-        sample = self.adc.read_raw_sample()
-
-        discards = 1 if settle_discard else 0
-        while discards > 0:
-            if not self.adc.wait_drdy(0.5):
-                raise TimeoutError(f"{self.name}: DRDY timeout during RTD single settle")
-            sample = self.adc.read_raw_sample()
-            discards -= 1
-
-        return int(sample)
-
-    def _read_raw_diff_rtd_mode(self, ainp: int, ainn: int, settle_discard: bool = True) -> int:
-        """
-        RTD-mode differential read.
-
-        Important: do NOT call adc.read_raw_diff() here, because the normal
-        ADC helper defensively calls _ensure_non_rtd_baseline(), which disables
-        IDAC excitation before the RTD measurement.
-        """
-        if not getattr(self.adc, "_conversion_started", False):
-            self.adc.start()
-
-        self.adc.set_inpmux_diff(ainp, ainn)
-
-        if not self.adc.wait_drdy(0.5):
-            raise TimeoutError(f"{self.name}: DRDY timeout after RTD diff MUX change")
-
-        sample = self.adc.read_raw_sample()
-
-        discards = 1 if settle_discard else 0
-        while discards > 0:
-            if not self.adc.wait_drdy(0.5):
-                raise TimeoutError(f"{self.name}: DRDY timeout during RTD diff settle")
-            sample = self.adc.read_raw_sample()
-            discards -= 1
-
-        return int(sample)
+    def _read_rtd_diff_code(self, settle_discard: bool) -> int:
+        code = int(
+            self.adc.read_raw_diff(
+                self.lead1_ain,
+                self.lead2_ain,
+                settle_discard=settle_discard,
+            )
+        )
+        self._last_diff_burst = (code,)
+        return code
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
         t_wall = time.time()
 
+        # Keep the RTD read path close to the standalone implementation: switch to
+        # internal reference, enable IDACs, read both leads plus the RTD
+        # differential once, then restore the ADC state.
         try:
             self.adc.configure_basic(use_internal_ref=True, gain=int(self.adc_gain))
         except Exception:
@@ -825,29 +819,12 @@ class RTDSensor(Sensor):
         )
 
         try:
-            settle_discard = bool(getattr(config, "ADC_SETTLE_DISCARD", True))
-
-            raw_lead1 = self._read_raw_single_rtd_mode(
-                self.lead1_ain,
-                settle_discard=settle_discard,
-            )
-
-            raw_lead2 = self._read_raw_single_rtd_mode(
-                self.lead2_ain,
-                settle_discard=settle_discard,
-            )
-
-            code_rtd = self._read_raw_diff_rtd_mode(
-                self.lead1_ain,
-                self.lead2_ain,
-                settle_discard=settle_discard,
-            )
-
+            settle_discard = getattr(config, "ADC_SETTLE_DISCARD", True)
+            raw_lead1 = self.adc.read_raw_single(self.lead1_ain, settle_discard=settle_discard)
+            raw_lead2 = self.adc.read_raw_single(self.lead2_ain, settle_discard=settle_discard)
+            code_rtd = self._read_rtd_diff_code(bool(settle_discard))
             if self.invert_polarity:
                 code_rtd = -int(code_rtd)
-
-            self._last_diff_burst = (int(code_rtd),)
-
         finally:
             self.adc.disable_rtd_mode()
 
@@ -864,47 +841,31 @@ class RTDSensor(Sensor):
         )
 
     def _code_to_resistance(self, code_rtd: int) -> float:
-        gain = self.adc_gain if self.adc_gain > 0 else 1.0
-        idac_current_a = self.idac_current_ua * 1e-6
-
-        if idac_current_a == 0:
+        if self.rref_ohms <= 0:
             return 0.0
-
-        v_rtd = (float(code_rtd) / self._FS) * (self._VREF_INTERNAL / gain)
-        return v_rtd / idac_current_a
+        factor = self.reference_factor if self.reference_factor > 0 else 1.0
+        gain = self.adc_gain if self.adc_gain > 0 else 1.0
+        return (float(code_rtd) / (self._FS * gain)) * self.rref_ohms * factor
 
     def _resistance_to_temperature_c(self, resistance: float) -> float:
         r_ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
-
         disc = self._CVD_A**2 - 4 * self._CVD_B * (1 - r_ratio)
         if disc < 0:
             return 0.0
-
         t_c = (-self._CVD_A + math.sqrt(disc)) / (2 * self._CVD_B)
-
         if t_c < 0:
             t_c = self._newton_cvd_negative(resistance, t_c)
-
         return t_c
 
-    def _newton_cvd_negative(
-        self,
-        resistance: float,
-        initial_guess: float,
-        iterations: int = 10,
-    ) -> float:
+    def _newton_cvd_negative(self, resistance: float, initial_guess: float, iterations: int = 10) -> float:
         A, B, C, R0 = self._CVD_A, self._CVD_B, self._CVD_C, self.r0_ohms
         t = float(initial_guess)
-
         for _ in range(iterations):
             r_calc = R0 * (1 + A * t + B * t**2 + C * (t - 100) * t**3)
             dr_dt = R0 * (A + 2 * B * t + C * (4 * t**3 - 300 * t**2))
-
             if abs(dr_dt) < 1e-15:
                 break
-
             t -= (r_calc - resistance) / dr_dt
-
         return t
 
     def _convert_unit(self, temp_c: float) -> float:
@@ -914,78 +875,10 @@ class RTDSensor(Sensor):
             return temp_c + 273.15
         return temp_c
 
-    def _maybe_log_debug(
-        self,
-        raw_sample: RawSample,
-        resistance: float,
-        temp_c: float,
-        temperature: float,
-    ) -> None:
-        if not bool(getattr(config, "RTD_DEBUG_LOG", False)):
-            return
-
-        now = time.monotonic()
-
-        try:
-            period_s = float(getattr(config, "RTD_DEBUG_LOG_PERIOD_S", 2.0) or 2.0)
-        except Exception:
-            period_s = 2.0
-
-        if period_s < 0:
-            period_s = 0.0
-
-        if (now - self._last_debug_log_t) < period_s:
-            return
-
-        self._last_debug_log_t = now
-
-        raw_lead1 = raw_sample.raw_diff_1
-        raw_lead2 = raw_sample.raw_diff_2
-        gain = self.adc_gain if self.adc_gain > 0 else 1.0
-
-        lead1_v = (
-            _adc_code_to_voltage(int(raw_lead1), vref=self._VREF_INTERNAL, gain=gain)
-            if raw_lead1 is not None
-            else None
-        )
-
-        lead2_v = (
-            _adc_code_to_voltage(int(raw_lead2), vref=self._VREF_INTERNAL, gain=gain)
-            if raw_lead2 is not None
-            else None
-        )
-
-        ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
-
-        _log.warning(
-            "[%s] RTD debug lead1_code=%s lead2_code=%s lead1_v=%s lead2_v=%s "
-            "diff=%s burst=%s gain=%s idac_ua=%.3f inferred_r=%.3f ohm "
-            "r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
-            self.name,
-            raw_lead1,
-            raw_lead2,
-            lead1_v,
-            lead2_v,
-            raw_sample.raw_count,
-            list(self._last_diff_burst),
-            self.adc_gain,
-            self.idac_current_ua,
-            resistance,
-            ratio,
-            temp_c,
-            temperature,
-            self.unit,
-        )
-
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
-        gain = self.adc_gain if self.adc_gain > 0 else 1.0
-
         resistance = self._code_to_resistance(int(raw_sample.raw_count))
         temp_c = self._resistance_to_temperature_c(resistance)
         temperature = self._convert_unit(temp_c) - self.offset
-
-        self._maybe_log_debug(raw_sample, resistance, temp_c, temperature)
-
         return Sample(
             sensor_name=raw_sample.sensor_name,
             sensor_kind="temperature",
@@ -994,24 +887,6 @@ class RTDSensor(Sensor):
             raw_value=raw_sample.raw_count,
             value=float(temperature),
             units=self.unit,
-            V_diff_1=(
-                _adc_code_to_voltage(
-                    int(raw_sample.raw_diff_1),
-                    vref=self._VREF_INTERNAL,
-                    gain=gain,
-                )
-                if raw_sample.raw_diff_1 is not None
-                else None
-            ),
-            V_diff_2=(
-                _adc_code_to_voltage(
-                    int(raw_sample.raw_diff_2),
-                    vref=self._VREF_INTERNAL,
-                    gain=gain,
-                )
-                if raw_sample.raw_diff_2 is not None
-                else None
-            ),
             source="hardware",
         )
 
@@ -1533,10 +1408,10 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             except Exception:
                 return default
 
-        def _lc_calibration(sensor_id: str) -> tuple[float, float, float, float]:
-            """Return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n)."""
+        def _lc_calibration(sensor_id: str) -> tuple[float, float, float, float, str]:
+            """Return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n, force_unit)."""
 
-            default = (1000.0, 5.0, 0.0020, 0.0)
+            default = (1000.0, 5.0, 0.0020, 0.0, "lbs")
 
             cal = conversions_cfg.get("calibration")
             if not isinstance(cal, dict):
@@ -1568,7 +1443,8 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                 excitation_voltage = float(profile.get("excitation_voltage", default[1]))
                 sensitivity_v_per_v = float(profile.get("sensitivity_v_per_v", default[2]))
                 offset_n = float(profile.get("offset_n", default[3]))
-                return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n)
+                force_unit = str(profile.get("unit", profile.get("units", default[4])))
+                return (max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n, force_unit)
             except Exception:
                 return default
 
@@ -1839,7 +1715,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             except Exception:
                 adc_gain = 1.0
 
-            max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n = _lc_calibration(sensor_id)
+            max_load_n, excitation_voltage, sensitivity_v_per_v, offset_n, force_unit = _lc_calibration(sensor_id)
 
             # Allow hardware.yml to override calibration profile values.
             try:
@@ -1862,6 +1738,13 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                     offset_n = float(cfg.get("offset"))
             except Exception:
                 pass
+            try:
+                if cfg.get("unit") is not None:
+                    force_unit = str(cfg.get("unit"))
+                elif cfg.get("units") is not None:
+                    force_unit = str(cfg.get("units"))
+            except Exception:
+                pass
 
             sensors.append(
                 LoadCellSensor(
@@ -1875,6 +1758,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                     sensitivity_v_per_v=sensitivity_v_per_v,
                     offset_n=offset_n,
                     adc_gain=adc_gain,
+                    force_unit=force_unit,
                 )
             )
 
@@ -1913,6 +1797,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             amplitude_n=200.0,
             frequency_hz=0.5,
             seed=2,
+            force_unit="lbs",
         ),
         SimulatedFlowMeterSensor(
             name="FM-FM",
