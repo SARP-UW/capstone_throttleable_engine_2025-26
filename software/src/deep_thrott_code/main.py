@@ -7,12 +7,12 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
-from werkzeug.serving import WSGIRequestHandler
 
 from deep_thrott_code.backend.app_factory import parse_args
 from deep_thrott_code.backend.daq_runtime import DaqRuntime, drain_queue, emit_system as _emit_system
 from deep_thrott_code.backend.gui_command_handler import GuiCommandHandler
 from deep_thrott_code.gui.extensions import socketio
+from werkzeug.serving import WSGIRequestHandler
 
 try:
 	# Prefer the real controller as the source of truth for sequence state.

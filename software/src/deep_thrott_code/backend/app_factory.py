@@ -28,8 +28,6 @@ import queue
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from flask import Flask
-
 
 @dataclass(frozen=True)
 class BackendConfig:
