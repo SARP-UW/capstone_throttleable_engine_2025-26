@@ -188,6 +188,7 @@ sequences:
         user_input: true
         system_state: fire
 
+
 # hotfire sequence
 #  - name: fire
 #    steps:
