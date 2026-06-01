@@ -154,7 +154,7 @@ sensors:
 
     resistive temperature detectors:
       WI-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC1
         signal_mode: rtd_3_wire
         lead1_ain: 4
@@ -166,7 +166,7 @@ sensors:
         notes: "Water inlet RTD"
 
       WO-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC3
         signal_mode: rtd_3_wire
         lead1_ain: 4
@@ -178,7 +178,7 @@ sensors:
         notes: "Water outlet RTD"
 
       NT-RTD:
-        enabled: true
+        enabled: false
         adc_id: ADC2
         signal_mode: rtd_3_wire
         lead1_ain: 4
