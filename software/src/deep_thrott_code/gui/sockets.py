@@ -35,6 +35,8 @@ import threading
 import time
 from typing import Any, Callable
 
+from flask import request
+
 
 def _drain_pending_queue(q: queue.Queue | None) -> None:
 	if q is None:
@@ -131,6 +133,9 @@ def register_socket_handlers(
 	# We keep this lock small/fast so the 10 Hz loop stays stable.
 	latest_lock = threading.Lock()
 	latest_states: dict[str, dict[str, Any]] = {}
+	connected_clients_lock = threading.Lock()
+	connected_clients: set[str] = set()
+	clients_connected_event = threading.Event()
 
 	# Expose for other modules / debugging.
 	app.config["LATEST_STATES"] = latest_states
@@ -237,31 +242,35 @@ def register_socket_handlers(
 		"""Main 10 Hz loop that pushes current backend state to the browser."""
 
 		period_s = 0.1
-		next_tick = time.perf_counter()
 		while True:
-			drain_gui_queue()
-			drain_f3_to_gui_queue()
-			# DAQ packet: latest sensor values.
-			packet = build_packet()
-			try:
-				socketio.emit("daq_packet", packet)
-			except Exception:
-				# Keep the thread alive even if Socket.IO isn't ready.
-				pass
+			if not clients_connected_event.wait(timeout=1.0):
+				continue
 
-			# System packet: controller/sequencer snapshot.
-			sys_packet = build_system_packet()
-			try:
-				socketio.emit("system_packet", sys_packet)
-			except Exception:
-				pass
+			next_tick = time.perf_counter()
+			while clients_connected_event.is_set():
+				drain_gui_queue()
+				drain_f3_to_gui_queue()
+				# DAQ packet: latest sensor values.
+				packet = build_packet()
+				try:
+					socketio.emit("daq_packet", packet)
+				except Exception:
+					# Keep the thread alive even if Socket.IO isn't ready.
+					pass
 
-			next_tick += period_s
-			sleep_s = next_tick - time.perf_counter()
-			if sleep_s > 0:
-				time.sleep(sleep_s)
-			else:
-				next_tick = time.perf_counter()
+				# System packet: controller/sequencer snapshot.
+				sys_packet = build_system_packet()
+				try:
+					socketio.emit("system_packet", sys_packet)
+				except Exception:
+					pass
+
+				next_tick += period_s
+				sleep_s = next_tick - time.perf_counter()
+				if sleep_s > 0:
+					time.sleep(sleep_s)
+				else:
+					next_tick = time.perf_counter()
 
 	def gui_loop_entrypoint() -> None:
 		"""Optional CPU pinning wrapper for the GUI loop thread."""
@@ -270,15 +279,27 @@ def register_socket_handlers(
 			pin_thread_to_cpu(cpu)
 		gui_loop_thread()
 
-	# Start the GUI loop once per Flask app instance.
-	# (register_socket_handlers can be called multiple times in some setups.)
-	if not app.config.get("GUI_LOOP_STARTED"):
+	def _ensure_gui_loop_started() -> None:
+		# Start the GUI loop once per Flask app instance.
+		# (register_socket_handlers can be called multiple times in some setups.)
+		if app.config.get("GUI_LOOP_STARTED"):
+			return
 		threading.Thread(target=gui_loop_entrypoint, daemon=True, name="gui_loop").start()
 		app.config["GUI_LOOP_STARTED"] = True
 
 	@socketio.on("connect")
 	def _on_connect() -> None:
 		"""Client connected: send initial state so the GUI renders immediately."""
+
+		_ensure_gui_loop_started()
+		try:
+			sid = str(getattr(request, "sid", "") or "")
+		except Exception:
+			sid = ""
+		with connected_clients_lock:
+			if sid:
+				connected_clients.add(sid)
+			clients_connected_event.set()
 
 		socketio.emit("server_hello", {"ok": True})
 		# Send an immediate packet so the UI doesn't wait up to 100ms.
@@ -291,6 +312,18 @@ def register_socket_handlers(
 		except Exception:
 			pass
 		socketio.emit("system_packet", build_system_packet())
+
+	@socketio.on("disconnect")
+	def _on_disconnect() -> None:
+		try:
+			sid = str(getattr(request, "sid", "") or "")
+		except Exception:
+			sid = ""
+		with connected_clients_lock:
+			if sid:
+				connected_clients.discard(sid)
+			if not connected_clients:
+				clients_connected_event.clear()
 
 	@socketio.on("manual_step_execute")
 	def _on_manual_step_execute(payload: Any) -> None:  # noqa: ANN401
