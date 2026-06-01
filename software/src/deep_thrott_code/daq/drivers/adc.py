@@ -347,24 +347,6 @@ class ADS124S08:
             idac2_ain=idac2_ain,
         )
 
-        if bool(getattr(daq_config, "RTD_DEBUG_REG_READBACK", False)):
-            try:
-                ref_reg = self.rreg(self.REG_REF, 1)[0]
-                idacmag_reg = self.rreg(self.REG_IDACMAG, 1)[0]
-                idacmux_reg = self.rreg(self.REG_IDACMUX, 1)[0]
-                _log.warning(
-                    "[%s] RTD reg readback REF=0x%02X IDACMAG=0x%02X IDACMUX=0x%02X current_ua=%s idac1_ain=%s idac2_ain=%s",
-                    self.id,
-                    ref_reg,
-                    idacmag_reg,
-                    idacmux_reg,
-                    current_ua,
-                    idac1_ain,
-                    idac2_ain,
-                )
-            except Exception as exc:
-                _log.warning("[%s] RTD reg readback failed: %s", self.id, exc)
-
         extra_discards = int(getattr(daq_config, "ADC_EXTRA_SETTLE_DISCARDS_AFTER_RTD_SWITCH", 1) or 0)
         self._queue_settle_discards(extra_discards)
 

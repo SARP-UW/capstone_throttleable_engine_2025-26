@@ -35,16 +35,6 @@ ADC_FORCE_MAX_DATARATE: bool = False
 ADC_DATARATE_HEADROOM: float = 1.5
 
 
-# Optional RTD diagnostic logging.
-# When enabled, each RTD emits a throttled backend log line with the raw lead
-# codes, raw differential code, inferred resistance, and computed temperature.
-RTD_DEBUG_LOG: bool = True
-RTD_DEBUG_LOG_PERIOD_S: float = 2.0
-
-# Optional ADS124S08 RTD register readback logging.
-RTD_DEBUG_REG_READBACK: bool = True
-
-
 # Internally oversubscribe per-sensor sampling targets to compensate for
 # scheduler jitter and conversion overhead. A configured sensor rate in
 # hardware.yml is multiplied by this value for producer scheduling and ADC

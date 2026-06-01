@@ -875,46 +875,10 @@ class RTDSensor(Sensor):
             return temp_c + 273.15
         return temp_c
 
-    def _maybe_log_debug(self, raw_sample: RawSample, resistance: float, temp_c: float, temperature: float) -> None:
-        if not bool(getattr(config, "RTD_DEBUG_LOG", False)):
-            return
-
-        now = time.monotonic()
-        try:
-            period_s = float(getattr(config, "RTD_DEBUG_LOG_PERIOD_S", 2.0) or 2.0)
-        except Exception:
-            period_s = 2.0
-        if period_s < 0:
-            period_s = 0.0
-        if (now - self._last_debug_log_t) < period_s:
-            return
-
-        self._last_debug_log_t = now
-        raw_lead1 = raw_sample.raw_diff_1
-        raw_lead2 = raw_sample.raw_diff_2
-        ratio = resistance / self.r0_ohms if self.r0_ohms else 0.0
-        _log.warning(
-            "[%s] RTD debug lead1=%s lead2=%s diff=%s burst=%s gain=%s rref=%.3f ref_factor=%.3f inferred_r=%.3f ohm r_over_r0=%.4f temp_c=%.3f out=%.3f %s",
-            self.name,
-            raw_lead1,
-            raw_lead2,
-            raw_sample.raw_count,
-            list(self._last_diff_burst),
-            self.adc_gain,
-            self.rref_ohms,
-            self.reference_factor,
-            resistance,
-            ratio,
-            temp_c,
-            temperature,
-            self.unit,
-        )
-
     def convert_raw_sample_to_sample(self, raw_sample: RawSample) -> Sample:
         resistance = self._code_to_resistance(int(raw_sample.raw_count))
         temp_c = self._resistance_to_temperature_c(resistance)
         temperature = self._convert_unit(temp_c) - self.offset
-        self._maybe_log_debug(raw_sample, resistance, temp_c, temperature)
         return Sample(
             sensor_name=raw_sample.sensor_name,
             sensor_kind="temperature",

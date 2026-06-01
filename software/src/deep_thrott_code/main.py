@@ -150,7 +150,7 @@ def main() -> None:
 		drain_queue_fn=drain_queue,
 		pin_thread_to_cpu=pin_current_thread_to_cpu,
 		producer_cpu=CPU_CORE_2_DAQ_PRODUCER,
-		producer_cpus=(CPU_CORE_0_OS_AND_GUI, CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER),
+		producer_cpus=(CPU_CORE_1_THROTTLE, CPU_CORE_2_DAQ_PRODUCER, CPU_CORE_3_DAQ_CONSUMER_AND_F3),
 		consumer_cpu=CPU_CORE_3_DAQ_CONSUMER_AND_F3,
 	)
 
