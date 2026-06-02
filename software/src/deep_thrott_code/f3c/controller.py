@@ -141,6 +141,20 @@ class Controller:
             self.history: list[dict] = []
             self.waiting_manual: dict | None = None
 
+    def _set_sequence_idle_locked(self, *, clear_history: bool = False) -> None:
+        self.state = State.IDLE
+        self.step_status = StepStatus.READY
+        self.active_sequence = "idle"
+        self.current_step_index = None
+        self.current_step = None
+        self.waiting_manual = None
+        try:
+            self.step_list.clear()
+        except Exception:
+            pass
+        if clear_history:
+            self.history.clear()
+
     @staticmethod
     def _return_to_nominal_state(value: Any) -> ValveState | None:
         if isinstance(value, ValveState):
@@ -157,17 +171,7 @@ class Controller:
     # elyse added this, for gui simulation mode, reset button will reset sequence and state
     def reset_sequences(self):
         with self._lock:
-            self.state = State.IDLE
-            self.step_status = StepStatus.READY
-            self.active_sequence = "idle"
-            self.current_step_index = None
-            self.current_step = None
-            try:
-                self.step_list.clear()
-            except Exception:
-                pass
-            self.waiting_manual = None
-            self.history.clear()
+            self._set_sequence_idle_locked(clear_history=True)
 
     def get_state(self) -> State:
         return self.state
@@ -549,7 +553,7 @@ class Controller:
                 else:
                     fire_executed = True
                 with self._lock:
-                    self.state = State.IDLE
+                    self._set_sequence_idle_locked()
             else:
                 # TODO: send to gui "already executed fill/fire sequence"
                 pass
