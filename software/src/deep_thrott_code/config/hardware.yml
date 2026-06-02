@@ -71,7 +71,7 @@ sensors:
         sampling_rate_hz: 25
         notes: "Fuel tank pressure transducer"
 
-      FM-PT:
+      OM-PT:
         enabled: true
         adc_id: ADC2
         signal_mode: single_ended
@@ -134,7 +134,7 @@ sensors:
         sampling_rate_hz: 25
         notes: "Ox fill pressure transducer"
 
-      OM-PT:
+      FM-PT:
         enabled: true
         adc_id: ADC3
         signal_mode: single_ended

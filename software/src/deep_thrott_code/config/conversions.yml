@@ -101,7 +101,7 @@ calibration:
     FI-PT: { profile: v_to_psi_0p5_4p5V_0_3000psi } #confirmed
     WM-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #confirmed
     CC-PT: { profile: v_to_psi_0p5_4p5V_0_3000psi } #
-    XF-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed 
+    XF-PT: { profile: v_to_psi_0p5_4p5V_0_3000psi } #confirmed 
     OT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
     OF-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #confirmed
     OM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
