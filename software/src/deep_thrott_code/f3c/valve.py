@@ -167,9 +167,9 @@ class ThrottleValve():
             # angles calibrated for omctv
             if self.valve_id == "omctv":
                 if new_state == ValveState.CLOSED:
-                    self.throttle(75.0, actuation_time)
+                    self.throttle(80.0, actuation_time)
                 else:
-                    self.throttle(165.0, actuation_time)
+                    self.throttle(170.0, actuation_time)
             # angles calibrated for fmctv
             else:
                 if new_state == ValveState.CLOSED:
