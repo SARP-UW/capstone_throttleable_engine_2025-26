@@ -337,12 +337,12 @@ actuators:
       normally_closed: true
       notes: "Oxidizer filling flow valve"
     
-    ftfv/otfv:
+    otfv:
       enabled: true
       mode: on_off
       pin: 19
       normally_closed: true
-      notes: "Fuel tank filling flow valve"
+      notes: "Oxidizer tank filling flow valve"
 
     oifv:
       enabled: true

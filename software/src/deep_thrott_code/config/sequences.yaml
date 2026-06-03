@@ -49,7 +49,7 @@ sequences:
         user_input: true
         system_state: fill
 
-      - valve_id: ftfv/otfv
+      - valve_id: otfv
         action: open
         time_delay: 0.0
         user_input: true
