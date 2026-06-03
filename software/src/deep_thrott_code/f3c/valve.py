@@ -197,7 +197,7 @@ class ThrottleValve():
 
         # adjust throttle angle based on angle calibration
         if self.valve_id == "omctv":
-            angle_deg = angle_deg - 15.0
+            angle_deg = angle_deg + 88.0
         else:
             angle_deg = angle_deg + 20.0
 
