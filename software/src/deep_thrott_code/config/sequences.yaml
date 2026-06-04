@@ -19,12 +19,6 @@ sequences:
         user_input: true
         system_state: fill
 
-      - valve_id: lffv
-        action: closed
-        time_delay: 0.0
-        user_input: true
-        system_state: fill
-
       - valve_id: otvv
         action: open
         time_delay: 0.0
@@ -49,7 +43,7 @@ sequences:
         user_input: true
         system_state: fill
 
-      - valve_id: otfv
+      - valve_id: xffv
         action: open
         time_delay: 0.0
         user_input: true
@@ -72,18 +66,6 @@ sequences:
     steps:
       - valve_id: wmv
         action: open
-        time_delay: 0.0
-        user_input: false
-        system_state: fire
-
-      - valve_id: fifv
-        action: open
-        time_delay: 0.0
-        user_input: false
-        system_state: fire
-
-      - valve_id: oifv
-        action: open
         time_delay: 2.0
         user_input: false
         system_state: fire
@@ -102,7 +84,7 @@ sequences:
 
       - valve_id: fmctv
         action: None
-        angle: 60.0    # full open
+        angle: 90.0    # full open
         time: 0.5
         time_delay: 0.0
         user_input: false
@@ -110,21 +92,15 @@ sequences:
 
       - valve_id: omctv
         action: None
-        angle: 60.0     # full open
+        angle: 90.0     # full open
         time: 0.5
         time_delay: 2.0
         user_input: false
         system_state: fire
 
-      - valve_id: oifv
-        action: closed
-        time_delay: 0.0
-        user_input: false
-        system_state: fire
-
       - valve_id: fmctv
         action: None
-        angle: 45.0     # 90% open
+        angle: 50.0
         time: 0.5
         time_delay: 0.0
         user_input: false
@@ -132,15 +108,15 @@ sequences:
 
       - valve_id: omctv
         action: None
-        angle: 45.0         # 90% open
+        angle: 50.0
         time: 0.5
-        time_delay: 1.0
+        time_delay: 2.0
         user_input: false
         system_state: fire
 
       - valve_id: fmctv
         action: None
-        angle: 45.0     # 90% open
+        angle: 35.0
         time: 0.5
         time_delay: 0.0
         user_input: false
@@ -148,9 +124,25 @@ sequences:
 
       - valve_id: omctv
         action: None
-        angle: 45.0         # 90% open
+        angle: 35.0
         time: 0.5
-        time_delay: 1.0
+        time_delay: 2.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: fmctv
+        action: None
+        angle: 20.0
+        time: 0.5
+        time_delay: 0.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: omctv
+        action: None
+        angle: 20.0
+        time: 0.5
+        time_delay: 2.0
         user_input: false
         system_state: fire
 

@@ -167,15 +167,15 @@ class ThrottleValve():
             # angles calibrated for omctv
             if self.valve_id == "omctv":
                 if new_state == ValveState.CLOSED:
-                    self.throttle(75.0, actuation_time)
+                    self.throttle(0, actuation_time)
                 else:
-                    self.throttle(-15.0, actuation_time)
+                    self.throttle(90.0, actuation_time)
             # angles calibrated for fmctv
             else:
                 if new_state == ValveState.CLOSED:
-                    self.throttle(110.0, actuation_time)
+                    self.throttle(0, actuation_time)
                 else:
-                    self.throttle(20.0, actuation_time)
+                    self.throttle(90.0, actuation_time)
 
     def pulse_valve(self, dt: float):
         if self.state == ValveState.CLOSED:
@@ -197,9 +197,9 @@ class ThrottleValve():
 
         # adjust throttle angle based on angle calibration
         if self.valve_id == "omctv":
-            angle_deg = angle_deg - 15.0
+            angle_deg = angle_deg + 73.0
         else:
-            angle_deg = angle_deg + 20.0
+            angle_deg = angle_deg + 110.0
 
         time_ms = int(time_s * 1000)
         angle_param = int(angle_deg * self.SERVO_ANGLE_PARAM / self.SERVO_ANGLE_DEG)
