@@ -34,6 +34,14 @@ calibration_profiles:
       psi_min: 0.0
       psi_max: 80.0
 
+    v_to_psi_0p5_4p5V_0_1161psi:
+      units: psi
+      type: volts_to_psi
+      v_min: 0.5
+      v_max: 4.5
+      psi_min: 0.0
+      psi_max: 1161.3
+
   load_cells:
     # force_n = (|V_plus - V_minus| / excitation_voltage) / sensitivity_v_per_v * max_load_n - offset_n
     # where sensitivity_v_per_v is in V/V at full-scale load.
@@ -98,7 +106,7 @@ calibration_profiles:
 calibration:
   pressure_transducers:
     LF-PT: { profile: v_to_psi_0p5_4p5V_0_3000psi } #confirmed
-    FT-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
+    FT-PT: { profile: v_to_psi_0p5_4p5V_0_1161psi } #confirmed
     FM-PT: { profile: v_to_psi_0p5_4p5V_0_1000psi } #confirmed
     FI-PT: { profile: v_to_psi_0p5_4p5V_0_3000psi } #confirmed
     WM-PT: { profile: v_to_psi_0p5_4p5V_0_5000psi } #confirmed
