@@ -213,7 +213,7 @@ sensors:
 
     flow meters:
       FM-FM:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 10
@@ -221,7 +221,7 @@ sensors:
         notes: "Fuel main flow meter"
 
       OM-FM:
-        enabled: false
+        enabled: true
         adc_id: ADC3
         signal_mode: single_ended
         ain: 8
