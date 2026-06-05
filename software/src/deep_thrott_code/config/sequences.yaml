@@ -85,7 +85,7 @@ sequences:
       - valve_id: fmctv
         action: throttle
         angle: 90.0    # full open
-        time: 0.5
+        time: 0.0
         time_delay: 0.0
         user_input: false
         system_state: fire
@@ -93,7 +93,7 @@ sequences:
       - valve_id: omctv
         action: throttle
         angle: 90.0     # full open
-        time: 0.5
+        time: 0.0
         time_delay: 2.0
         user_input: false
         system_state: fire
@@ -101,7 +101,7 @@ sequences:
       - valve_id: fmctv
         action: throttle
         angle: 50.0
-        time: 0.5
+        time: 0.0
         time_delay: 0.0
         user_input: false
         system_state: fire
@@ -109,7 +109,7 @@ sequences:
       - valve_id: omctv
         action: throttle
         angle: 50.0
-        time: 0.5
+        time: 0.0
         time_delay: 2.0
         user_input: false
         system_state: fire
@@ -117,7 +117,7 @@ sequences:
       - valve_id: fmctv
         action: throttle
         angle: 35.0
-        time: 0.5
+        time: 0.0
         time_delay: 0.0
         user_input: false
         system_state: fire
@@ -125,7 +125,7 @@ sequences:
       - valve_id: omctv
         action: throttle
         angle: 35.0
-        time: 0.5
+        time: 0.0
         time_delay: 2.0
         user_input: false
         system_state: fire
@@ -133,7 +133,7 @@ sequences:
       - valve_id: fmctv
         action: throttle
         angle: 20.0
-        time: 0.5
+        time: 0.0
         time_delay: 0.0
         user_input: false
         system_state: fire
@@ -141,7 +141,7 @@ sequences:
       - valve_id: omctv
         action: throttle
         angle: 20.0
-        time: 0.5
+        time: 0.0
         time_delay: 2.0
         user_input: false
         system_state: fire
