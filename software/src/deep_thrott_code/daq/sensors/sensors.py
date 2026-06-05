@@ -909,6 +909,8 @@ class FlowMeterSensor(Sensor):
         unit: str = "gallons_per_minute",
         adc_vref: float = 5.0,
         adc_gain: float = 1.0,
+        calibration_m = None,
+        calibration_b = None
     ):
         self.name = str(name)
         self.adc = adc
@@ -924,6 +926,8 @@ class FlowMeterSensor(Sensor):
         self.unit = str(unit)
         self.adc_vref = float(adc_vref)
         self.adc_gain = float(adc_gain)
+        self.cal_m = calibration_m
+        self.cal_b = calibration_b
 
     def read_raw_sample(self) -> RawSample:
         t_mono = time.perf_counter()
@@ -955,6 +959,8 @@ class FlowMeterSensor(Sensor):
         else:
             frac = (voltage - self.v_min) / self.v_span
             flow_value = self.flow_min + frac * self.flow_span
+        if self.cal_m is not None:
+            flow_value = float(self.cal_m) * flow_value + float(self.cal_b or 0.0)
         flow_value -= self.offset_flow
         return Sample(
             sensor_name=raw_sample.sensor_name,
@@ -1370,8 +1376,8 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             except Exception:
                 return default
 
-        def _flow_calibration(sensor_id: str) -> tuple[float, float, float, float, str, float]:
-            default = (0.8, 4.0, 0.0, 30.0, "gallons_per_minute", 0.0)
+        def _flow_calibration(sensor_id: str) -> tuple[float, float, float, float, str, float, float | None, float | None]:
+            default = (0.8, 4.0, 0.0, 30.0, "gallons_per_minute", 0.0, None, None)
             cal = conversions_cfg.get("calibration")
             if not isinstance(cal, dict):
                 return default
@@ -1404,7 +1410,11 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                 flow_max = float(profile.get("flow_max", profile.get("gpm_max", default[3])))
                 unit = str(profile.get("unit", profile.get("units", default[4])))
                 offset = float(profile.get("offset", default[5]))
-                return (v_min, v_max, flow_min, flow_max, unit, offset)
+                calibration_m = profile.get("calibration_m")
+                calibration_b = profile.get("calibration_b")
+                cal_m = float(calibration_m) if calibration_m is not None else default[6]
+                cal_b = float(calibration_b) if calibration_b is not None else default[7]
+                return (v_min, v_max, flow_min, flow_max, unit, offset, cal_m, cal_b)
             except Exception:
                 return default
 
@@ -1544,7 +1554,7 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
             if ain is None:
                 raise RuntimeError(f"Flow meter {sensor_id} is enabled but has no 'ain' set")
 
-            v_min, v_max, flow_min, flow_max, unit, offset_flow = _flow_calibration(sensor_id)
+            v_min, v_max, flow_min, flow_max, unit, offset_flow, calibration_m, calibration_b = _flow_calibration(sensor_id)
 
             try:
                 sampling_rate_hz = float(cfg.get("sampling_rate_hz")) if cfg.get("sampling_rate_hz") is not None else None
@@ -1596,6 +1606,16 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                     offset_flow = float(cfg.get("offset"))
             except Exception:
                 pass
+            try:
+                if cfg.get("calibration_m") is not None:
+                    calibration_m = float(cfg.get("calibration_m"))
+            except Exception:
+                pass
+            try:
+                if cfg.get("calibration_b") is not None:
+                    calibration_b = float(cfg.get("calibration_b"))
+            except Exception:
+                pass
 
             sensors.append(
                 FlowMeterSensor(
@@ -1610,6 +1630,8 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                     offset_flow=offset_flow,
                     unit=unit,
                     adc_gain=adc_gain,
+                    calibration_m=calibration_m,
+                    calibration_b=calibration_b,
                 )
             )
 

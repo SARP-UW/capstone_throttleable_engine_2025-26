@@ -199,7 +199,7 @@ class ThrottleValve():
         if self.valve_id == "omctv":
             angle_deg = angle_deg + 73.0
         else:
-            angle_deg = angle_deg + 130.0
+            angle_deg = angle_deg + 110.0
 
         time_ms = int(time_s * 1000)
         angle_param = int(angle_deg * self.SERVO_ANGLE_PARAM / self.SERVO_ANGLE_DEG)
