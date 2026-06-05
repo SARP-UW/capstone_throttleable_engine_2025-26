@@ -421,8 +421,10 @@ class Controller:
                             if action == "open":
                                 valve_goal_state = ValveState.OPEN
 
-                            else:
+                            elif action == "closed":
                                 valve_goal_state = ValveState.CLOSED
+                            else:
+                                print("Error: Invalid action")
 
                         # update current step information
                         with self._lock:
@@ -489,8 +491,9 @@ class Controller:
                             # TODO: need to have something that limits what OF you can have based on angles provided by
                             # TODO: log throttle valve actuation
                             # throttle controller, absolute max of 1.2
-
-                            if action is not None:
+                            
+                            # open or close throttle valve
+                            if action in ["open", "closed"]:
                                 # actuate throttle valve (on or off)
                                 current_valve.set_state(valve_goal_state)
 
@@ -500,16 +503,21 @@ class Controller:
 
 
                             # throttling to a specific angle (this implementation works for open loop only!)
-                            else:
+                            elif action == "throttle":
                                 # getting throttle angle and time to reach angle 
                                 angle = step.get("angle")
+                                print(f"Command throttle angle: {angle}")
                                 throttle_time = step.get("time")
+                                print(f"Actuation time: {throttle_time}")
                                 # actuating valve
                                 current_valve.throttle(angle, throttle_time)
+                                print(current_valve.get_valve_id() + "throttled")
 
                                 # log valve actuation
                                 self.actuation_logger.write_valve_action(
                                     [valve_id, "throttle", angle, None, time.time(), current_sequence])
+                            else:
+                                print("Error: Invalid action")
 
                         # if the valve for this step is an on/off valve
                         elif isinstance(current_valve, Valve):
