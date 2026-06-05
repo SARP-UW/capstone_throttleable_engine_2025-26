@@ -511,7 +511,7 @@ class Controller:
                                 print(f"Actuation time: {throttle_time}")
                                 # actuating valve
                                 current_valve.throttle(angle, throttle_time)
-                                print(current_valve.get_valve_id + "throttled")
+                                print(current_valve.get_valve_id() + "throttled")
 
                                 # log valve actuation
                                 self.actuation_logger.write_valve_action(
