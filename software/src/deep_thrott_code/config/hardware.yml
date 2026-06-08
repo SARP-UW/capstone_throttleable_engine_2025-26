@@ -217,7 +217,7 @@ sensors:
         adc_id: ADC3
         signal_mode: single_ended
         ain: 10
-        sampling_rate_hz: 150
+        sampling_rate_hz: 10
         notes: "Fuel main flow meter"
 
       OM-FM:
@@ -225,7 +225,7 @@ sensors:
         adc_id: ADC3
         signal_mode: single_ended
         ain: 8
-        sampling_rate_hz: 150
+        sampling_rate_hz: 10
         notes: "Oxidizer main flow meter"
 
   injector cold flow:
