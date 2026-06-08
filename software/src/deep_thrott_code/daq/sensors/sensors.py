@@ -22,7 +22,11 @@ from typing import Any
 
 from .. import config
 from ..services.sample import RawSample, Sample
-import RPi.GPIO as GPIO  # type: ignore
+
+try:
+    import RPi.GPIO as GPIO  # type: ignore
+except ImportError:
+    GPIO = None  # type: ignore[assignment]
 
 
 _log = logging.getLogger(__name__)
@@ -1068,6 +1072,9 @@ def build_sensors(*, simulation: bool = True, test_name: str | None = None, sele
                 raise RuntimeError(f"{adc_id}: cs_gpio must be set for manual CS mode")
 
             manual_cs_pins.append(int(cs_gpio))
+
+        if GPIO is None:
+            raise RuntimeError("RPi.GPIO is required for hardware DAQ mode but is not installed in this environment")
 
         # initialize all CS GPIOs high before opening/using SPI
         GPIO.setmode(GPIO.BCM)
