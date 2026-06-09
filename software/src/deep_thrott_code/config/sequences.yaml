@@ -269,13 +269,13 @@ sequences:
         user_input: false
         system_state: fire
 
-      - valve_id: fifv
+      - valve_id: oifv
         action: open
-        time_delay: 0.0
+        time_delay: 0.1
         user_input: false
         system_state: fire
-
-      - valve_id: oifv
+      
+      - valve_id: fifv
         action: open
         time_delay: 6.0
         user_input: false
