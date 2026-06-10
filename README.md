@@ -1,11 +1,11 @@
 # capstone_throttleable_engine_2025-26
 
-2025-2026 SARP Capstone Project — a throttleable Eth/N2O rocket engine.
+2025-2026 SARP Capstone Project — a throttleable ethanol / nitrous engine injector testbed.
 
 This repository includes:
 - **software** (`software/`) — Python DAQ, valve actuation, throttle control, and web GUI
-- **hardware** (`hardware/`) — KiCAD PCB design for DAQ, valve actuation, and throttle control
-- **analysis** (`analysis/`) — Thermal, structural, and control system analysis (MATLAB/Python)
+- **hardware** (`hardware/`) — KiCAD PCB design for DAQ, valve actuation, and servo control
+- **analysis** (`analysis/`) — Thermal, structural, and control system analysis 
 
 ---
 
