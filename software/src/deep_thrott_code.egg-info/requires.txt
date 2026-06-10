@@ -1,0 +1,16 @@
+flask
+flask-socketio
+matplotlib
+numpy
+PyYAML
+pyserial
+scipy
+simple-websocket
+
+[:platform_system == "Linux"]
+RPi.GPIO
+pigpio
+spidev
+
+[server]
+eventlet

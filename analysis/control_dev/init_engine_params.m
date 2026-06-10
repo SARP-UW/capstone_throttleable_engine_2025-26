@@ -1,8 +1,8 @@
 %% Parameters for Throttleable Engine Model
 
 % Run Lookup Table Scripts
-run("cstar_lookup_table.m")
-run("sonvel_lookup_table.m")
+run("FirstPrinc_DataDriven/cstar_lookup_table.m")
+run("FirstPrinc_DataDriven/sonvel_lookup_table.m")
 
 % Unit conversions
 psi_to_Pa = 6894.76;

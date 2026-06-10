@@ -1,0 +1,29 @@
+Metadata-Version: 2.4
+Name: deep-thrott-code
+Version: 0.1.0
+Summary: Throttleable engine DAQ, control, and GUI software for the 2025-26 capstone project
+Author: SARP Capstone Team
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: flask
+Requires-Dist: flask-socketio
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: PyYAML
+Requires-Dist: pyserial
+Requires-Dist: scipy
+Requires-Dist: simple-websocket
+Requires-Dist: RPi.GPIO; platform_system == "Linux"
+Requires-Dist: pigpio; platform_system == "Linux"
+Requires-Dist: spidev; platform_system == "Linux"
+Provides-Extra: server
+Requires-Dist: eventlet; extra == "server"
+
+# capstone_throttleable_engine_2025-26
+2025-2026 SARP Capstone Project, a throttleable Eth/N20 rocket engine.
+
+This repository includes...
+- software (Python) for data acquisition, valve actuation, and throttle control
+- hardware (KiCAD) design of the PCB for data acquisition, valve actuation, and throttle control
+- thermal and structural analysis (Ansys) of the engine and fluid-feed/cooling system
+
