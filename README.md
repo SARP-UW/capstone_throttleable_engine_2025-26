@@ -20,12 +20,6 @@ This repository includes:
 pip install -e .
 ```
 
-For the async server (production/Raspberry Pi use):
-
-```bash
-pip install -e ".[server]"
-```
-
 ### Running the GUI
 
 The system is split into two servers:
@@ -53,8 +47,8 @@ Once the server is running, open any browser on the same network and navigate to
 http://<host-ip>:5000
 ```
 
-If running locally (e.g. on your laptop), just go to `http://localhost:5000` or `http://127.0.0.1:5000`.  
-If running on a Raspberry Pi on the bench, use the Pi's IP address: `http://192.168.x.x:5000`.
+If running locally, just go to `http://localhost:5000` or `http://127.0.0.1:5000`.  
+If running on a Raspberry Pi, use the Pi's IP address: `http://192.168.x.x:5000`.
 
 **Running backend on a Pi, GUI on your laptop:**
 
@@ -98,7 +92,6 @@ software/src/deep_thrott_code/
 ├── daq/                  # Data acquisition — ADC drivers and sensor interfaces
 ├── f3c/                  # Flight control sequencer and valve control
 ├── control/              # PID throttle controller and servo characterization
-├── core/                 # State management and watchdog
 └── config/               # Default configuration files
 ```
 
