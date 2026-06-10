@@ -26,8 +26,8 @@ The system is split into two servers:
 
 | Server | Default address | Role |
 |--------|----------------|------|
-| **Backend** (`main.py`) | `http://0.0.0.0:6001` | DAQ, valve control, F3C sequencer, Socket.IO |
-| **GUI** (`gui/`) | `http://127.0.0.1:5000` | Serves the web frontend only |
+| **Backend** | `http://0.0.0.0:6001` | DAQ, valve control, F3C sequencer, Socket.IO |
+| **GUI** | `http://127.0.0.1:5000` | Serves the web frontend only |
 
 When you open the GUI in a browser, the frontend JS automatically connects to the backend via Socket.IO on port 6001 (same host, different port). The backend streams live sensor data at ~10 Hz and receives commands (valve actuation, sequence control, start/stop logging) from the GUI.
 
@@ -38,7 +38,7 @@ When you open the GUI in a browser, the frontend JS automatically connects to th
 python -m deep_thrott_code.main --host 0.0.0.0 --port 6001
 
 # Terminal 2 — start the GUI server
-python -m deep_thrott_code.gui --host 0.0.0.0 --port 5000
+python -m deep_thrott_code.gui.run_gui --host 0.0.0.0 --port 5000
 ```
 
 Once the server is running, open any browser on the same network and navigate to:
