@@ -1,8 +1,8 @@
 %% Parameters for Throttleable Engine Model
 
 % Run Lookup Table Scripts
-run("FirstPrinc_DataDriven/cstar_lookup_table.m")
-run("FirstPrinc_DataDriven/sonvel_lookup_table.m")
+run("cstar_lookup_table.m")
+run("sonvel_lookup_table.m")
 
 % Unit conversions
 psi_to_Pa = 6894.76;
@@ -105,26 +105,16 @@ theta_ff_table = [ ...
 % Valve CdA Example Lookup Table
 theta_bp = [ ...
      0
-    10
     20
-    30
-    40
+    35
     50
-    60
-    70
-    80
     90 ];
 CdA_table = [ ...
-    1.5e-6      % 0 deg
-    1.6e-6      % 10 deg
-    1.7e-6      % 20 deg
-    1.8e-6      % 30 deg
-    1.9e-6      % 40 deg
-    2.0e-6      % 50 deg
-    2.1e-6      % 60 deg
-    2.2e-6      % 70 deg
-    2.3e-6      % 80 deg
-    2.4e-6 ];   % 90 deg
+    0      % 0 deg
+    2.348e-8      % 20 deg
+    1.532e-6      % 30 deg
+    2.826e-6      % 50 deg
+    5.048e-6 ];   % 90 deg
 
 % Tiny epsilon for smoothing piecewise functions, no sharp clamps that ruin
 % algebraic loops
