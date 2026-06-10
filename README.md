@@ -90,7 +90,7 @@ software/src/deep_thrott_code/
 ├── backend/              # App factory, GUI command handlers, DAQ runtime
 ├── gui/                  # Flask + Socket.IO web interface (routes, sockets)
 ├── daq/                  # Data acquisition — ADC drivers and sensor interfaces
-├── f3c/                  # Flight control sequencer and valve control
+├── f3c/                  # Sequencer and valve control
 ├── control/              # PID throttle controller and servo characterization
 └── config/               # Default configuration files
 ```
