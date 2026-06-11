@@ -221,7 +221,7 @@ sequences:
       - valve_id: otfv
         action: open
         time_delay: 0.0
-        user_input: true
+        user_input: false
         system_state: fire
 
       - valve_id: wmv
