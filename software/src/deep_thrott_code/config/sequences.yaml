@@ -60,12 +60,6 @@ sequences:
         time_delay: 0.0
         user_input: true
         system_state: fill
-      
-      - valve_id: otfv
-        action: open
-        time_delay: 0.0
-        user_input: true
-        system_state: fill
 
 # coldflow sequence
 #  - name: fire
@@ -315,6 +309,12 @@ sequences:
 
   - name: fire
     steps:
+      - valve_id: otfv
+        action: open
+        time_delay: 0.0
+        user_input: true
+        system_state: fire
+
       - valve_id: wmv
         action: open
         time_delay: 4.0
