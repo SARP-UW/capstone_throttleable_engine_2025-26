@@ -19,7 +19,7 @@ sequences:
         user_input: true
         system_state: fill
 
-       - valve_id: otvv
+      - valve_id: otvv
         action: open
         time_delay: 0.0
         user_input: true
