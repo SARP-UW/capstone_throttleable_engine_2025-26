@@ -60,12 +60,6 @@ sequences:
         time_delay: 0.0
         user_input: true
         system_state: fill
-      
-      - valve_id: otfv
-        action: open
-        time_delay: 0.0
-        user_input: true
-        system_state: fill
 
 # coldflow sequence
 #  - name: fire
@@ -261,11 +255,69 @@ sequences:
 
 # igniter sequence
 
+  # - name: fire
+  #   steps:
+  #     - valve_id: wmv
+  #       action: open
+  #       time_delay: 0.0
+  #       user_input: false
+  #       system_state: fire
+
+  #     - valve_id: oifv
+  #       action: open
+  #       time_delay: 0.1
+  #       user_input: false
+  #       system_state: fire
+      
+  #     - valve_id: fifv
+  #       action: open
+  #       time_delay: 6.0
+  #       user_input: false
+  #       system_state: fire
+
+  #     - valve_id: omv
+  #       action: open
+  #       time_delay: 0.0
+  #       user_input: false
+  #       system_state: fire
+
+  #     - valve_id: otvv
+  #       action: open
+  #       time_delay: 2.0
+  #       user_input: false
+  #       system_state: fire
+
+  #     - valve_id: lffv
+  #       action: closed
+  #       time_delay: 0.0
+  #       user_input: false
+  #       system_state: fire
+
+  #     - valve_id: xffv
+  #       action: closed
+  #       time_delay: 0.0
+  #       user_input: true
+  #       system_state: fire
+
+  #     - valve_id: oifv
+  #       action: closed
+  #       time_delay: 0.0
+  #       user_input: true
+  #       system_state: fire
+
+# hotfire 2 second sequence
+
   - name: fire
     steps:
-      - valve_id: wmv
+      - valve_id: otfv
         action: open
         time_delay: 0.0
+        user_input: true
+        system_state: fire
+
+      - valve_id: wmv
+        action: open
+        time_delay: 4.0
         user_input: false
         system_state: fire
 
@@ -277,7 +329,7 @@ sequences:
       
       - valve_id: fifv
         action: open
-        time_delay: 6.0
+        time_delay: 2.0
         user_input: false
         system_state: fire
 
@@ -287,9 +339,31 @@ sequences:
         user_input: false
         system_state: fire
 
-      - valve_id: otvv
+      - valve_id: fmv
         action: open
+        time_delay: 4.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: fmctv
+        action: throttle
+        angle: 77.0
+        time: 1.0
+        time_delay: 0.0
+        user_input: false
+        system_state: fire
+
+      - valve_id: omctv
+        action: throttle
+        angle: 77.0
+        time: 1.0
         time_delay: 2.0
+        user_input: false
+        system_state: fire
+      
+      - valve_id: oifv   # double check with Oliver
+        action: closed
+        time_delay: 4.0
         user_input: false
         system_state: fire
 
@@ -298,15 +372,22 @@ sequences:
         time_delay: 0.0
         user_input: false
         system_state: fire
-
+        
+      # manual purge steps after hotfire sequence
       - valve_id: xffv
         action: closed
         time_delay: 0.0
         user_input: true
+        system_state: fire   
+      
+      - valve_id: ftvv
+        action: open
+        time_delay: 0.0
+        user_input: true
         system_state: fire
-
-      - valve_id: oifv
-        action: closed
+      
+      - valve_id: otvv
+        action: open
         time_delay: 0.0
         user_input: true
         system_state: fire
