@@ -279,7 +279,7 @@ sequences:
         system_state: fire
       
       - valve_id: ftvv
-        action: closed
+        action: open
         time_delay: 0.0
         user_input: true
         system_state: fire
