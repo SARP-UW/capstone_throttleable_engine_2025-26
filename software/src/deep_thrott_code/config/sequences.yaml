@@ -238,7 +238,7 @@ sequences:
 
       - valve_id: oifv
         action: open
-        time_delay: 0.1
+        time_delay: 0.2
         user_input: false
         system_state: fire
       
@@ -320,7 +320,7 @@ sequences:
 
   #     - valve_id: fmv
   #       action: open
-  #       time_delay: 4.0
+  #       time_delay: 6.0
   #       user_input: false
   #       system_state: fire
 
@@ -353,6 +353,13 @@ sequences:
   #       system_state: fire
         
   #     # manual purge steps after hotfire sequence
+  
+  #     - valve_id: otvv
+  #       action: open
+  #       time_delay: 0.0
+  #       user_input: true
+  #       system_state: fire
+
   #     - valve_id: xffv
   #       action: closed
   #       time_delay: 0.0
@@ -360,12 +367,6 @@ sequences:
   #       system_state: fire   
       
   #     - valve_id: ftvv
-  #       action: open
-  #       time_delay: 0.0
-  #       user_input: true
-  #       system_state: fire
-      
-  #     - valve_id: otvv
   #       action: open
   #       time_delay: 0.0
   #       user_input: true
