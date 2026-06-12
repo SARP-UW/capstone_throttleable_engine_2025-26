@@ -263,7 +263,7 @@ sequences:
       - valve_id: oifv
         action: closed
         time_delay: 0.0
-        user_input: false
+        user_input: true
         system_state: fire
 
       - valve_id: lffv
